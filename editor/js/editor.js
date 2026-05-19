@@ -175,7 +175,9 @@ const Editor = (() => {
       })
     ));
     preface.appendChild(el('div', { class: 'shorttitle' },
-      el('input', { type: 'text', value: doc.shortTitle || '', placeholder: 'Ementa do diploma',
+      el('input', { type: 'text', value: doc.shortTitle || '',
+        placeholder: 'Sumário — uma frase a descrever o que o diploma faz (opcional)',
+        title: 'Frase única, normalmente 1-2 linhas, que aparece no DRE como sumário. Muitos diplomas (Portarias, alguns Despachos) não têm; pode deixar vazio e usar o texto do Artigo 1.º como sumário implícito.',
         style: 'width: 100%;',
         on: { input: e => State.update({ shortTitle: e.target.value }) }
       })
@@ -246,19 +248,32 @@ const Editor = (() => {
       ));
       doc.signatures.forEach((s, i) => {
         concl.appendChild(el('div', { class: 'signature-block' },
-          el('select', {
+          el('select', { title: 'Papel da assinatura',
             on: { change: e => State.updateSignature(i, { role: e.target.value }) }
           },
             ...['signature', 'countersignature', 'promulgation'].map(r =>
               el('option', { value: r, ...(r === s.role ? { selected: true } : {}) }, r)
             )
           ),
-          el('input', { type: 'text', value: s.as || '', placeholder: 'as=#actor',
+          // Título completo do cargo (e.g. "Ministro de Estado e das Finanças")
+          el('input', { type: 'text', value: s.title || '',
+            placeholder: 'Cargo (ex. Ministro de Estado e das Finanças)',
+            title: 'Cargo completo, mostrado como showAs no <TLCRole>',
+            on: { input: e => State.updateSignature(i, { title: e.target.value }) }
+          }),
+          // Nome do signatário
+          el('input', { type: 'text', value: s.name || '',
+            placeholder: 'Nome (ex. António Leitão Amaro)',
+            title: 'Nome do signatário, mostrado como showAs no <TLCPerson>',
+            on: { input: e => State.updateSignature(i, { name: e.target.value }) }
+          }),
+          // eId interno (gerado automaticamente, mas editável)
+          el('input', { type: 'text', value: s.as || '',
+            placeholder: 'eId (auto)',
+            title: 'eId do papel — usualmente gerado a partir do cargo',
+            style: 'font-family:var(--font-mono);font-size:0.8em;flex:0 0 200px',
             on: { input: e => State.updateSignature(i, { as: e.target.value }) }
           }),
-          el('input', { type: 'text', value: s.name || '', placeholder: 'Nome do signatário (opcional)',
-            on: { input: e => State.updateSignature(i, { name: e.target.value }) }
-          })
         ));
       });
       main.appendChild(concl);
@@ -464,8 +479,16 @@ const Editor = (() => {
     ));
 
     pane.appendChild(el('div', { class: 'field-group' },
-      el('label', null, 'Ementa (short title)'),
+      el('label', null, 'Sumário do diploma'),
+      el('p', { class: 'hint' },
+        'Frase única que descreve o que o diploma faz, mostrada no portal DRE. ',
+        'Opcional — muitos diplomas (Portarias regulamentares, despachos internos) não têm sumário explícito; ',
+        'nesse caso pode deixar vazio e o conteúdo do ',
+        el('em', null, 'Artigo 1.º — Objeto'),
+        ' serve de sumário implícito.'),
       el('textarea', {
+        rows: 3,
+        placeholder: 'ex. "Estabelece o regime jurídico de..."',
         on: { input: e => State.update({ shortTitle: e.target.value }) }
       }, doc.shortTitle || '')
     ));

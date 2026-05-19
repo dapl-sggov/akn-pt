@@ -496,6 +496,12 @@ try {
     ['2 ministros assinantes', parsed.signatures.filter(s => s.name).length === 2],
     ['nome Joaquim Miranda Sarmento', parsed.signatures.some(s => s.name.includes('Miranda Sarmento'))],
     ['nome António Leitão Amaro', parsed.signatures.some(s => s.name.includes('Leitão Amaro'))],
+    ['título Ministro de Estado e das Finanças preservado',
+      parsed.signatures.some(s => s.title && s.title.includes('Estado e das Finanças'))],
+    ['eId específico ministro-estado-financas',
+      parsed.signatures.some(s => s.as === 'ministro-estado-financas')],
+    ['eId específico ministro-presidencia',
+      parsed.signatures.some(s => s.as === 'ministro-presidencia')],
   ];
   const fails = checks.filter(([, ok]) => !ok);
   if (fails.length) {

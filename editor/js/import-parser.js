@@ -61,13 +61,20 @@ const ImportParser = (() => {
   // Helpers
   // -----------------------------------------------------------------------
   function normalizeLines(text) {
-    // Normalize whitespace, normalize unicode, split into lines
+    // Normalize whitespace, normalize unicode, split into lines.
+    // CRÍTICO: mammoth.js (browser) gera múltiplas linhas vazias entre cada
+    // parágrafo lógico do .docx (cada <w:br/> ou tab vira \n). Filtramos
+    // todas as linhas vazias para que lines[i+1] seja sempre a próxima
+    // linha SEMÂNTICA (necessário para detectar epígrafes "Artigo N.º \n
+    // [vazio]* \n Heading").
     return text
       .replace(/\r\n/g, '\n').replace(/\r/g, '\n')
       .replace(/­/g, '')  // soft hyphens
+      .replace(/[ ]/g, ' ')  // non-breaking spaces → espaço normal
       .replace(/[\t ]+/g, ' ')
       .split('\n')
-      .map(l => l.trim());
+      .map(l => l.trim())
+      .filter(l => l.length > 0);
   }
 
   // Detect "Artigo 5.º" or "Artigo 5.º-A" → return {num, label, eId}
@@ -583,18 +590,47 @@ const ImportParser = (() => {
     return segments.map(s => s.trim()).filter(Boolean);
   }
 
-  // Parses um segmento "O Ministro de X, João Silva." → { as, name }
+  // Parses um segmento "O Ministro de X, João Silva." → { as, name, title }
+  // Estratégia de eId para `as`:
+  //   - Para cargos canónicos (PM, PR, Presidente AR…) usa eId fixo
+  //   - Para ministros específicos, gera slug do título completo
+  //     ("Ministro de Estado e das Finanças" → "ministro-estado-financas")
+  //   Isto preserva o título completo na pegada ELI-PT e permite ao
+  //   exporter gerar `<TLCRole>` com `showAs` adequado.
   function _parseSignatureSegment(seg) {
-    // Match: "O/A <título>, <nome>." — captura nome após a primeira vírgula
     const m = seg.match(/^(?:O|A|Os|As|U[mn]a?)?\s*(.+?),\s*(.+?)\.?\s*$/);
     if (!m) return null;
     const title = m[1].trim();
     const name = m[2].trim();
-    let as = null;
+    // Identificar grupo canónico (para template-driven role assignment)
+    let baseAs = null;
     for (const r of ROLE_KEYWORD_MAP) {
-      if (r.re.test(title)) { as = r.as; break; }
+      if (r.re.test(title)) { baseAs = r.as; break; }
     }
-    return as ? { as, name, title } : null;
+    if (!baseAs) return null;
+    // Se for um cargo COM modificador (e.g. "Ministro de Estado e das Finanças"),
+    // gerar eId específico do título. Cargos sem modificador ficam genéricos.
+    let as = baseAs;
+    if (baseAs === 'ministro' || baseAs === 'secretario-estado') {
+      const slug = _slugifyRole(title);
+      if (slug && slug !== baseAs) as = slug;
+    }
+    return { as, name, title };
+  }
+
+  // Slugify "Ministro de Estado e das Finanças" → "ministro-estado-financas".
+  // Conservador: remove stopwords ("de", "do", "da", "e", "dos", "das"),
+  // remove acentos, junta com hífen.
+  function _slugifyRole(title) {
+    return String(title || '')
+      .toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')  // remove acentos
+      .replace(/[^a-z0-9\s-]/g, ' ')
+      .split(/\s+/)
+      .filter(w => w && !['de','do','da','dos','das','e','a','o','os','as'].includes(w))
+      .join('-')
+      .replace(/--+/g, '-')
+      .replace(/^-|-$/g, '');
   }
 
   function detectSignatures(lines, r) {
@@ -630,34 +666,36 @@ const ImportParser = (() => {
     if (r.actType === 'dec-lei') {
       const pm = parsedSigs.find(s => s.as === 'primeiro-ministro');
       sigs.push({ role: 'countersignature', as: 'primeiro-ministro',
-                  name: pm?.name || '', date: r.adoptionDate });
+                  name: pm?.name || '', title: pm?.title || '', date: r.adoptionDate });
       if (hasPromulgated) {
         const pr = parsedSigs.find(s => s.as === 'presidente-republica');
         sigs.push({ role: 'promulgation', as: 'presidente-republica',
-                    name: pr?.name || '', date: r.adoptionDate });
+                    name: pr?.name || '', title: pr?.title || '', date: r.adoptionDate });
       }
-      // Ministros adicionais (referendados)
-      parsedSigs.filter(s => s.as === 'ministro').forEach(s => {
-        sigs.push({ role: 'countersignature', as: 'ministro', name: s.name, date: r.adoptionDate });
+      // Ministros adicionais (referendados) — preservar título específico
+      parsedSigs.filter(s => /^ministr/i.test(s.as) && s.as !== 'primeiro-ministro').forEach(s => {
+        sigs.push({ role: 'countersignature', as: s.as, name: s.name, title: s.title, date: r.adoptionDate });
       });
     } else if (r.actType === 'lei') {
       const par = parsedSigs.find(s => s.as === 'presidente-ar');
       const pr = parsedSigs.find(s => s.as === 'presidente-republica');
       const pm = parsedSigs.find(s => s.as === 'primeiro-ministro');
-      sigs.push({ role: 'signature', as: 'presidente-ar', name: par?.name || '', date: r.adoptionDate });
-      sigs.push({ role: 'promulgation', as: 'presidente-republica', name: pr?.name || '', date: r.adoptionDate });
-      sigs.push({ role: 'countersignature', as: 'primeiro-ministro', name: pm?.name || '', date: r.adoptionDate });
+      sigs.push({ role: 'signature', as: 'presidente-ar', name: par?.name || '', title: par?.title || '', date: r.adoptionDate });
+      sigs.push({ role: 'promulgation', as: 'presidente-republica', name: pr?.name || '', title: pr?.title || '', date: r.adoptionDate });
+      sigs.push({ role: 'countersignature', as: 'primeiro-ministro', name: pm?.name || '', title: pm?.title || '', date: r.adoptionDate });
     } else if (r.actType === 'res-cm') {
       const pm = parsedSigs.find(s => s.as === 'primeiro-ministro');
-      sigs.push({ role: 'signature', as: 'primeiro-ministro', name: pm?.name || '', date: r.adoptionDate });
+      sigs.push({ role: 'signature', as: 'primeiro-ministro', name: pm?.name || '', title: pm?.title || '', date: r.adoptionDate });
     } else if (r.actType === 'portaria' || r.actType === 'despacho-normativo') {
       // Portarias podem ter VÁRIOS ministros assinantes (frequente para
-      // diplomas conjuntos). Emitir uma assinatura por cada ministro
-      // detectado, fallback para genérico se nada apanhado.
-      const ministers = parsedSigs.filter(s => s.as === 'ministro' || s.as === 'secretario-estado' || s.as === 'primeiro-ministro');
+      // diplomas conjuntos). Emitir uma assinatura por cada ministro,
+      // preservando título completo no campo `title` para showAs.
+      // Aceita qualquer eId que comece por "ministro" ou "secretario-".
+      const ministers = parsedSigs.filter(s =>
+        /^ministr/i.test(s.as) || /^secretario/i.test(s.as) || s.as === 'primeiro-ministro');
       if (ministers.length) {
         ministers.forEach(m => sigs.push({
-          role: 'signature', as: m.as, name: m.name, date: r.adoptionDate,
+          role: 'signature', as: m.as, name: m.name, title: m.title, date: r.adoptionDate,
         }));
       } else {
         sigs.push({ role: 'signature', as: 'ministro', name: '', date: r.adoptionDate });

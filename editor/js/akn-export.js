@@ -84,9 +84,12 @@ const AknExport = (() => {
     actors.add('dre'); actors.add('dapl');
     actors.add(ACTOR_FOR_TYPE[doc.actName] || 'governo');
 
-    // From signatures
+    // From signatures — recolher também TÍTULOS específicos quando disponíveis
+    // (e.g. "ministro-estado-financas" + showAs="Ministro de Estado e das Finanças")
+    const signatureTitles = new Map();  // eId → titulo humano
     doc.signatures.forEach(s => {
       if (s.as) actors.add(s.as);
+      if (s.as && s.title) signatureTitles.set(s.as, s.title);
     });
 
     // From footprint
@@ -95,18 +98,20 @@ const AknExport = (() => {
       step.inputs.forEach(inp => { if (inp.source) actors.add(inp.source); });
     });
 
-    const isRole = (e) => /^(primeiro-ministro|presidente-republica|presidente-ar|presidente-alra|representante-republica|ministro|presidente-governo)/.test(e);
+    const isRole = (e) => /^(primeiro-ministro|presidente-republica|presidente-ar|presidente-alra|representante-republica|ministro|secretario|presidente-governo)/.test(e);
 
     const items = [...actors].map(eid => {
       const tag = isRole(eid) ? 'TLCRole' : 'TLCOrganization';
       const tipo = tag === 'TLCRole' ? 'role' : 'organization';
-      return `        <${tag} eId="${eid}" href="/akn/ontology/${tipo}/pt/${eid}" showAs="${displayName(eid)}"/>`;
+      // Privilegiar título específico se foi parsed da signature
+      const showAs = signatureTitles.get(eid) || displayName(eid);
+      return `        <${tag} eId="${eid}" href="/akn/ontology/${tipo}/pt/${eid}" showAs="${escapeXml(showAs)}"/>`;
     });
 
     // Persons referenced by signatures
     doc.signatures.forEach((s, i) => {
       const pid = `pessoa-${s.as || 'signatario'}-${(s.date || '').slice(0, 7)}`;
-      items.push(`        <TLCPerson eId="${id(pid)}" href="/akn/ontology/person/pt/${id(pid)}" showAs="${escapeXml(s.name || displayName(s.as))}"/>`);
+      items.push(`        <TLCPerson eId="${id(pid)}" href="/akn/ontology/person/pt/${id(pid)}" showAs="${escapeXml(s.name || s.title || displayName(s.as))}"/>`);
     });
 
     return `      <references source="#dapl">
