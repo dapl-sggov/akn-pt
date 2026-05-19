@@ -6,6 +6,16 @@ on:
     branches: [main, develop]
 
 jobs:
+  schema-sync:
+    name: Schema sync check (schema/ vs validator/data/)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Check schemas in sync
+        run: python tools/sync_schemas.py --check
+
   schema-tests:
     name: Schema test suite (XSD + Schematron)
     runs-on: ubuntu-latest

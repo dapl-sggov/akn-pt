@@ -59,6 +59,16 @@ akn-pt batch corpus/ --phase publication --pattern "*.akn.xml"
 akn-pt schema-path           # prints path to bundled XSD/Schematron files
 ```
 
+> **Schema canónica vs. cópia distribuída.** A única source-of-truth dos
+> XSD e Schematron é `schema/` na raiz do monorepo. `validator/src/akn_pt/data/`
+> contém uma **cópia** distribuída com o pacote pip (necessário porque é
+> carregada via `importlib.resources`). Para sincronizar após editar o canónico:
+>
+> ```bash
+> python tools/sync_schemas.py           # copia schema/ → validator/data/
+> python tools/sync_schemas.py --check   # falha se houver drift (uso em CI)
+> ```
+
 ### Version
 
 ```bash

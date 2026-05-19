@@ -18,7 +18,7 @@ do Conselho de Ministros, decretos legislativos regionais e outros.
 
 | Artefacto | Pasta | Estado |
 |---|---|---|
-| **Especificação** (PT body + EN summary) | [`docs/spec/`](docs/spec/) | v0.1.0 — 18 capítulos |
+| **Especificação** | [`docs/spec/pt/`](docs/spec/pt/) (18 capítulos, autoritativa) + [`docs/spec/en/`](docs/spec/en/) (3 documentos sumário) | v0.1.0 |
 | **Schema XSD** (modular, 4 ficheiros) | [`schema/xsd/`](schema/xsd/) | v0.1.0 — 43 test cases |
 | **Schematron** (9 patterns, 3 fases) | [`schema/schematron/`](schema/schematron/) | v0.1.0 |
 | **ELI-PT** (perfil URI nacional) | [`eli-pt/`](eli-pt/) | v0.1.0 — `eli.gov.pt` placeholder |
