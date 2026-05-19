@@ -106,7 +106,7 @@ jobs:
         with: { python-version: '3.12' }
       - name: Install validator
         run: pip install -e ./validator
-      - name: Run editor smoke (gera 19 ficheiros: 9 templates + 10 features)
+      - name: "Run editor smoke (gera 19 ficheiros: 9 templates + 10 features)"
         run: node editor/smoke-test.js
       - name: Validar todos via akn-pt batch (18 esperado OK)
         run: python -m akn_pt batch editor/.smoke-output
