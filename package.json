@@ -6,10 +6,13 @@
   "license": "EUPL-1.2",
   "scripts": {
     "smoke": "node editor/smoke-test.js",
-    "test:ui": "node editor/test-ui.js"
+    "test:ui": "node editor/test-ui.js",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
   },
   "devDependencies": {
     "@xmldom/xmldom": "^0.9.10",
-    "jsdom": "^24.1.3"
+    "jsdom": "^24.1.3",
+    "wrangler": "^4.93.0"
   }
 }
