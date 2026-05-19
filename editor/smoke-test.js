@@ -162,6 +162,67 @@ const cases = [
     },
     type: 'dlr',
   },
+  {
+    // Tipo 5/9 — Decreto da Assembleia da República (tratado / convenção).
+    // Estrutura com articulado simples; assinaturas PAR + PR.
+    name: 'decreto-ar-simple',
+    setup(d) {
+      d.number = '12'; d.year = 2026;
+      d.subtype = 'decreto-ar-tratado';
+      d.formula = 'A Assembleia da República resolve, nos termos do n.º 5 do artigo 166.º da Constituição, aprovar a Convenção sobre cooperação X.';
+      d.shortTitle = 'Aprova a Convenção sobre cooperação X assinada em Lisboa.';
+      d.adoptionDate = '2026-03-15';
+      d.publicationDate = '2026-03-22';
+      d.docDate = '2026-03-22'; d.docDateText = '22 de marco';
+      d.body.items[0].heading = 'Aprovação';
+      d.body.items[0].paragraphs[0].content = 'E aprovada a Convenção sobre cooperação X, cujo texto se publica em anexo.';
+      d.signatures = [
+        { role: 'signature', as: 'presidente-ar', name: 'PAR', date: '2026-03-15' },
+        { role: 'promulgation', as: 'presidente-republica', name: 'PR', date: '2026-03-20' },
+      ];
+    },
+    type: 'decreto-ar',
+  },
+  {
+    // Tipo 7/9 — Despacho normativo ministerial com habilitante.
+    // Estrutura semelhante a portaria.
+    name: 'despacho-simple',
+    setup(d) {
+      d.number = '8'; d.year = 2026;
+      d.shortTitle = 'Estabelece o regime de funcionamento da plataforma Y.';
+      d.adoptionDate = '2026-04-10';
+      d.publicationDate = '2026-04-15';
+      d.docDate = '2026-04-15'; d.docDateText = '15 de abril';
+      d.habilitante = 'https://eli.gov.pt/eli/pt/dec-lei/2025/45/pt';
+      d.habilitanteLabel = 'Decreto-Lei n.o 45/2025, de 18 de junho';
+      d.body.items[0].heading = 'Objeto';
+      d.body.items[0].paragraphs[0].content = 'O presente despacho estabelece o regime de funcionamento da plataforma Y.';
+      d.signatures = [
+        { role: 'signature', as: 'ministro', name: 'Ministra da Administracao Interna', date: '2026-04-10' },
+      ];
+    },
+    type: 'despacho-normativo',
+  },
+  {
+    // Tipo 9/9 — Decreto Regulamentar Regional dos Açores com habilitante.
+    name: 'drr-acores-simple',
+    setup(d) {
+      d.number = '3'; d.year = 2026;
+      d.country = 'pt-20';
+      d.shortTitle = 'Regulamenta o regime do procedimento X na Regiao Autonoma dos Acores.';
+      d.adoptionDate = '2026-05-01';
+      d.publicationDate = '2026-05-08';
+      d.docDate = '2026-05-08'; d.docDateText = '8 de maio';
+      d.habilitante = 'https://eli.gov.pt/eli/pt/dlr/2025/12/pt';
+      d.habilitanteLabel = 'Decreto Legislativo Regional n.o 12/2025/A, de 10 de outubro';
+      d.body.items[0].heading = 'Objeto';
+      d.body.items[0].paragraphs[0].content = 'O presente DRR regulamenta o regime do procedimento X.';
+      d.signatures = [
+        { role: 'signature', as: 'presidente-governo-regional-acores', name: 'PGRA', date: '2026-05-01' },
+      ];
+    },
+    type: 'drr',
+  },
 ];
 
 let n_ok = 0, n_fail = 0;

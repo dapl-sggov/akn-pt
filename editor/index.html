@@ -45,7 +45,8 @@
        ====================================================================== -->
   <section id="editor" class="screen">
 
-    <!-- ====== TOPBAR ====== -->
+    <!-- ====== MASTHEAD (navy) ====== -->
+    <!-- Topbar reduzida: voltar | identidade do doc | Cmd-K | Validar | Exportar -->
     <nav class="topbar">
       <div class="topbar-left">
         <button class="btn-ghost" id="btn-back" title="Voltar à escolha de tipos">←</button>
@@ -60,11 +61,15 @@
         <span id="peers-badge" class="badge badge-ok hidden" title="Tabs ligadas em sincronização">● 1</span>
         <span id="validation-badge" class="badge badge-pending" title="Estado da validação">●</span>
 
-        <!-- Acções primárias -->
-        <button class="btn-ghost" id="btn-preview" title="Pré-visualizar como documento">Pré-visualizar</button>
+        <!-- Cmd-K trigger -->
+        <button class="cmdk-trigger" id="btn-cmdk" title="Pesquisar acções (Ctrl/⌘+K)">
+          <span>Acções</span>
+          <kbd>⌘K</kbd>
+        </button>
+
         <button class="btn-ghost" id="btn-validate" title="Verificar consistência">Validar</button>
 
-        <!-- Export — dropdown com 1 acção primária + alternativas -->
+        <!-- Export — dropdown único; resto via Cmd-K -->
         <div class="menu" data-menu="export">
           <button class="btn-primary menu-trigger" data-menu-trigger>
             Exportar <span class="caret">▾</span>
@@ -80,19 +85,18 @@
             </button>
             <div class="menu-divider"></div>
             <button class="menu-item" data-export="pdf">
-              <span class="menu-icon">📄</span>
+              <span class="menu-icon">⎙</span>
               <span class="menu-label">PDF <span class="menu-shortcut">via impressão</span></span>
             </button>
             <button class="menu-item" data-export="docx">
-              <span class="menu-icon">📝</span>
+              <span class="menu-icon">✑</span>
               <span class="menu-label">Word (.doc)</span>
             </button>
-            <button class="menu-item" data-export="bluebell">
+            <button class="menu-item lab-only hidden" data-export="bluebell">
               <span class="menu-icon">≣</span>
               <span class="menu-label">Texto Bluebell-PT</span>
             </button>
-            <div class="menu-divider"></div>
-            <button class="menu-item" data-export="share-url">
+            <button class="menu-item lab-only hidden" data-export="share-url">
               <span class="menu-icon">↗</span>
               <span class="menu-label">Partilhar por URL</span>
             </button>
@@ -106,135 +110,71 @@
             </button>
           </div>
         </div>
-
-        <!-- Overflow — tudo o que é secundário -->
-        <div class="menu" data-menu="more">
-          <button class="btn-ghost menu-trigger" data-menu-trigger title="Mais opções">⋯</button>
-          <div class="menu-panel menu-panel-right" data-menu-panel>
-            <button class="menu-item" data-action="open-snapshots">
-              <span class="menu-icon">⟲</span>
-              <span class="menu-label">Snapshots & versões…</span>
-            </button>
-            <button class="menu-item" data-action="open-diff">
-              <span class="menu-icon">⇄</span>
-              <span class="menu-label">Comparar versões…</span>
-            </button>
-            <button class="menu-item" data-action="save-draft">
-              <span class="menu-icon">💾</span>
-              <span class="menu-label">Guardar rascunho agora</span>
-            </button>
-            <div class="menu-divider"></div>
-            <button class="menu-item" data-action="open-text">
-              <span class="menu-icon">≣</span>
-              <span class="menu-label">Editar como texto (Bluebell-PT)…</span>
-            </button>
-            <button class="menu-item" data-action="open-collab">
-              <span class="menu-icon">↗</span>
-              <span class="menu-label">Partilhar / colaborar…</span>
-            </button>
-            <button class="menu-item" data-action="open-ai-settings">
-              <span class="menu-icon">✦</span>
-              <span class="menu-label">Definições do assistente IA…</span>
-            </button>
-            <div class="menu-divider"></div>
-            <button class="menu-item" data-action="open-import">
-              <span class="menu-icon">↥</span>
-              <span class="menu-label">Importar diploma não marcado…</span>
-            </button>
-            <button class="menu-item" data-action="open-amend">
-              <span class="menu-icon">±</span>
-              <span class="menu-label">Modo alterar diploma existente…</span>
-            </button>
-          </div>
-        </div>
       </div>
     </nav>
 
-    <!-- ====== 3 PAINÉIS ====== -->
+    <!-- ====== 3 PAINÉIS — PILHA | CANVAS | RÉGUA DE ACTIVIDADE ====== -->
     <div class="layout">
-      <!-- TOC -->
-      <aside class="panel-left" id="toc">
+
+      <!-- PILHA: rascunhos abertos no browser; substitui o TOC sidebar antigo. -->
+      <aside class="panel-left" id="stack-panel">
         <div class="panel-header">
-          <h2>Estrutura</h2>
+          <h2>Pilha</h2>
         </div>
-        <nav id="toc-nav"></nav>
+        <ul id="stack-list" class="stack-list" role="listbox" aria-label="Rascunhos abertos"></ul>
         <div class="panel-actions">
-          <button class="btn-small" data-action="add-recital">+ Considerando</button>
-          <button class="btn-small" data-action="add-article">+ Artigo</button>
-          <button class="btn-small" data-action="add-paragraph">+ Ponto resolutivo</button>
-          <button class="btn-small" data-action="add-attachment">+ Anexo</button>
+          <button class="btn-small btn-stack-new" id="stack-new">+ Novo rascunho</button>
         </div>
       </aside>
 
-      <!-- Corpo do documento -->
-      <main class="panel-center" id="document-body"></main>
+      <!-- CANVAS: documento com breadcrumb sticky no topo (substitui o TOC). -->
+      <main class="panel-center" id="canvas-wrap">
+        <nav class="canvas-breadcrumb" id="breadcrumb" aria-label="Estrutura do documento"></nav>
+        <div class="canvas-scroll">
+          <div id="document-body"></div>
 
-      <!-- Painel direito — APENAS 4 TABS -->
-      <aside class="panel-right" id="metadata">
-        <div class="tabs">
-          <button class="tab active" data-tab="info">
-            Informação
-          </button>
-          <button class="tab" data-tab="review">
-            Revisão
-            <span class="tab-badge hidden" data-badge="review"></span>
-          </button>
-          <button class="tab" data-tab="links">
-            Ligações
-            <span class="tab-badge hidden" data-badge="links"></span>
-          </button>
-          <button class="tab" data-tab="output">
-            Saída
-          </button>
-        </div>
+          <!-- Identidade do documento — bloco que vivia em "Informação".
+               Aparece embutido no canvas, no fundo, porque metadados de
+               identificação SÃO conteúdo, não chrome. -->
+          <section class="canvas-card identity-card" aria-label="Identificação">
+            <h3>Identificação</h3>
+            <div data-section="meta"></div>
+          </section>
 
-        <!-- INFO: metadados + pegada legislativa -->
-        <div class="tab-pane active" data-pane="info">
-          <details class="section" open>
-            <summary>Identificação</summary>
-            <div class="section-body" data-section="meta"></div>
-          </details>
-          <details class="section">
-            <summary>Pegada legislativa</summary>
-            <div class="section-body" data-section="footprint"></div>
-          </details>
+          <!-- Pegada legislativa — vivia também em "Informação".
+               Faz parte do documento (será publicada com ele); permanente. -->
+          <section class="canvas-card footprint-card" aria-label="Pegada legislativa">
+            <h3>Pegada legislativa</h3>
+            <div data-section="footprint"></div>
+          </section>
         </div>
+      </main>
 
-        <!-- REVIEW: comentários + IA + validação -->
-        <div class="tab-pane" data-pane="review">
-          <details class="section" open>
-            <summary>Validação <span class="muted small" data-summary="validation"></span></summary>
-            <div class="section-body" data-section="validation"></div>
-          </details>
-          <details class="section">
-            <summary>Comentários <span class="muted small" data-summary="comments"></span></summary>
-            <div class="section-body" data-section="comments"></div>
-          </details>
-          <details class="section">
-            <summary>Assistente IA</summary>
-            <div class="section-body" data-section="ai"></div>
-          </details>
+      <!-- RÉGUA DE ACTIVIDADE: feed cronológico inverso; substitui as 4 tabs. -->
+      <aside class="panel-right" id="activity-panel">
+        <div class="activity-head">
+          <h2>Actividade</h2>
+          <div class="activity-filters" role="tablist">
+            <button class="activity-filter active" data-filter="all">Todos</button>
+            <button class="activity-filter" data-filter="validation">Validação</button>
+            <button class="activity-filter" data-filter="comment">Coments</button>
+            <button class="activity-filter" data-filter="ref">Refs</button>
+            <button class="activity-filter" data-filter="footprint">Pegada</button>
+            <button class="activity-filter" data-filter="ia">IA</button>
+            <button class="activity-filter" data-filter="snapshot">Snaps</button>
+          </div>
         </div>
-
-        <!-- LINKS: refs cruzadas resolvidas + ajuda DRE -->
-        <div class="tab-pane" data-pane="links">
-          <details class="section" open>
-            <summary>Referências cruzadas <span class="muted small" data-summary="refs"></span></summary>
-            <div class="section-body" data-section="refs"></div>
-          </details>
-          <details class="section">
-            <summary>Base DRE (autocomplete)</summary>
-            <div class="section-body" data-section="dre"></div>
-          </details>
-        </div>
-
-        <!-- OUTPUT: XML preview -->
-        <div class="tab-pane" data-pane="output">
-          <p class="hint">Pré-visualização do XML AKN-PT gerado pelo editor.</p>
-          <pre id="xml-preview"></pre>
-        </div>
+        <ul id="activity-feed" class="activity-feed" role="feed" aria-label="Feed de actividade do documento"></ul>
       </aside>
     </div>
+
+    <!-- XML preview escondido (mantido para Cmd-K abrir como overlay) -->
+    <pre id="xml-preview" hidden></pre>
+    <div data-section="refs" hidden></div>
+    <div data-section="comments" hidden></div>
+    <div data-section="ai" hidden></div>
+    <div data-section="dre" hidden></div>
+    <div data-section="validation" hidden></div>
   </section>
 
 
@@ -395,12 +335,28 @@
     </div>
   </div>
 
+  <!-- XML preview (invocado via Cmd-K "Ver XML") -->
+  <div id="xml-modal" class="modal hidden" data-modal>
+    <div class="modal-content modal-wide">
+      <header class="modal-header">
+        <h2>XML AKN-PT (live)</h2>
+        <button class="btn-close" data-close="xml-modal">×</button>
+      </header>
+      <div class="modal-body">
+        <pre id="xml-modal-body" class="xml-preview-pre"></pre>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div id="toast" class="toast hidden"></div>
 
   <!-- Scripts -->
   <script src="js/templates.js"></script>
   <script src="js/state.js"></script>
+  <script src="js/stack.js"></script>
+  <script src="js/activity.js"></script>
+  <script src="js/cmdk.js"></script>
   <script src="js/references.js"></script>
   <script src="js/dre-mock.js"></script>
   <script src="js/akn-export.js"></script>

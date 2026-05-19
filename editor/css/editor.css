@@ -1,64 +1,74 @@
-/* AKN-PT Editor — stylesheet v2
+/* AKN-PT Editor — stylesheet v3 ("Cockpit de drafting")
    --------------------------------------------------------------
-   Identidade alinhada com o Livro de Estilo da Secretaria-Geral
-   do Governo (SGGov). Procura, na sua linguagem visual, o mesmo
-   registo do guia editorial:
+   Direcção estética nomeada — não "moderno" nem "clean":
 
-     · sobriedade institucional
-     · clareza e legibilidade
-     · hierarquia por tipografia, não por ornamento
-     · neutralidade cromática (papel cru, vermelho institucional)
-     · rigor — tudo no seu lugar, nada a mais
+     · COCKPIT DE DRAFTING — biblioteca jurídica + sala de redacção.
+     · Hierarquia por tipografia distinta, não por ornamento.
+     · Navy institucional como autoridade (masthead).
+     · Marfim como canvas — diferente do papel cru SGGov.
+     · Oxblood para erro/atenção (parente do vermelho DR mas mais sombrio).
+     · Verde-oliva para sucesso (vegetação institucional, não verde HUD).
+     · Brass para avisos editoriais (IA, pegada).
 
-   Referências visuais: Diário da República, atos do Governo,
-   capitulares de decretos-lei. O articulado é o protagonista.
+   Inspirações: códigos jurídicos europeus, Bloomberg Terminal,
+   Linear command palette, editorial print magazines.
    --------------------------------------------------------------
 */
 
 /* ---------- Fontes --------------------------------------------------- */
-@import url("https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400;1,8..60,500&family=Inter:wght@400;500;600;700&display=swap");
+/* Fraunces — display com optical sizing e weight axis (não Source Serif). */
+/* STIX Two Text — corpo do diploma; desenhada para texto académico denso. */
+/* Geist — UI sans (substitui Inter; alfabeto neutro mas com personalidade). */
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,700;9..144,900&family=STIX+Two+Text:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap");
 
 /* ---------- Tokens --------------------------------------------------- */
 :root {
-  /* Papel SGGov — neutros quentes, próximos de papel oficial */
-  --color-bg:          #faf7f1;   /* papel cru */
-  --color-bg-soft:     #f1ede2;   /* margem */
-  --color-bg-sunken:   #e8e3d4;   /* pasta */
-  --color-bg-emph:     #fffdf8;   /* corpo de texto destacado */
+  /* Marfim — fundo do canvas, mais quente que branco mas menos pesado que papel cru */
+  --color-bg:          #fdfaf2;   /* canvas */
+  --color-bg-soft:     #f5f0e3;   /* pilha + régua */
+  --color-bg-sunken:   #ece5d2;   /* fundo da pilha quando profundo */
+  --color-bg-emph:     #ffffff;   /* superfícies destacadas (cards, dropdowns) */
 
-  --color-ink:         #15140f;   /* tinta */
-  --color-ink-soft:    #3a3830;
+  --color-ink:         #0a0a0a;   /* tinta */
+  --color-ink-soft:    #2a2a2a;
   --color-muted:       #6b6859;
   --color-faint:       #9a9787;
 
-  /* Acento institucional — vermelho “Diário da República” */
-  --color-accent:        #931b22;
-  --color-accent-hover:  #6f1219;
-  --color-accent-soft:   #f3e2e1;
-  --color-accent-faint:  #f9eeed;
-  --color-accent-ink:    #5a0d12;
+  /* NAVY institucional — autoridade, masthead, links activos */
+  --color-navy:          #0f2747;
+  --color-navy-hover:    #1a3a6b;
+  --color-navy-soft:     #d8dfeb;
+  --color-navy-faint:    #eef1f6;
 
-  /* Verde nacional (estados de sucesso / publicado) */
-  --color-green:         #1f4d2e;
-  --color-green-soft:    #dde7df;
+  /* OXBLOOD — erro, atenção, acento de validação. Mais sombrio que o DR red. */
+  --color-accent:        #7a1f2b;
+  --color-accent-hover:  #5a131c;
+  --color-accent-soft:   #e8d5d7;
+  --color-accent-faint:  #f3e5e7;
+  --color-accent-ink:    #45101a;
 
-  /* Âmbar para avisos editoriais */
-  --color-amber:         #8a5a17;
-  --color-amber-soft:    #f5e9c9;
+  /* OLIVE — sucesso / publicado / OK. */
+  --color-green:         #4a5520;
+  --color-green-soft:    #e2e3d0;
 
-  /* Erro */
-  --color-error:         #7e1a1a;
-  --color-error-soft:    #f3dada;
+  /* BRASS — avisos editoriais (IA, pegada legislativa, sugestões) */
+  --color-amber:         #a87832;
+  --color-amber-soft:    #f0e3c8;
 
-  /* Bordas — papel envelhecido */
-  --color-border:        #d8d2c1;
+  /* ERROR semantic alias (mesmo que oxblood) */
+  --color-error:         #7a1f2b;
+  --color-error-soft:    #e8d5d7;
+
+  /* Bordas — papel envelhecido com leve quente */
+  --color-border:        #d6cfb8;
   --color-border-strong: #b8b1a0;
-  --color-rule:          #2a2823;   /* régua fina, para títulos institucionais */
+  --color-rule:          #0f2747;   /* régua fina = navy (autoridade) */
 
-  /* Tipografia */
-  --font-text: "Source Serif 4", "Source Serif Pro", "Charter", "Iowan Old Style", Georgia, "Times New Roman", serif;
-  --font-ui:   "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Consolas, monospace;
+  /* Tipografia — declarada explicitamente, sem fallbacks system-* */
+  --font-text:    "STIX Two Text", "Source Serif 4", Charter, Georgia, serif;
+  --font-display: "Fraunces", "STIX Two Text", Georgia, serif;
+  --font-ui:      "Geist", "Inter", -apple-system, "Segoe UI", sans-serif;
+  --font-mono:    "Geist Mono", ui-monospace, Consolas, monospace;
 
   /* Escala — proporção 1.2, ancorada em 15px */
   --fs-xs:   11px;
@@ -87,8 +97,8 @@
   --shadow-md: 0 1px 2px rgba(21,20,15,0.06), 0 4px 12px rgba(21,20,15,0.06);
   --shadow-lg: 0 4px 12px rgba(21,20,15,0.08), 0 16px 40px rgba(21,20,15,0.12);
 
-  /* Foco */
-  --ring: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent);
+  /* Foco — anel navy (institucional) sobre fundo do canvas */
+  --ring: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-navy);
 
   --ease: cubic-bezier(.2,.7,.3,1);
   --dur-fast: 100ms;
@@ -107,21 +117,25 @@
 /* ---------- Modo escuro --------------------------------------------- */
 @media (prefers-color-scheme: dark) {
   :root.auto-dark, :root[data-theme="dark"] {
-    --color-bg:        #15140f;
-    --color-bg-soft:   #1d1c16;
-    --color-bg-sunken: #0f0e0a;
-    --color-bg-emph:   #1a1913;
+    --color-bg:        #0f1117;
+    --color-bg-soft:   #181c26;
+    --color-bg-sunken: #0a0c12;
+    --color-bg-emph:   #1c2030;
     --color-ink:       #ecead9;
     --color-ink-soft:  #c8c5b4;
     --color-muted:     #8e8b7a;
     --color-faint:     #5a5849;
+    --color-navy:          #6488c4;
+    --color-navy-hover:    #88a4d4;
+    --color-navy-soft:     #1c2942;
+    --color-navy-faint:    #141a28;
     --color-accent:        #d96971;
     --color-accent-hover:  #e88a91;
     --color-accent-soft:   #3a1e20;
     --color-accent-faint:  #251417;
-    --color-border:        #2c2a23;
-    --color-border-strong: #3e3c33;
-    --color-rule:          #c8c5b4;
+    --color-border:        #2c2e36;
+    --color-border-strong: #3e424a;
+    --color-rule:          #6488c4;
     --shadow-sm: 0 1px 0 rgba(0,0,0,0.5);
     --shadow-md: 0 2px 6px rgba(0,0,0,0.5);
     --shadow-lg: 0 8px 24px rgba(0,0,0,0.6);
@@ -366,24 +380,24 @@ label {
   position: absolute;
   top: 0; left: 0;
   width: 64px; height: 3px;
-  background: var(--color-accent);
+  background: var(--color-navy);
 }
 .landing-header h1 {
-  font-family: var(--font-text);
-  font-size: var(--fs-3xl);
+  font-family: var(--font-display);
+  font-size: var(--fs-4xl);
   margin: 0;
-  font-weight: 600;
-  letter-spacing: -0.015em;
-  color: var(--color-ink);
-  line-height: 1.05;
-  font-feature-settings: "ss01";
+  font-weight: 300;
+  letter-spacing: -0.025em;
+  color: var(--color-navy);
+  line-height: 1.0;
+  font-variation-settings: "opsz" 144;
 }
 .landing-header .tagline {
   font-family: var(--font-text);
   font-size: var(--fs-md);
   font-style: italic;
   color: var(--color-ink-soft);
-  margin: var(--sp-3) 0 0;
+  margin: var(--sp-4) 0 0;
   max-width: 60ch;
   text-wrap: pretty;
   font-weight: 400;
@@ -426,15 +440,16 @@ label {
 .type-card:focus-visible {
   outline: none;
   background: var(--color-bg-soft);
-  box-shadow: inset 0 0 0 2px var(--color-accent);
+  box-shadow: inset 0 0 0 2px var(--color-navy);
 }
 .type-card .card-title {
-  font-family: var(--font-text);
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-weight: 500;
   font-size: var(--fs-lg);
   margin: 0 0 4px;
-  color: var(--color-ink);
-  letter-spacing: -0.005em;
+  color: var(--color-navy);
+  letter-spacing: -0.01em;
+  font-variation-settings: "opsz" 24;
 }
 .type-card .card-subtitle {
   font-family: var(--font-ui);
@@ -492,44 +507,105 @@ label {
   letter-spacing: 0.08em;
 }
 
-/* ---------- Topbar -------------------------------------------------- */
+/* ---------- Masthead (ex-topbar) ----------------------------------- */
+/* Faixa horizontal navy estilo cabeçalho de jornal institucional.
+   Gradiente subtil radial canto sup-esq (8% mais claro) sugere
+   iluminação de papel antigo. */
 .topbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 var(--sp-4);
+  padding: 0 var(--sp-5);
   height: var(--topbar-h);
-  background: var(--color-bg-emph);
-  border-bottom: var(--hairline);
+  background:
+    radial-gradient(120% 200% at 0% -20%,
+                    color-mix(in oklab, var(--color-navy) 85%, white 15%) 0%,
+                    var(--color-navy) 60%);
+  color: #f5f0e3;
+  border-bottom: 0;
   position: sticky;
   top: 0;
   z-index: 100;
-  /* Faixa institucional fina — assinatura SGGov */
-  box-shadow: inset 0 -3px 0 var(--color-bg-emph), inset 0 -4px 0 var(--color-accent);
+  /* Hairline brass por baixo — assinatura editorial */
+  box-shadow: inset 0 -1px 0 color-mix(in oklab, var(--color-amber) 50%, var(--color-navy) 50%);
 }
 .topbar-left { display: flex; align-items: center; gap: var(--sp-4); min-width: 0; }
 .doc-info {
-  font-family: var(--font-text);
-  font-size: var(--fs-sm);
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
   display: flex;
   align-items: baseline;
-  gap: var(--sp-2);
+  gap: var(--sp-3);
   min-width: 0;
-}
-.doc-info strong {
-  font-family: var(--font-text);
-  color: var(--color-accent);
-  font-weight: 700;
   letter-spacing: 0.005em;
 }
+.doc-info strong {
+  font-family: var(--font-display);
+  color: #fdfaf2;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  font-variation-settings: "opsz" 36;
+}
 .doc-info span {
-  color: var(--color-muted);
+  color: color-mix(in oklab, #fdfaf2 70%, transparent);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   font-style: italic;
+  font-size: var(--fs-sm);
+  font-family: var(--font-text);
+  font-weight: 400;
 }
-.topbar-actions { display: flex; gap: var(--sp-1); align-items: center; }
+.topbar-actions { display: flex; gap: var(--sp-2); align-items: center; }
+
+/* Botões dentro do masthead invertem-se (ink claro sobre navy) */
+.topbar .btn-ghost {
+  color: color-mix(in oklab, #fdfaf2 80%, transparent);
+  background: transparent;
+}
+.topbar .btn-ghost:hover {
+  background: color-mix(in oklab, #fdfaf2 12%, transparent);
+  color: #fdfaf2;
+}
+.topbar .btn-primary {
+  background: var(--color-amber);
+  color: #1a1408;
+  border-color: var(--color-amber);
+  font-weight: 600;
+}
+.topbar .btn-primary:hover {
+  background: color-mix(in oklab, var(--color-amber) 88%, white 12%);
+  border-color: color-mix(in oklab, var(--color-amber) 88%, white 12%);
+}
+
+/* Cmd-K trigger no masthead — chip dedicado */
+.topbar .cmdk-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  padding: 5px 10px 5px 12px;
+  border: 1px solid color-mix(in oklab, #fdfaf2 25%, transparent);
+  border-radius: 4px;
+  background: color-mix(in oklab, #fdfaf2 6%, transparent);
+  color: color-mix(in oklab, #fdfaf2 75%, transparent);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease);
+}
+.topbar .cmdk-trigger:hover {
+  background: color-mix(in oklab, #fdfaf2 15%, transparent);
+  color: #fdfaf2;
+}
+.topbar .cmdk-trigger kbd {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 1px 5px;
+  background: color-mix(in oklab, #fdfaf2 15%, transparent);
+  border-radius: 3px;
+  border: 0;
+  color: inherit;
+}
 
 .badge {
   display: inline-flex;
@@ -556,12 +632,26 @@ label {
 .badge-error   { background: var(--color-error-soft); color: var(--color-error); border-color: color-mix(in oklab, var(--color-error) 30%, transparent); }
 .badge-pending { background: var(--color-bg-soft); color: var(--color-muted); border-color: var(--color-border); }
 
+/* Badges no masthead navy adoptam variante semi-transparente — preserva
+   semântica de cor mas com contraste contra o navy. */
+.topbar .badge-ok      { background: rgba(220, 230, 200, 0.18); color: #d2dba8; border-color: rgba(220, 230, 200, 0.35); }
+.topbar .badge-warn    { background: rgba(240, 200, 140, 0.18); color: #f0d098; border-color: rgba(240, 200, 140, 0.35); }
+.topbar .badge-error   { background: rgba(232, 168, 175, 0.18); color: #ec9aa3; border-color: rgba(232, 168, 175, 0.35); }
+.topbar .badge-pending { background: rgba(253, 250, 242, 0.10); color: rgba(253, 250, 242, 0.55); border-color: rgba(253, 250, 242, 0.18); }
+
 /* ---------- Layout -------------------------------------------------- */
 .layout {
   display: grid;
-  grid-template-columns: 260px 1fr 360px;
+  grid-template-columns: 220px 1fr 320px;
   gap: 0;
   height: calc(100vh - var(--topbar-h));
+}
+@media (max-width: 1200px) {
+  .layout { grid-template-columns: 200px 1fr 280px; }
+}
+@media (max-width: 980px) {
+  .layout { grid-template-columns: 1fr; }
+  .panel-left, .panel-right { display: none; }
 }
 
 .panel-left, .panel-right {
@@ -1858,3 +1948,603 @@ textarea.point-content:focus {
   .conclusions-section::before { background: #fff; }
   @page { margin: 2.5cm 2.2cm; size: A4; }
 }
+
+
+/* ===================================================================== */
+/* === Cockpit de drafting (v3) — novos componentes ==================== */
+/* ===================================================================== */
+
+/* ---------- PILHA (panel-left v3) ------------------------------------ */
+.stack-list {
+  list-style: none;
+  margin: 0;
+  padding: var(--sp-2) 0;
+  flex: 1;
+  overflow-y: auto;
+}
+.stack-empty {
+  padding: var(--sp-6) var(--sp-4);
+  font-family: var(--font-text);
+  font-style: italic;
+  color: var(--color-muted);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+.stack-item {
+  display: grid;
+  grid-template-columns: 18px 1fr 18px;
+  gap: var(--sp-2);
+  align-items: start;
+  padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-2);
+  margin: 0 var(--sp-2) 2px;
+  cursor: pointer;
+  border-radius: 2px;
+  border-left: 2px solid transparent;
+  transition: background var(--dur-fast) var(--ease),
+              border-color var(--dur-fast) var(--ease);
+  font-family: var(--font-ui);
+}
+.stack-item:hover {
+  background: color-mix(in oklab, var(--color-navy) 5%, transparent);
+}
+.stack-item.active {
+  background: var(--color-bg-emph);
+  border-left-color: var(--color-navy);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-navy) 18%, transparent);
+}
+.stack-item.amender { border-left-color: var(--color-amber); }
+.stack-item-marker {
+  font-family: var(--font-mono);
+  color: var(--color-navy);
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: center;
+}
+.stack-item-body { min-width: 0; }
+.stack-item-title {
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--color-ink);
+  line-height: 1.25;
+  letter-spacing: -0.005em;
+  font-variation-settings: "opsz" 14;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.stack-item-num {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--color-muted);
+  white-space: nowrap;
+}
+.stack-item-ementa {
+  font-family: var(--font-text);
+  font-size: 11.5px;
+  color: var(--color-ink-soft);
+  margin-top: 2px;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  font-style: italic;
+}
+.stack-item-ementa.muted {
+  color: var(--color-faint);
+}
+.stack-item-meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-muted);
+  margin-top: 4px;
+  letter-spacing: 0.02em;
+}
+.stack-item-close {
+  background: transparent;
+  border: 0;
+  color: var(--color-faint);
+  padding: 0;
+  font-size: 16px;
+  line-height: 1;
+  width: 18px;
+  height: 18px;
+  border-radius: 2px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease);
+}
+.stack-item:hover .stack-item-close { opacity: 1; }
+.stack-item-close:hover {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+.btn-stack-new {
+  width: 100%;
+  background: transparent;
+  border: 1px dashed var(--color-border-strong);
+  color: var(--color-navy);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  padding: 8px;
+}
+.btn-stack-new:hover {
+  border-color: var(--color-navy);
+  background: var(--color-bg-emph);
+}
+
+/* ---------- BREADCRUMB no canvas (substitui o TOC sidebar) ----------- */
+.canvas-breadcrumb {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background:
+    linear-gradient(to bottom,
+                    var(--color-bg) 0%,
+                    var(--color-bg) 80%,
+                    color-mix(in oklab, var(--color-bg) 50%, transparent) 100%);
+  padding: var(--sp-3) var(--sp-6) var(--sp-3);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-muted);
+  border-bottom: 1px solid color-mix(in oklab, var(--color-navy) 12%, transparent);
+  backdrop-filter: blur(4px);
+}
+.breadcrumb-sep {
+  color: var(--color-faint);
+  font-size: 13px;
+  margin: 0 2px;
+}
+.breadcrumb-link {
+  color: var(--color-navy);
+  text-decoration: none;
+  border-radius: 2px;
+  padding: 1px 4px;
+  transition: background var(--dur-fast) var(--ease);
+}
+.breadcrumb-link:hover {
+  background: var(--color-navy-faint);
+  text-decoration: none;
+}
+.breadcrumb-current {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+.breadcrumb-mini-toc {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.mini-toc-chip {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-muted);
+  background: var(--color-bg-soft);
+  border: 1px solid var(--color-border);
+  padding: 2px 6px;
+  border-radius: 2px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background var(--dur-fast) var(--ease),
+              border-color var(--dur-fast) var(--ease),
+              color var(--dur-fast) var(--ease);
+}
+.mini-toc-chip:hover {
+  background: var(--color-navy-faint);
+  border-color: var(--color-navy);
+  color: var(--color-navy);
+  text-decoration: none;
+}
+.mini-toc-more {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-faint);
+}
+
+/* Canvas + scroll wrapper */
+#canvas-wrap {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+.canvas-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: var(--sp-12);
+}
+
+/* Canvas card — bloco institucional embutido (identidade, pegada) */
+.canvas-card {
+  max-width: 78ch;
+  margin: var(--sp-10) auto var(--sp-6);
+  padding: var(--sp-6) var(--sp-8);
+  background: var(--color-bg-emph);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-navy);
+  border-radius: 2px;
+}
+.canvas-card h3 {
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--color-navy);
+  margin: 0 0 var(--sp-4);
+  font-weight: 700;
+}
+.canvas-card.footprint-card { border-left-color: var(--color-amber); }
+.canvas-card.footprint-card h3 { color: var(--color-amber); }
+.canvas-card .field-group { margin-bottom: var(--sp-3); }
+.canvas-card .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+
+/* Highlight breve quando o feed manda foco a um elemento */
+.flash {
+  animation: flash-keyframe 1.2s ease;
+}
+@keyframes flash-keyframe {
+  0%   { box-shadow: 0 0 0 4px transparent; }
+  20%  { box-shadow: 0 0 0 4px var(--color-amber-soft); }
+  100% { box-shadow: 0 0 0 4px transparent; }
+}
+
+/* ---------- RÉGUA DE ACTIVIDADE (panel-right v3) -------------------- */
+#activity-panel {
+  background: var(--color-bg-soft);
+  display: flex;
+  flex-direction: column;
+}
+.activity-head {
+  padding: var(--sp-3) var(--sp-4) var(--sp-2);
+  border-bottom: var(--hairline);
+  background: var(--color-bg-soft);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.activity-head h2 {
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--color-muted);
+  margin: 0 0 var(--sp-2);
+  font-weight: 700;
+}
+.activity-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+.activity-filter {
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  font-weight: 500;
+  padding: 2px 8px;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  color: var(--color-muted);
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  text-transform: lowercase;
+}
+.activity-filter:hover {
+  border-color: var(--color-border-strong);
+  color: var(--color-ink);
+}
+.activity-filter.active {
+  background: var(--color-navy);
+  color: #fdfaf2;
+  border-color: var(--color-navy);
+}
+
+.activity-feed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  overflow-y: auto;
+}
+.activity-empty {
+  padding: var(--sp-6) var(--sp-4);
+  font-family: var(--font-text);
+  font-style: italic;
+  color: var(--color-muted);
+  font-size: var(--fs-sm);
+  text-wrap: balance;
+}
+.activity-item {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px dashed color-mix(in oklab, var(--color-border) 50%, transparent);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  line-height: 1.4;
+  animation: activity-in 200ms var(--ease);
+}
+@keyframes activity-in {
+  from { opacity: 0; transform: translateX(8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.activity-icon {
+  font-family: var(--font-text);
+  font-size: 14px;
+  color: var(--color-muted);
+  line-height: 1.4;
+  text-align: center;
+}
+.activity-item.lvl-error .activity-icon { color: var(--color-accent); }
+.activity-item.lvl-warn  .activity-icon { color: var(--color-amber); }
+.activity-item.activity-snapshot .activity-icon { color: var(--color-navy); }
+.activity-item.activity-ia       .activity-icon { color: var(--color-amber); }
+.activity-item.activity-footprint .activity-icon { color: var(--color-amber); }
+.activity-item.activity-comment  .activity-icon { color: var(--color-navy); }
+.activity-item.activity-ref      .activity-icon { color: var(--color-navy); }
+
+.activity-content { min-width: 0; }
+.activity-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--sp-2);
+}
+.activity-title {
+  font-weight: 600;
+  color: var(--color-ink);
+  font-size: 11.5px;
+  letter-spacing: 0.005em;
+}
+.activity-item.lvl-error .activity-title { color: var(--color-accent); }
+.activity-item.lvl-warn  .activity-title { color: var(--color-amber); }
+.activity-time {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-faint);
+  white-space: nowrap;
+}
+.activity-body {
+  color: var(--color-ink-soft);
+  font-family: var(--font-text);
+  font-size: 12.5px;
+  line-height: 1.4;
+  margin-top: 2px;
+  word-wrap: break-word;
+}
+.activity-link {
+  display: inline-block;
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--color-navy);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--color-navy);
+}
+.activity-link:hover { background: var(--color-navy-faint); }
+
+/* Live events distinguem-se subtilmente do log persistido */
+.activity-item.live { background: color-mix(in oklab, var(--color-navy) 2%, transparent); }
+
+/* ---------- CMD-K PALETTE -------------------------------------------- */
+.cmdk-overlay {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in oklab, var(--color-navy) 65%, transparent);
+  backdrop-filter: blur(3px);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 14vh;
+  animation: cmdk-in 160ms var(--ease);
+}
+.cmdk-overlay.hidden { display: none; }
+@keyframes cmdk-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.cmdk-modal {
+  background: var(--color-bg-emph);
+  border-radius: 4px;
+  width: min(640px, 92vw);
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 64px rgba(15, 39, 71, 0.35),
+              0 2px 8px rgba(15, 39, 71, 0.15);
+  border: 1px solid var(--color-border-strong);
+  overflow: hidden;
+  animation: cmdk-modal-in 220ms var(--ease);
+}
+@keyframes cmdk-modal-in {
+  from { transform: translateY(-12px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+.cmdk-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: var(--hairline);
+}
+.cmdk-prefix {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-navy);
+  background: var(--color-navy-faint);
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+#cmdk-input {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  font-family: var(--font-ui);
+  font-size: 15px;
+  color: var(--color-ink);
+  padding: 0;
+}
+#cmdk-input:focus { outline: none; box-shadow: none; }
+.cmdk-hint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-faint);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.cmdk-list {
+  list-style: none;
+  margin: 0;
+  padding: var(--sp-1) 0;
+  overflow-y: auto;
+  flex: 1;
+}
+.cmdk-group-head {
+  font-family: var(--font-ui);
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--color-faint);
+  padding: var(--sp-3) var(--sp-4) var(--sp-1);
+}
+.cmdk-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: 7px var(--sp-4);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--color-ink);
+}
+.cmdk-item.cmdk-active {
+  background: var(--color-navy);
+  color: #fdfaf2;
+}
+.cmdk-item.cmdk-active .cmdk-item-hint { color: color-mix(in oklab, #fdfaf2 70%, transparent); }
+.cmdk-label { font-weight: 500; }
+.cmdk-item-hint {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--color-muted);
+  letter-spacing: 0.02em;
+}
+.cmdk-empty {
+  padding: var(--sp-5) var(--sp-4);
+  font-family: var(--font-text);
+  font-style: italic;
+  color: var(--color-muted);
+  text-align: center;
+}
+.cmdk-footer {
+  display: flex;
+  gap: var(--sp-4);
+  padding: var(--sp-2) var(--sp-4);
+  border-top: var(--hairline);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-faint);
+  background: var(--color-bg-soft);
+}
+.cmdk-footer kbd {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 1px 5px;
+  background: var(--color-bg-emph);
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  margin-right: 4px;
+  color: var(--color-ink-soft);
+}
+
+/* XML preview pre (no modal) */
+.xml-preview-pre {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  padding: var(--sp-4);
+  background: var(--color-bg-soft);
+  border: var(--hairline);
+  border-radius: 2px;
+  white-space: pre;
+  overflow: auto;
+  max-height: 70vh;
+  color: var(--color-ink-soft);
+}
+
+/* Esconder lab-only por defeito (visível com ?lab=1) */
+.lab-only.hidden { display: none; }
+
+/* ---------- Validação inline no canvas ----------------------------- */
+/* Marca elementos com issues — sublinhado vertical na borda esquerda,
+   acrescido de tooltip nativo via data-val-msg → :hover ::before. */
+.canvas-validation-mark {
+  position: relative;
+}
+.canvas-validation-mark::before {
+  content: "";
+  position: absolute;
+  left: -10px;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 1px;
+  pointer-events: none;
+}
+.canvas-validation-mark.val-error::before { background: var(--color-accent); }
+.canvas-validation-mark.val-warn::before  { background: var(--color-amber); }
+
+/* Tooltip — mostra a mensagem no hover do elemento marcado */
+.canvas-validation-mark::after {
+  content: attr(data-val-msg);
+  position: absolute;
+  left: 0;
+  bottom: 100%;
+  margin-bottom: 6px;
+  padding: 6px 10px;
+  border-radius: 3px;
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  color: #fdfaf2;
+  background: var(--color-ink);
+  white-space: pre-line;
+  max-width: 340px;
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms var(--ease);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+}
+.canvas-validation-mark.val-error::after { background: var(--color-accent); }
+.canvas-validation-mark.val-warn::after  { background: var(--color-amber); }
+.canvas-validation-mark:hover::after,
+.canvas-validation-mark:focus-within::after { opacity: 1; }
+
+/* Pulso uma vez quando um issue novo aparece */
+.val-pulse {
+  animation: val-pulse-anim 280ms var(--ease);
+}
+@keyframes val-pulse-anim {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.012); }
+  100% { transform: scale(1); }
+}
+

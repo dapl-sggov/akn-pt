@@ -56,7 +56,10 @@ const Editor = (() => {
   function startNew(typeId) {
     const doc = newDocument(typeId);
     State.init(doc);
+    // Cria slot novo na pilha — não sobrescreve drafts anteriores.
+    if (typeof Stack !== 'undefined') Stack.add(doc);
     State.saveDraft();
+    if (typeof Activity !== 'undefined') Activity.log('import', { summary: `Novo ${typeId}` });
     showScreen('editor');
     refresh();
   }
@@ -66,9 +69,14 @@ const Editor = (() => {
     const doc = State.get();
     if (!doc) return;
     renderTopbar(doc);
-    renderToc(doc);
-    // Em modo "alterador" o painel central é diferente — lista alterações
-    // sobre um diploma alvo, em vez de um articulado livre.
+    // Pilha multi-doc (substitui o TOC sidebar antigo)
+    if ($('#stack-list')) renderStack();
+    // TOC continua acessível via $('#toc-nav') para back-compat; só renderiza
+    // se o elemento ainda existir (vai sair quando o redesign for total).
+    if ($('#toc-nav')) renderToc(doc);
+    // Breadcrumb no topo do canvas (substitui o TOC sidebar como navegação)
+    if ($('#breadcrumb')) renderBreadcrumb(doc);
+    // Em modo "alterador" o painel central é diferente.
     if (doc.kind === 'amender') {
       _maybeRenderAmenderBody(doc);
     } else {
@@ -83,6 +91,12 @@ const Editor = (() => {
     renderXmlTab(doc);
     renderValidationTab(doc);
     renderTabBadges(doc);
+    // Régua de actividade unificada (substitui as 4 tabs)
+    if ($('#activity-feed')) renderActivity(doc);
+    // Marcar elementos com erro/aviso directamente no canvas (sublinhados)
+    _applyInlineValidation(doc);
+    // Persistir no slot da pilha (não cria spam — Stack faz merge)
+    if (typeof Stack !== 'undefined') Stack.persistActive();
     // Mostrar/esconder opcoes de export do alterador
     const isAmender = doc.kind === 'amender';
     const a = $('#export-amender-xml'); if (a) a.hidden = !isAmender;
@@ -842,6 +856,7 @@ const Editor = (() => {
     try {
       const text = await AI.callClaude(taskId, input);
       $('#ai-result-body').textContent = text;
+      if (typeof Activity !== 'undefined') Activity.log('ia', { task: label });
     } catch (e) {
       $('#ai-result-body').textContent = '✗ Erro: ' + e.message;
     }
@@ -1273,6 +1288,365 @@ const Editor = (() => {
   const _wrapRenderBody = renderBody;
   // Substituir só a primeira ocorrência via shadow — apanhamos via refresh()
 
+  // =========================================================================
+  // ===== Renderers v3 (Cockpit de drafting) ================================
+  // =========================================================================
+
+  // ---------- Pilha (substitui o TOC sidebar antigo) ----------------------
+  function renderStack() {
+    const ul = $('#stack-list');
+    if (!ul) return;
+    ul.innerHTML = '';
+    const entries = Stack.list();
+    const activeId = Stack.activeId();
+
+    if (!entries.length) {
+      ul.appendChild(el('li', { class: 'stack-empty' },
+        'Sem rascunhos. Comece um abaixo ou regresse à escolha de tipo.'));
+      return;
+    }
+
+    entries.forEach(e => {
+      const t = (typeof ACT_TYPES !== 'undefined') ? ACT_TYPES.find(x => x.id === e.actName) : null;
+      const isActive = e.id === activeId;
+      const item = el('li', {
+        class: 'stack-item' + (isActive ? ' active' : '') + (e.kind === 'amender' ? ' amender' : ''),
+        role: 'option',
+        'aria-selected': isActive ? 'true' : 'false',
+        on: { click: () => switchToStackEntry(e.id) },
+      },
+        el('div', { class: 'stack-item-marker' }, isActive ? '▣' : '▢'),
+        el('div', { class: 'stack-item-body' },
+          el('div', { class: 'stack-item-title' },
+            t ? t.name : (e.actName || 'rascunho'),
+            e.number ? el('span', { class: 'stack-item-num' }, ` n.º ${e.number}/${e.year}`) : null,
+          ),
+          e.shortTitle
+            ? el('div', { class: 'stack-item-ementa' }, e.shortTitle)
+            : el('div', { class: 'stack-item-ementa muted' }, 'sem ementa'),
+          el('div', { class: 'stack-item-meta' }, _relativeTime(e.lastModified)),
+        ),
+        el('button', {
+          class: 'stack-item-close',
+          title: 'Remover este rascunho',
+          on: { click: (ev) => {
+            ev.stopPropagation();
+            if (!confirm(`Apagar rascunho "${(e.shortTitle || e.actName).slice(0, 60)}"?`)) return;
+            Stack.remove(e.id);
+            // se era o activo, voltar à landing
+            if (isActive) showScreen('landing');
+            else renderStack();
+          }}
+        }, '×'),
+      );
+      ul.appendChild(item);
+    });
+  }
+
+  function switchToStackEntry(id) {
+    // grava o doc actual no seu slot, carrega o novo, refresca
+    const doc = Stack.activate(id);
+    if (!doc) { toast('Rascunho indisponível.', 'error'); return; }
+    State.init(doc);
+    refresh();
+  }
+
+  // ---------- Breadcrumb (substitui o TOC sidebar como navegação) ---------
+  function renderBreadcrumb(doc) {
+    const bc = $('#breadcrumb');
+    if (!bc) return;
+    bc.innerHTML = '';
+    const type = (typeof ACT_TYPES !== 'undefined') ? ACT_TYPES.find(t => t.id === doc.actName) : null;
+
+    const crumbs = [];
+    crumbs.push({ label: type ? type.name : 'Documento', href: null });
+    if (doc.recitals && doc.recitals.length) {
+      crumbs.push({ label: 'Preâmbulo', href: '#' + doc.recitals[0].id });
+    }
+    if (doc.body && doc.body.items && doc.body.items.length) {
+      crumbs.push({
+        label: doc.body.kind === 'articles' ? 'Articulado' : 'Pontos resolutivos',
+        href: '#' + doc.body.items[0].id,
+      });
+    }
+    if (doc.attachments && doc.attachments.length) {
+      crumbs.push({ label: 'Anexos', href: '#' + doc.attachments[0].id });
+    }
+
+    crumbs.forEach((c, i) => {
+      if (i > 0) bc.appendChild(el('span', { class: 'breadcrumb-sep' }, '›'));
+      if (c.href) {
+        bc.appendChild(el('a', {
+          class: 'breadcrumb-link',
+          href: c.href,
+          on: { click: (ev) => {
+            ev.preventDefault();
+            const target = document.querySelector(c.href);
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }}
+        }, c.label));
+      } else {
+        bc.appendChild(el('span', { class: 'breadcrumb-current' }, c.label));
+      }
+    });
+
+    // Mini-TOC expansível com hover — chips com os artigos
+    if (doc.body && doc.body.items && doc.body.items.length > 1) {
+      const mini = el('div', { class: 'breadcrumb-mini-toc' });
+      const items = doc.body.items.slice(0, 12);
+      items.forEach(a => {
+        mini.appendChild(el('a', {
+          class: 'mini-toc-chip',
+          href: '#' + a.id,
+          on: { click: (ev) => {
+            ev.preventDefault();
+            const target = document.querySelector('#' + a.id);
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }}
+        }, a.num || a.id));
+      });
+      if (doc.body.items.length > 12) {
+        mini.appendChild(el('span', { class: 'mini-toc-more' }, `+${doc.body.items.length - 12}`));
+      }
+      bc.appendChild(mini);
+    }
+  }
+
+  // ---------- Régua de actividade unificada -------------------------------
+  let _activityFilter = 'all';
+  function renderActivity(doc) {
+    const feed = $('#activity-feed');
+    if (!feed) return;
+    feed.innerHTML = '';
+
+    if (typeof Activity === 'undefined') {
+      feed.appendChild(el('li', { class: 'activity-empty' }, 'Módulo Activity indisponível.'));
+      return;
+    }
+
+    const events = Activity.allForDoc(doc).filter(e =>
+      _activityFilter === 'all' || e.kind === _activityFilter);
+
+    if (!events.length) {
+      feed.appendChild(el('li', { class: 'activity-empty' },
+        _activityFilter === 'all'
+          ? 'Sem actividade ainda. Comece a escrever ou importe um diploma.'
+          : 'Nenhum evento neste filtro.'));
+      return;
+    }
+
+    events.forEach(e => feed.appendChild(_renderActivityItem(e, doc)));
+  }
+
+  function _renderActivityItem(e, doc) {
+    const icon = {
+      validation: e.data.level === 'error' ? '✗' : '⚠',
+      comment: '✎',
+      snapshot: '⟲',
+      ia: '✦',
+      footprint: '⚖',
+      ref: '↗',
+      import: '↥',
+    }[e.kind] || '·';
+
+    const kindClass = `activity-${e.kind}` + (e.data && e.data.level ? ` lvl-${e.data.level}` : '');
+
+    let title = '';
+    let body = '';
+    let target = null;
+
+    switch (e.kind) {
+      case 'validation':
+        title = e.data.level === 'error' ? 'Erro' : 'Aviso';
+        body = e.data.msg;
+        if (e.data.eId) target = e.data.eId;
+        break;
+      case 'comment':
+        title = 'Comentários';
+        body = e.live ? `${e.data.open} abertos` : (e.data.msg || 'novo comentário');
+        break;
+      case 'snapshot':
+        title = 'Snapshot';
+        body = e.data.label || 'sem etiqueta';
+        break;
+      case 'ia':
+        title = 'Assistente IA';
+        body = e.data.task || 'invocado';
+        break;
+      case 'footprint':
+        title = 'Pegada legislativa';
+        body = e.data.summary || `${e.data.steps || 0} step(s)`;
+        break;
+      case 'ref':
+        title = 'Referências';
+        body = e.live
+          ? `${e.data.total} (${e.data.internal} int. · ${e.data.externalPt} PT · ${e.data.externalUe} UE)`
+          : (e.data.label || '');
+        break;
+      case 'import':
+        title = 'Importação';
+        body = e.data.summary || '';
+        break;
+      default:
+        title = e.kind;
+        body = JSON.stringify(e.data);
+    }
+
+    return el('li', {
+      class: `activity-item ${kindClass}` + (e.live ? ' live' : ''),
+      'data-kind': e.kind,
+      'data-id': e.id,
+    },
+      el('span', { class: 'activity-icon' }, icon),
+      el('div', { class: 'activity-content' },
+        el('div', { class: 'activity-row' },
+          el('span', { class: 'activity-title' }, title),
+          el('span', { class: 'activity-time' }, e.live ? 'agora' : _relativeTime(e.timestamp)),
+        ),
+        el('div', { class: 'activity-body' }, body),
+        target ? el('a', {
+          class: 'activity-link',
+          href: '#' + target,
+          on: { click: (ev) => {
+            ev.preventDefault();
+            const t = document.querySelector('#' + target);
+            if (t) {
+              t.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              t.classList.add('flash');
+              setTimeout(() => t.classList.remove('flash'), 1200);
+            }
+          }}
+        }, '→ ir ao ' + target) : null,
+      ),
+    );
+  }
+
+  function _relativeTime(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    const delta = (Date.now() - d.getTime()) / 1000;
+    if (delta < 60) return 'agora mesmo';
+    if (delta < 3600) return `há ${Math.floor(delta / 60)} min`;
+    if (delta < 86400) return `há ${Math.floor(delta / 3600)} h`;
+    return d.toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit' });
+  }
+
+  // ---------- Validação inline no canvas ---------------------------------
+  // Sublinha em oxblood/brass os blocos do canvas que têm issues, e
+  // dispara um pulso (flash) na primeira vez que aparecem.
+  let _seenIssueIds = new Set();
+  function _applyInlineValidation(doc) {
+    if (typeof Validation === 'undefined') return;
+    const issues = Validation.check(doc);
+    const stillSeen = new Set();
+    // Limpar marcações anteriores
+    $$('.canvas-validation-mark').forEach(node => {
+      node.classList.remove('canvas-validation-mark', 'val-error', 'val-warn');
+      node.removeAttribute('data-val-msg');
+    });
+    issues.forEach(i => {
+      if (!i.eId) return;
+      const node = document.getElementById(i.eId);
+      if (!node) return;
+      const cls = i.level === 'error' ? 'val-error' : 'val-warn';
+      node.classList.add('canvas-validation-mark', cls);
+      const existing = node.getAttribute('data-val-msg') || '';
+      node.setAttribute('data-val-msg',
+        existing ? `${existing}\n${i.msg}` : i.msg);
+      const fingerprint = `${i.eId}|${i.level}|${i.msg}`;
+      stillSeen.add(fingerprint);
+      if (!_seenIssueIds.has(fingerprint)) {
+        // primeira vez que vemos este issue — pulso curto
+        node.classList.add('val-pulse');
+        setTimeout(() => node.classList.remove('val-pulse'), 280);
+      }
+    });
+    _seenIssueIds = stillSeen;
+  }
+
+  // ---------- Cmd-K palette — registo central de acções ------------------
+  function _setupCmdK() {
+    if (typeof CmdK === 'undefined') return;
+    const actions = [
+      // ---- Estrutura do documento ----
+      { id: 'add-recital', label: 'Adicionar considerando', group: 'Estrutura', hint: 'no preâmbulo',
+        fn: () => { State.addRecital(); refresh(); },
+        when: (doc) => doc && doc.body && doc.body.kind !== 'paragraphs' },
+      { id: 'add-article', label: 'Adicionar artigo', group: 'Estrutura', hint: 'no fim do articulado',
+        fn: () => { State.addArticle(); refresh(); },
+        when: (doc) => doc && doc.body && doc.body.kind === 'articles' },
+      { id: 'add-paragraph', label: 'Adicionar ponto resolutivo', group: 'Estrutura',
+        fn: () => { State.addParagraph(null); refresh(); },
+        when: (doc) => doc && doc.body && doc.body.kind === 'paragraphs' },
+      { id: 'add-attachment', label: 'Adicionar anexo', group: 'Estrutura',
+        fn: () => { State.addAttachment(); refresh(); } },
+      // ---- Revisão / qualidade ----
+      { id: 'validate', label: 'Validar agora', group: 'Revisão', hint: 'verifica consistência',
+        fn: () => { refresh(); toast('Validação refrescada.', 'success'); } },
+      { id: 'snapshots', label: 'Snapshots e versões', group: 'Revisão',
+        fn: () => openSnapshotsModal() },
+      { id: 'diff', label: 'Comparar versões', group: 'Revisão',
+        fn: () => openDiffModal() },
+      { id: 'preview', label: 'Pré-visualizar como documento', group: 'Revisão',
+        fn: () => { $('#preview-body').innerHTML = Preview.render(State.get()); openModal('preview-modal'); } },
+      { id: 'view-xml', label: 'Ver XML AKN-PT', group: 'Revisão', hint: 'live',
+        fn: () => {
+          const doc = State.get();
+          const xml = doc.kind === 'amender'
+            ? Amendment.toAknXml(doc)
+            : AknExport.toXml(doc);
+          $('#xml-modal-body').textContent = xml;
+          openModal('xml-modal');
+        } },
+      // ---- IA ----
+      { id: 'ai-settings', label: 'Definições do assistente IA', group: 'IA',
+        fn: () => openAiSettingsModal() },
+      { id: 'ai-heading', label: 'IA — sugerir epígrafe para artigo sem título', group: 'IA',
+        fn: () => runAiTask('suggestHeading', 'Sugerir epígrafe', State.get()) },
+      { id: 'ai-simplify', label: 'IA — simplificar texto seleccionado', group: 'IA',
+        fn: () => runAiTask('simplify', 'Simplificar texto', State.get()) },
+      { id: 'ai-ambiguity', label: 'IA — detectar ambiguidade', group: 'IA',
+        fn: () => runAiTask('detectAmbiguity', 'Detectar ambiguidade', State.get()) },
+      // ---- Importação / alteração ----
+      { id: 'import', label: 'Importar diploma não marcado', group: 'Importar',
+        fn: () => openModal('import-modal') },
+      { id: 'amend', label: 'Alterar diploma existente (AKN-PT)', group: 'Importar',
+        fn: () => $('#file-input-amend-xml').click() },
+      { id: 'save', label: 'Guardar rascunho agora', group: 'Sessão',
+        fn: () => { State.saveDraft(); Stack.persistActive(); toast('Rascunho guardado.', 'success'); } },
+      { id: 'back', label: 'Voltar à escolha de tipo', group: 'Sessão',
+        fn: () => showScreen('landing') },
+      // ---- Experimentais (só com ?lab=1) ----
+      { id: 'bluebell', label: 'Editar como texto (Bluebell-PT)', group: 'Laboratório', hint: 'experimental',
+        fn: () => openTextModal(),
+        when: () => _isLab() },
+      { id: 'collab', label: 'Partilhar / colaborar', group: 'Laboratório', hint: 'experimental',
+        fn: () => openCollabModal(),
+        when: () => _isLab() },
+    ];
+    CmdK.init(actions);
+  }
+
+  function _isLab() {
+    if (typeof window === 'undefined') return false;
+    if (window.location.search.includes('lab=1')) return true;
+    try { return localStorage.getItem('akn-pt-lab') === '1'; } catch { return false; }
+  }
+
+  // ---------- Activity filter wiring -------------------------------------
+  function _setupActivityFilters() {
+    $$('.activity-filter').forEach(b => {
+      b.addEventListener('click', () => {
+        $$('.activity-filter').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        _activityFilter = b.dataset.filter;
+        const doc = State.get();
+        if (doc) renderActivity(doc);
+      });
+    });
+  }
+
   // ----- Wire up event handlers --------------------------------------------
   // ============= MENU SYSTEM (única fonte de verdade) ====================
   // Comporta-se como dropdown/menubar: click-outside fecha, ESC fecha,
@@ -1396,25 +1770,39 @@ const Editor = (() => {
       }
     });
 
-    // Topbar primary actions
-    $('#btn-preview').addEventListener('click', () => {
+    // Topbar primary actions (preview foi removido — acessível via Cmd-K)
+    $('#btn-preview')?.addEventListener('click', () => {
       $('#preview-body').innerHTML = Preview.render(State.get());
       openModal('preview-modal');
     });
-    $('#btn-validate').addEventListener('click', () => {
+    $('#btn-validate')?.addEventListener('click', () => {
       refresh();
-      // Saltar para tab Revisão e abrir a secção de validação
-      $$('.tab').forEach(t => t.classList.remove('active'));
-      $('[data-tab="review"]').classList.add('active');
-      $$('.tab-pane').forEach(p => p.classList.remove('active'));
-      $('[data-pane="review"]').classList.add('active');
+      // No layout v3 a validação vive na régua (sempre visível); só refrescar
+      // chega. Em layouts legacy (tabs) ainda saltamos para a tab Revisão.
+      const reviewTab = $('[data-tab="review"]');
+      if (reviewTab) {
+        $$('.tab').forEach(t => t.classList.remove('active'));
+        reviewTab.classList.add('active');
+        $$('.tab-pane').forEach(p => p.classList.remove('active'));
+        $('[data-pane="review"]')?.classList.add('active');
+      }
       const valSection = $('[data-section="validation"]')?.closest('details');
       if (valSection) valSection.open = true;
+      toast('Validação refrescada.', 'success');
     });
 
-    // Setup menus + modais
+    // Setup menus + modais + Cmd-K + filtros da régua
     _setupMenus();
     _setupModals();
+    _setupCmdK();
+    _setupActivityFilters();
+    _setupFeatureFlags();
+
+    // Cmd-K trigger no masthead
+    $('#btn-cmdk')?.addEventListener('click', () => CmdK.open());
+
+    // Botão "+ novo rascunho" da pilha → volta à landing
+    $('#stack-new')?.addEventListener('click', () => showScreen('landing'));
 
     // Export menu items
     $$('[data-export]').forEach(b => {
@@ -1530,6 +1918,7 @@ const Editor = (() => {
       try {
         const label = $('#snap-label').value.trim();
         const e = Snapshots.save(label);
+        if (typeof Activity !== 'undefined') Activity.log('snapshot', { label: e.label });
         toast(`Snapshot "${e.label}" criado.`, 'success');
         $('#snap-label').value = '';
         renderSnapshotsList();
@@ -1604,6 +1993,7 @@ const Editor = (() => {
       if (parsed.bodyKind === 'articles') summary += ` · ${parsed.articles.length} artigo(s)`;
       else summary += ` · ${parsed.paragraphs.length} ponto(s)`;
       if (parsed.recitals.length) summary += ` · ${parsed.recitals.length} considerando(s)`;
+      if (typeof Activity !== 'undefined') Activity.log('import', { summary });
       toast(summary, 'success');
     } catch (err) {
       toast('Erro ao importar: ' + err.message, 'error');
@@ -1613,6 +2003,8 @@ const Editor = (() => {
   function applyImport(parsed) {
     const doc = ImportParser.toDocState(parsed);
     State.init(doc);
+    // Cada importação cria um novo slot na pilha (não sobrescreve activo)
+    if (typeof Stack !== 'undefined') Stack.add(doc);
     State.saveDraft();
     $('#import-modal').classList.add('hidden');
     showScreen('editor');
@@ -1662,11 +2054,24 @@ Sede social: ______________________________________
 Declaracao sob compromisso de honra: o requerente declara cumprir todos os requisitos previstos no artigo 2.º da presente portaria.
 `;
 
+  // ---------- Feature flag handling --------------------------------------
+  // Esconde elementos com .lab-only do DOM (e.g. itens do menu export que
+  // são experimentais). Quando ?lab=1, mostra-os.
+  function _setupFeatureFlags() {
+    const lab = _isLab();
+    $$('.lab-only').forEach(e => {
+      if (lab) e.classList.remove('hidden');
+      else e.classList.add('hidden');
+    });
+  }
+
   // ----- Init --------------------------------------------------------------
   let _initialized = false;
   async function init() {
     if (_initialized) return;  // guarda contra DOMContentLoaded duplo
     _initialized = true;
+    // Migrar draft legacy para a pilha (uma vez) — não destrói nada.
+    if (typeof Stack !== 'undefined') Stack.migrateLegacyIfNeeded();
     renderLanding();
     bindGlobal();
     _setupCollab();

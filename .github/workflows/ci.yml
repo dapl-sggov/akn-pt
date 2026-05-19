@@ -96,7 +96,7 @@ jobs:
         run: ruff check src tests
 
   editor-smoke:
-    name: Editor — smoke test (16 cenários) + AKN-PT batch
+    name: Editor — smoke test (19 cenários) + AKN-PT batch (18 OK)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -106,9 +106,9 @@ jobs:
         with: { python-version: '3.12' }
       - name: Install validator
         run: pip install -e ./validator
-      - name: Run editor smoke (gera 16 ficheiros)
+      - name: Run editor smoke (gera 19 ficheiros: 9 templates + 10 features)
         run: node editor/smoke-test.js
-      - name: Validar todos via akn-pt batch (15 esperado OK)
+      - name: Validar todos via akn-pt batch (18 esperado OK)
         run: python -m akn_pt batch editor/.smoke-output
 
   editor-ui:

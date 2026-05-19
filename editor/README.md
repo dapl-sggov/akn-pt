@@ -1,11 +1,21 @@
-# AKN-PT Editor (demo v0.1.0)
+# AKN-PT Editor (demo v0.1.0 — Cockpit de drafting)
 
 Editor web puro (HTML/CSS/JS, sem servidor) que gera **XML AKN-PT v0.1.0
 validável** a partir de um interface amigável para juristas.
 
+> **Nota de UX (v3 — Cockpit de drafting).** O editor foi redesenhado para
+> reduzir ruído: o painel esquerdo passou de TOC para **pilha multi-rascunho**,
+> o painel direito passou de 4 tabs (Informação/Revisão/Ligações/Saída) para
+> uma **régua de actividade** cronológica unificada. A navegação interna ao
+> documento vive como **breadcrumb sticky** no topo do canvas. Acções
+> secundárias acedem-se via **Cmd-K** (palette pesquisável). O masthead navy
+> dá assinatura institucional. Tipografia: *Fraunces* (display) + *STIX Two
+> Text* (corpo) + *Geist* (UI).
+
 ![v0.1.0](https://img.shields.io/badge/v0.1.0-demo-blue)
 ![License: EUPL 1.2](https://img.shields.io/badge/license-EUPL--1.2-blue)
-![Tests: 16/16](https://img.shields.io/badge/smoke--tests-16%2F16-brightgreen)
+![Tests: 18/18](https://img.shields.io/badge/smoke--tests-18%2F18-brightgreen)
+![UI tests: 25/25](https://img.shields.io/badge/ui--tests-25%2F25-brightgreen)
 
 ## Como executar
 
@@ -82,14 +92,15 @@ python -m akn_pt validate o-meu-doc.akn.xml --phase publication --json
 
 ## Smoke tests
 
-Verifica que o editor gera XML válido para 7 cenários representativos:
+Verifica que o editor gera XML válido para os 9 tipos de actos AKN-PT
+e para as features avançadas (alteração, comentários, inline edits):
 
 ```bash
-node editor/smoke-test.js                          # gera 7 ficheiros em editor/.smoke-output/
-python -m akn_pt batch editor/.smoke-output         # valida os 7 — 7/7 deve passar
+node editor/smoke-test.js                          # gera 19 ficheiros em editor/.smoke-output/
+python -m akn_pt batch editor/.smoke-output         # valida — 18/18 deve passar
 ```
 
-Cenários cobertos:
+Cenários cobertos (9 tipos × 1 baseline + 10 features):
 
 - `dec-lei-simple` — DL ordinário básico (template rico)
 - `dec-lei-with-footprint` — DL pós-2026-07-27 com `<workflow>` + `<input>` (pegada legislativa)
@@ -97,7 +108,17 @@ Cenários cobertos:
 - `portaria-simple` — Portaria com lei habilitante (`<ref>` injectado via campo "Habilitante")
 - `rcm-simple` — RCM com body em `<paragraph>` (sem `<article>`)
 - `dlr-acores` — DLR Açores (jurisdição `pt-20`, Representante da República)
-- **`imported-portaria` — Portaria importada a partir de texto não marcado** (parser heurístico → state → exporter)
+- `decreto-ar-simple` — Decreto da AR aprovando convenção (PAR + PR)
+- `despacho-simple` — Despacho normativo ministerial com habilitante
+- `drr-acores-simple` — DRR Açores com habilitante (Governo Regional)
+- `dec-lei-with-subalineas` — `<point>` com `<list>` aninhada (i, ii, iii)
+- `dec-lei-with-insertions` — exercita insertArticleAt + renumberArticles
+- `dec-lei-with-refs` — refs internas + externas PT + UE resolvidas
+- `amender` + `consolidated` — modo alterador com `<quotedStructure>`
+- `bluebell-roundtrip` — Bluebell-PT serialize/parse estável
+- `loda-inline` — edição word-level no modo alterador
+- `with-comments` — `<authorialNote>` injectados
+- **`imported-portaria`** — Portaria importada a partir de texto não marcado (parser heurístico → state → exporter)
 
 ## Import: como funciona o parser
 
@@ -162,6 +183,22 @@ Limitações cliente-side:
 - Não detecta refs internas órfãs (`href="#xxx"` para eId inexistente)
 
 Para validação completa: exportar XML e correr `akn-pt validate`.
+
+## Features experimentais (escondidas por defeito)
+
+Algumas features ficam atrás de um flag `?lab=1` (ou `localStorage.setItem('akn-pt-lab','1')`)
+para reduzir a superfície cognitiva da demo principal. Não estão removidas —
+são funcionais e testadas pelo smoke-test, mas não aparecem na UI por defeito:
+
+| Feature | Como activar |
+|---|---|
+| **Bluebell-PT** (autoria plain-text) | `http://localhost:8000/?lab=1` ou `localStorage.setItem('akn-pt-lab','1')` |
+| **Colaboração cross-tab + partilha por URL** | idem |
+| **Export AKN-PT com comentários** (`<authorialNote>`) | idem (até revisão Palmirani) |
+| **LoDA inline** (edição word-level no modo alterador) | idem |
+
+A linha de raciocínio: demonstração v0.1.0 deve mostrar **menos, melhor**.
+Quem queira experimentar todas as features avançadas usa `?lab=1`.
 
 ## Features que NÃO estão em v0.1.0 (planeadas para v0.1.1+)
 

@@ -40,18 +40,18 @@ const Validation = (() => {
     if (doc.body.kind === 'articles') {
       doc.body.items.forEach(a => {
         if (!a.heading || !a.heading.trim()) {
-          issues.push({ level: 'warn', msg: `${a.num} sem epígrafe.` });
+          issues.push({ level: 'warn', msg: `${a.num} sem epígrafe.`, eId: a.id });
         }
         a.paragraphs.forEach(p => {
           if (!p.content && !p.subPoints.length) {
-            issues.push({ level: 'warn', msg: `${a.num} ${p.num || ''} sem conteúdo.` });
+            issues.push({ level: 'warn', msg: `${a.num} ${p.num || ''} sem conteúdo.`, eId: p.id });
           }
         });
       });
     } else {
       doc.body.items.forEach(p => {
         if (!p.content && !p.subPoints.length) {
-          issues.push({ level: 'warn', msg: `Ponto ${p.num} sem conteúdo.` });
+          issues.push({ level: 'warn', msg: `Ponto ${p.num} sem conteúdo.`, eId: p.id });
         }
       });
     }
