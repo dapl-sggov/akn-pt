@@ -502,6 +502,25 @@ try {
       parsed.signatures.some(s => s.as === 'ministro-estado-financas')],
     ['eId específico ministro-presidencia',
       parsed.signatures.some(s => s.as === 'ministro-presidencia')],
+    ['sem eIds duplicados', (() => {
+      const all = [];
+      parsed.articles.forEach(a => {
+        all.push(a.id);
+        a.paragraphs.forEach(p => {
+          all.push(p.id);
+          (p.subPoints || []).forEach(sp => {
+            all.push(sp.id);
+            (sp.subPoints || []).forEach(ssp => all.push(ssp.id));
+          });
+        });
+      });
+      return all.length === new Set(all).size;
+    })()],
+    ['art_3 tem 5 parágrafos (intro + 4 numerados)', (() => {
+      const a = parsed.articles.find(x => x.id === 'art_3');
+      return a && a.paragraphs.length === 5
+          && a.paragraphs[0].num === '' && a.paragraphs[1].num === '1 -';
+    })()],
   ];
   const fails = checks.filter(([, ok]) => !ok);
   if (fails.length) {

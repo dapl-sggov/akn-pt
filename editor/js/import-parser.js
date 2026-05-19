@@ -392,22 +392,28 @@ const ImportParser = (() => {
       }
 
       // ----- number ("1 -" inside article or as body element in RCM) -----
+      // eId usa POSIÇÃO sequencial (não o valor do num), porque um artigo
+      // pode ter uma frase introdutória anónima ANTES dos parágrafos
+      // numerados — ambos competiriam por __para_1 se usássemos o valor.
+      // O `<num>` mantém o valor visível ("1 -"); o eId garante unicidade.
       m = ln.match(NUM_RE);
       if (m && (mode === 'body' || mode === 'preamble')) {
-        const n = parseInt(m[1], 10);
+        const numVal = m[1];  // valor visível ("1", "2", …)
         if (r.bodyKind === 'paragraphs') {
-          // RCM/Res-AR: paragraph directly in body
+          // RCM/Res-AR: paragraph directly in body — sequencial global
+          const seq = r.paragraphs.length + 1;
           curParagraph = {
-            id: `para_${n}`,
-            num: `${n} -`,
+            id: `para_${seq}`,
+            num: `${numVal} -`,
             content: m[2].trim(),
             subPoints: [],
           };
           r.paragraphs.push(curParagraph);
         } else if (curArticle) {
+          const seq = curArticle.paragraphs.length + 1;
           curParagraph = {
-            id: `${curArticle.id}__para_${n}`,
-            num: `${n} -`,
+            id: `${curArticle.id}__para_${seq}`,
+            num: `${numVal} -`,
             content: m[2].trim(),
             subPoints: [],
           };
@@ -476,9 +482,11 @@ const ImportParser = (() => {
         continue;
       }
       if (mode === 'body' && curArticle && !curParagraph) {
-        // Article body without explicit "1 -" → single anonymous paragraph
+        // Article body without explicit "1 -" → anonymous paragraph
+        // eId sequencial dentro do artigo
+        const seq = curArticle.paragraphs.length + 1;
         curParagraph = {
-          id: `${curArticle.id}__para_1`,
+          id: `${curArticle.id}__para_${seq}`,
           num: '',
           content: ln,
           subPoints: [],
