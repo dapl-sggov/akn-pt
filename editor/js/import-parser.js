@@ -82,11 +82,18 @@ const ImportParser = (() => {
   // Lower roman: "i)", "ii)", "iii)", "iv)", "v)", ... up to "xii)"  (subalineas)
   const ROMAN_RE = /^([ivxl]{1,5})\s*\)\s*(.+)$/;
 
-  // Considerando
+  // Considerando — recital explícito
   const CONS_RE = /^Considerando\b/i;
 
-  // Enacting formula starters
-  const FORMULA_RE = /^(Assim:|Manda\s+o\s+Governo|A\s+Assembleia\s+da\s+Rep[úu]blica\s+(?:decreta|resolve)|O\s+Governo\s+Regional|A\s+Assembleia\s+Legislativa)/i;
+  // Enacting formula starters. Aceita "Assim:", "Assim,", "Assim. ", além
+  // dos padrões parlamentares e regionais. Inclui também "Nos termos do"
+  // que é o início real frequente em Portarias e DLs sem "Assim".
+  const FORMULA_RE = /^(Assim\s*[:,.]|Manda\s+o\s+Governo|Nos\s+termos\s+(?:do|da|dos|das)\s|A\s+Assembleia\s+da\s+Rep[úu]blica\s+(?:decreta|resolve)|O\s+Governo\s+Regional|A\s+Assembleia\s+Legislativa)/i;
+
+  // Heurística adicional: linha que CONTÉM "ao abrigo de" ou "no uso da
+  // competência" — típica fórmula promulgatória de Portaria/Despacho mesmo
+  // sem "Assim" no início (ex. "Manda o Governo, ao abrigo de…")
+  const FORMULA_CONTAINS_RE = /\bao\s+abrigo\s+(?:do|da|dos|das)\b|\bno\s+uso\s+da\s+compet[êe]ncia\b|\bem\s+execu[çc][ãa]o\s+(?:do|da)\b/i;
 
   // Conclusion markers
   const VISTO_RE = /^Visto\s+e\s+aprovado\s+em\s+Conselho\s+de\s+Ministros/i;
@@ -94,6 +101,11 @@ const ImportParser = (() => {
   const PROMULGADO_RE = /^Promulgad[oa]\s+em\b/i;
   const REFERENDADO_RE = /^Referendad[oa]\s+em\b/i;
   const ASSINADO_RE = /^Assinado\s+em\b/i;
+  // "Em 30 de abril de 2025." — frequentemente precede assinaturas em Portarias
+  const EM_DATE_RE = /^Em\s+\d{1,2}\s+de\s+\w+\s+de\s+\d{4}\.?\s*$/i;
+
+  // Data inline "de DD de MMMM (de YYYY)?" — partilhada entre parse() e parseBody()
+  const DATE_INLINE_RE = /de\s+(\d{1,2})\s+de\s+(\w+)(?:\s+de\s+(\d{4}))?/i;
 
   // Annex
   const ANNEX_RE = /^Anexo(?:\s+([IVX]+|\d+))?(?:\s*\(.*\))?\s*$/i;
@@ -167,7 +179,7 @@ const ImportParser = (() => {
       janeiro: 1, fevereiro: 2, 'março': 3, marco: 3, abril: 4, maio: 5, junho: 6,
       julho: 7, agosto: 8, setembro: 9, outubro: 10, novembro: 11, dezembro: 12,
     };
-    const dateRe = /de\s+(\d{1,2})\s+de\s+(\w+)(?:\s+de\s+(\d{4}))?/i;
+    const dateRe = DATE_INLINE_RE;
     const dm = fullText.match(dateRe);
     if (dm) {
       const day = String(dm[1]).padStart(2, '0');
@@ -181,15 +193,29 @@ const ImportParser = (() => {
     }
 
     // Step 3: extract ementa (short title)
-    // Heuristic: line(s) after the type+number line, before the first "Considerando" or "Artigo"
+    // Heurística: linha curta (< 250 chars), uma frase única, logo após o
+    // header (tipo + data). Se NÃO houver ementa explícita (frequente em
+    // Portarias modernas), deixa vazio em vez de absorver o preâmbulo.
+    //
+    // Indicadores de que NÃO é ementa (é considerando implícito):
+    //   - linha > 250 chars
+    //   - começa por "A " / "O " / "Importa " (verbos típicos de recital)
+    //   - cita "Decreto-Lei n.º …" ou "Lei n.º …" no meio (típico de recital)
     if (typeMatch) {
       const typeLineIdx = lines.findIndex(l => typeMatch.re.test(l));
       if (typeLineIdx >= 0) {
         for (let i = typeLineIdx + 1; i < Math.min(typeLineIdx + 8, lines.length); i++) {
           const ln = lines[i];
           if (!ln) continue;
-          if (CONS_RE.test(ln) || ART_RE.test(ln) || ART_INLINE_RE.test(ln) || FORMULA_RE.test(ln)) break;
+          if (CONS_RE.test(ln) || ART_RE.test(ln) || ART_INLINE_RE.test(ln) ||
+              FORMULA_RE.test(ln) || FORMULA_CONTAINS_RE.test(ln)) break;
           if (dateRe.test(ln) && ln.length < 30) continue;  // skip date-only lines
+          // Anti-falso-positivo: descartar candidatos longos ou claramente
+          // narrativos. Se nenhum candidato passa o filtro, shortTitle fica
+          // vazio (preferível a poluir com preâmbulo).
+          if (ln.length > 250) break;
+          if (/\b(Decreto[- ]Lei|Lei)\s+n\.?[ºo°]?\s*\d+\/\d{4}/i.test(ln)) break;
+          if (/^(A\s+org[âa]nica|Importa\s+|Considerando|O\s+presente)/i.test(ln)) break;
           if (ln.length > 15) {
             result.shortTitle = ln.replace(/[.;]\s*$/, '');
             break;
@@ -240,6 +266,15 @@ const ImportParser = (() => {
     let recitalSeq = 1;
     let annexSeq = 1;
 
+    // Localizar o índice do header (linha onde aparece o tipo+número) para
+    // saber a partir de onde podemos tratar texto narrativo como recitais
+    // implícitos.
+    const TYPE_LINE_PATTERNS = TYPE_PATTERNS.map(t => t.re);
+    let headerLineIdx = -1;
+    for (let i = 0; i < Math.min(5, lines.length); i++) {
+      if (TYPE_LINE_PATTERNS.some(re => re.test(lines[i]))) { headerLineIdx = i; break; }
+    }
+
     for (let i = 0; i < lines.length; i++) {
       const ln = lines[i];
       if (!ln) continue;
@@ -262,6 +297,13 @@ const ImportParser = (() => {
         continue;
       }
 
+      // ----- "Em DD de mes de YYYY." precedendo assinaturas -----
+      if (EM_DATE_RE.test(ln)) {
+        mode = 'conclusions';
+        curArticle = null; curParagraph = null;
+        continue;  // handled later in detectSignatures (linha guardada)
+      }
+
       // ----- detect conclusion markers (transition out of body) -----
       if (VISTO_RE.test(ln) || APROVADA_RE.test(ln) || PROMULGADO_RE.test(ln) ||
           REFERENDADO_RE.test(ln) || ASSINADO_RE.test(ln)) {
@@ -270,18 +312,37 @@ const ImportParser = (() => {
         continue;  // handled later in detectSignatures
       }
 
-      // ----- recital -----
+      // ----- recital explícito ("Considerando que…") -----
       if (CONS_RE.test(ln) && mode !== 'body' && mode !== 'annex') {
         r.recitals.push({ id: `rec_${recitalSeq++}`, text: ln });
         mode = 'preamble';
         continue;
       }
 
-      // ----- enacting formula -----
-      if (FORMULA_RE.test(ln) && !curArticle) {
+      // ----- fórmula promulgatória / dispositiva -----
+      // Detecta de duas formas:
+      //   (a) linha começa por palavras canónicas ("Assim,", "Manda o Governo",
+      //       "Nos termos…", "A Assembleia…")
+      //   (b) linha contém "ao abrigo de…" e ainda não temos articulado
+      //       (caso típico de Portarias que omitem "Assim,")
+      if ((FORMULA_RE.test(ln) || (FORMULA_CONTAINS_RE.test(ln) && !curArticle)) && !curArticle) {
         if (r.formula) r.formula += ' ' + ln;
         else r.formula = ln;
         mode = 'body';
+        continue;
+      }
+
+      // ----- recital IMPLÍCITO -----
+      // Linha narrativa entre o header e a fórmula promulgatória que não
+      // começa por "Considerando" — captura preâmbulos reais que omitem
+      // essa palavra. Convenção legística: cada parágrafo do source ⇒
+      // recital próprio (não concatenar).
+      if ((mode === 'header' || mode === 'preamble') && headerLineIdx >= 0 && i > headerLineIdx &&
+          !ART_RE.test(ln) && !ART_INLINE_RE.test(ln) && !ANNEX_RE.test(ln) &&
+          !(DATE_INLINE_RE.test(ln) && ln.length < 30) /* linha só com data */ &&
+          ln.length > 30 /* linha narrativa, não fragmento */) {
+        r.recitals.push({ id: `rec_${recitalSeq++}`, text: ln });
+        mode = 'preamble';
         continue;
       }
 
@@ -442,59 +503,188 @@ const ImportParser = (() => {
   // -----------------------------------------------------------------------
   // Habilitante detection (Portaria / Despacho / DRR / DL autorizado)
   // -----------------------------------------------------------------------
+  // Heurística: extrai TODAS as citações de diplomas na fórmula promulgatória
+  // ("ao abrigo de…" e similares) e escolhe a MAIS PROXIMAL — a última (em
+  // Português a cadeia "ao abrigo de A e B" termina no autorizante imediato).
+  // Para Portarias regulamentares de orgânicas, o autorizante é frequentemente
+  // o Decreto-Lei que aprovou a orgânica.
   function detectHabilitante(r) {
     const needs = ['portaria', 'despacho-normativo', 'drr'].includes(r.actType) ||
                   ['dec-lei-autorizado', 'dlr-autorizado'].includes(r.subtype);
     if (!needs) return;
 
-    // Search in formula + first recital for "Decreto-Lei n.º X/YYYY" or "Lei n.º X/YYYY"
-    const sources = [r.formula, ...r.recitals.map(rc => rc.text)].join(' ');
-    const habRe = /(Decreto[- ]Lei|Lei(?:\s+Org[âa]nica)?)\s+n\.?[ºo°]?\s*(\d+(?:-[A-Z])?)\s*\/\s*(\d{4})(?:,?\s+de\s+\d+\s+de\s+\w+)?/i;
-    const m = sources.match(habRe);
-    if (m) {
-      const type = /lei/i.test(m[1]) && !/decreto/i.test(m[1]) ? 'lei' : 'dec-lei';
-      r.habilitante = `https://eli.gov.pt/eli/pt/${type}/${m[3]}/${m[2]}/pt`;
-      r.habilitanteLabel = m[0].replace(/\s+/g, ' ').trim();
-    }
+    // Procurar na fórmula primeiro (mais frequente) e depois em recitais.
+    const sources = r.formula
+      ? [r.formula, ...r.recitals.map(rc => rc.text)]
+      : r.recitals.map(rc => rc.text);
+
+    // Pattern global — captura "tipo n.º N/YYYY" + opcional ", de DD de mês"
+    const habGlobalRe = /(Decreto[- ]Lei|Lei(?:\s+Org[âa]nica)?)\s+n\.?[ºo°]?\s*(\d+(?:-[A-Z])?)\s*\/\s*(\d{4})(?:,?\s+de\s+(\d{1,2}\s+de\s+\w+(?:\s+de\s+\d{4})?))?/gi;
+
+    const candidates = [];
+    sources.forEach(src => {
+      let m;
+      habGlobalRe.lastIndex = 0;
+      while ((m = habGlobalRe.exec(src)) !== null) {
+        const isLei = /lei/i.test(m[1]) && !/decreto/i.test(m[1]);
+        candidates.push({
+          type: isLei ? 'lei' : 'dec-lei',
+          number: m[2],
+          year: m[3],
+          dateText: m[4] || '',
+          raw: m[0].replace(/\s+/g, ' ').trim(),
+        });
+      }
+    });
+
+    if (!candidates.length) return;
+
+    // Estratégia: escolher o ÚLTIMO Decreto-Lei se houver — é o autorizante
+    // imediato em Portarias de orgânica. Se só houver Lei, pega a última.
+    const dls = candidates.filter(c => c.type === 'dec-lei');
+    const choice = dls.length ? dls[dls.length - 1] : candidates[candidates.length - 1];
+
+    r.habilitante = `https://eli.gov.pt/eli/pt/${choice.type}/${choice.year}/${choice.number}/pt`;
+    r.habilitanteLabel = choice.raw;
   }
 
   // -----------------------------------------------------------------------
-  // Signature detection (heuristic — last 20 lines)
+  // Signature detection
   // -----------------------------------------------------------------------
+  // Estratégia em 2 passos:
+  //   1. Identifica papel-base por tipo de acto (template-driven)
+  //   2. Tenta extrair NOMES da linha real de assinaturas (geralmente a
+  //      última linha não-vazia que não é artigo nem anexo).
+  //      Formato típico: "O Ministro da X, Nome A. - O Ministro da Y, Nome B."
+  //      ou "O Primeiro-Ministro, Nome A. - Promulgado em … - Nome B."
+  //
+  // Mapa: rótulo no texto → eId do papel
+  const ROLE_KEYWORD_MAP = [
+    { re: /Primeiro[- ]Ministro/i,            as: 'primeiro-ministro' },
+    { re: /Presidente\s+da\s+Rep[úu]blica/i,  as: 'presidente-republica' },
+    { re: /Presidente\s+da\s+Assembleia\s+da\s+Rep[úu]blica/i, as: 'presidente-ar' },
+    { re: /Presidente\s+da\s+Assembleia\s+Legislativa.*?A[çc]ores/i, as: 'presidente-alra' },
+    { re: /Presidente\s+da\s+Assembleia\s+Legislativa.*?Madeira/i,   as: 'presidente-alrm' },
+    { re: /Representante\s+da\s+Rep[úu]blica.*?A[çc]ores/i, as: 'representante-republica-acores' },
+    { re: /Representante\s+da\s+Rep[úu]blica.*?Madeira/i,   as: 'representante-republica-madeira' },
+    { re: /Presidente\s+do\s+Governo\s+Regional.*?A[çc]ores/i, as: 'presidente-governo-regional-acores' },
+    { re: /Presidente\s+do\s+Governo\s+Regional.*?Madeira/i,   as: 'presidente-governo-regional-madeira' },
+    // Genéricos — verificar DEPOIS dos específicos
+    { re: /Ministr[oa]\b/i, as: 'ministro' },
+    { re: /Secret[áa]ri[oa]\s+de\s+Estado/i, as: 'secretario-estado' },
+  ];
+
+  // Extrai segmentos da linha de assinaturas. Separadores típicos: " - ",
+  // ".\s+-\s+", " — " (em dash), ". —". O parser conserva apenas segmentos
+  // não vazios com pelo menos um nome próprio (heurística: começa por maiúscula).
+  function _splitSignatureLine(line) {
+    const segments = line.split(/\s*[-—–]\s*(?=[OAU])/);  // split antes de "O ", "A ", "U "
+    if (segments.length <= 1) return [line];
+    return segments.map(s => s.trim()).filter(Boolean);
+  }
+
+  // Parses um segmento "O Ministro de X, João Silva." → { as, name }
+  function _parseSignatureSegment(seg) {
+    // Match: "O/A <título>, <nome>." — captura nome após a primeira vírgula
+    const m = seg.match(/^(?:O|A|Os|As|U[mn]a?)?\s*(.+?),\s*(.+?)\.?\s*$/);
+    if (!m) return null;
+    const title = m[1].trim();
+    const name = m[2].trim();
+    let as = null;
+    for (const r of ROLE_KEYWORD_MAP) {
+      if (r.re.test(title)) { as = r.as; break; }
+    }
+    return as ? { as, name, title } : null;
+  }
+
   function detectSignatures(lines, r) {
-    const tail = lines.slice(-25);
-    const text = tail.join(' ');
+    // 1. Procurar linha(s) de assinatura nas últimas 30 linhas.
+    //    Ignorar anexos (já capturados) e linhas curtas.
+    const tail = lines.slice(-30).filter(Boolean);
+    const tailText = tail.join(' ');
+    const parsedSigs = [];
+
+    // Heurística: a linha de assinaturas começa com "O " ou "A " seguido de
+    // um título de cargo (Ministro/Primeiro-Ministro/Presidente/Secretário…)
+    // e tem uma vírgula com nome próprio a seguir. Pode conter vários
+    // segmentos separados por " - ".
+    const titleStarter = /(?:^|[-—–]\s+)(?:O|A|Os|As)\s+(Ministr[oa]|Primeiro[- ]Ministro|Secret[áa]ri[oa]|Presidente|Representante)\b/;
+    for (let i = tail.length - 1; i >= 0; i--) {
+      const ln = tail[i];
+      if (ART_RE.test(ln) || ART_INLINE_RE.test(ln)) continue;
+      if (!titleStarter.test(ln)) continue;
+      const segments = _splitSignatureLine(ln);
+      segments.forEach(seg => {
+        const sig = _parseSignatureSegment(seg);
+        if (sig) parsedSigs.push(sig);
+      });
+      if (parsedSigs.length) break;  // achou — não procurar mais acima
+    }
+
+    // 2. Determinar papel-base (signature / countersignature / promulgation)
+    //    com base no tipo de acto + sinais textuais
     const sigs = [];
+    const hasPromulgated = /promulgad[oa]/i.test(tailText);
+    const hasReferended = /referendad[oa]/i.test(tailText);
 
     if (r.actType === 'dec-lei') {
-      sigs.push({ role: 'countersignature', as: 'primeiro-ministro', name: '', date: r.adoptionDate });
-      if (/promulgad[oa]/i.test(text)) {
-        sigs.push({ role: 'promulgation', as: 'presidente-republica', name: '', date: r.adoptionDate });
+      const pm = parsedSigs.find(s => s.as === 'primeiro-ministro');
+      sigs.push({ role: 'countersignature', as: 'primeiro-ministro',
+                  name: pm?.name || '', date: r.adoptionDate });
+      if (hasPromulgated) {
+        const pr = parsedSigs.find(s => s.as === 'presidente-republica');
+        sigs.push({ role: 'promulgation', as: 'presidente-republica',
+                    name: pr?.name || '', date: r.adoptionDate });
       }
-      if (/referendad[oa]/i.test(text)) {
-        sigs.push({ role: 'countersignature', as: 'ministro', name: '', date: r.adoptionDate });
-      }
+      // Ministros adicionais (referendados)
+      parsedSigs.filter(s => s.as === 'ministro').forEach(s => {
+        sigs.push({ role: 'countersignature', as: 'ministro', name: s.name, date: r.adoptionDate });
+      });
     } else if (r.actType === 'lei') {
-      sigs.push({ role: 'signature', as: 'presidente-ar', name: '', date: r.adoptionDate });
-      sigs.push({ role: 'promulgation', as: 'presidente-republica', name: '', date: r.adoptionDate });
-      sigs.push({ role: 'countersignature', as: 'primeiro-ministro', name: '', date: r.adoptionDate });
+      const par = parsedSigs.find(s => s.as === 'presidente-ar');
+      const pr = parsedSigs.find(s => s.as === 'presidente-republica');
+      const pm = parsedSigs.find(s => s.as === 'primeiro-ministro');
+      sigs.push({ role: 'signature', as: 'presidente-ar', name: par?.name || '', date: r.adoptionDate });
+      sigs.push({ role: 'promulgation', as: 'presidente-republica', name: pr?.name || '', date: r.adoptionDate });
+      sigs.push({ role: 'countersignature', as: 'primeiro-ministro', name: pm?.name || '', date: r.adoptionDate });
     } else if (r.actType === 'res-cm') {
-      sigs.push({ role: 'signature', as: 'primeiro-ministro', name: '', date: r.adoptionDate });
+      const pm = parsedSigs.find(s => s.as === 'primeiro-ministro');
+      sigs.push({ role: 'signature', as: 'primeiro-ministro', name: pm?.name || '', date: r.adoptionDate });
     } else if (r.actType === 'portaria' || r.actType === 'despacho-normativo') {
-      sigs.push({ role: 'signature', as: 'ministro', name: '', date: r.adoptionDate });
+      // Portarias podem ter VÁRIOS ministros assinantes (frequente para
+      // diplomas conjuntos). Emitir uma assinatura por cada ministro
+      // detectado, fallback para genérico se nada apanhado.
+      const ministers = parsedSigs.filter(s => s.as === 'ministro' || s.as === 'secretario-estado' || s.as === 'primeiro-ministro');
+      if (ministers.length) {
+        ministers.forEach(m => sigs.push({
+          role: 'signature', as: m.as, name: m.name, date: r.adoptionDate,
+        }));
+      } else {
+        sigs.push({ role: 'signature', as: 'ministro', name: '', date: r.adoptionDate });
+      }
     } else if (r.actType === 'decreto-ar' || r.actType === 'res-ar') {
-      sigs.push({ role: 'signature', as: 'presidente-ar', name: '', date: r.adoptionDate });
+      const par = parsedSigs.find(s => s.as === 'presidente-ar');
+      sigs.push({ role: 'signature', as: 'presidente-ar', name: par?.name || '', date: r.adoptionDate });
       if (r.actType === 'decreto-ar') {
-        sigs.push({ role: 'promulgation', as: 'presidente-republica', name: '', date: r.adoptionDate });
+        const pr = parsedSigs.find(s => s.as === 'presidente-republica');
+        sigs.push({ role: 'promulgation', as: 'presidente-republica', name: pr?.name || '', date: r.adoptionDate });
       }
     } else if (r.actType === 'dlr') {
       const reg = r.country === 'pt-30' ? 'madeira' : 'acores';
-      sigs.push({ role: 'signature', as: `presidente-alr${reg === 'madeira' ? 'm' : 'a'}`, name: '', date: r.adoptionDate });
-      sigs.push({ role: 'promulgation', as: `representante-republica-${reg}`, name: '', date: r.adoptionDate });
+      const alr = parsedSigs.find(s => s.as === `presidente-alr${reg === 'madeira' ? 'm' : 'a'}`);
+      const rr = parsedSigs.find(s => s.as === `representante-republica-${reg}`);
+      sigs.push({ role: 'signature', as: `presidente-alr${reg === 'madeira' ? 'm' : 'a'}`,
+                  name: alr?.name || '', date: r.adoptionDate });
+      sigs.push({ role: 'promulgation', as: `representante-republica-${reg}`,
+                  name: rr?.name || '', date: r.adoptionDate });
     } else if (r.actType === 'drr') {
       const reg = r.country === 'pt-30' ? 'madeira' : 'acores';
-      sigs.push({ role: 'signature', as: `presidente-governo-regional-${reg}`, name: '', date: r.adoptionDate });
-      sigs.push({ role: 'promulgation', as: `representante-republica-${reg}`, name: '', date: r.adoptionDate });
+      const pgr = parsedSigs.find(s => s.as === `presidente-governo-regional-${reg}`);
+      const rr = parsedSigs.find(s => s.as === `representante-republica-${reg}`);
+      sigs.push({ role: 'signature', as: `presidente-governo-regional-${reg}`,
+                  name: pgr?.name || '', date: r.adoptionDate });
+      sigs.push({ role: 'promulgation', as: `representante-republica-${reg}`,
+                  name: rr?.name || '', date: r.adoptionDate });
     }
 
     r.signatures = sigs;

@@ -477,7 +477,38 @@ try {
   n_fail++;
 }
 
-// 9. Test DRE mock suggest
+// 9. Test ImportParser on real DRE Portaria (fixture: port-205B-2025.txt)
+try {
+  const fixtureText = fs.readFileSync(path.join(ROOT, 'test-fixtures', 'port-205B-2025.txt'), 'utf8');
+  const parsed = global.ImportParser.parse(fixtureText);
+
+  const checks = [
+    ['type=portaria', parsed.actType === 'portaria'],
+    ['number=205-B', parsed.number === '205-B'],
+    ['year=2025', parsed.year === 2025],
+    ['docDate', parsed.docDate === '2025-04-30'],
+    ['no shortTitle absorption', parsed.shortTitle.length < 250],
+    ['2+ recitals', parsed.recitals.length >= 2],
+    ['formula apanhada', parsed.formula && parsed.formula.length > 100],
+    ['habilitante = DL 43-B/2024', parsed.habilitante.includes('43-B') && parsed.habilitante.includes('2024')],
+    ['12 artigos', parsed.articles.length === 12],
+    ['todas epígrafes', parsed.articles.every(a => a.heading && a.heading.length > 3)],
+    ['2 ministros assinantes', parsed.signatures.filter(s => s.name).length === 2],
+    ['nome Joaquim Miranda Sarmento', parsed.signatures.some(s => s.name.includes('Miranda Sarmento'))],
+    ['nome António Leitão Amaro', parsed.signatures.some(s => s.name.includes('Leitão Amaro'))],
+  ];
+  const fails = checks.filter(([, ok]) => !ok);
+  if (fails.length) {
+    throw new Error('Falhas: ' + fails.map(f => f[0]).join(', '));
+  }
+  console.log(`  OK   ImportParser real Portaria  (${checks.length}/${checks.length} verificações)`);
+  n_ok++;
+} catch (e) {
+  console.log(`  FAIL ImportParser real Portaria: ${e.message}`);
+  n_fail++;
+}
+
+// 10. Test DRE mock suggest
 try {
   const res = global.DreMock.suggest('21 2023');
   if (!res.length || !res[0].label.includes('21/2023')) {
@@ -494,7 +525,7 @@ try {
   n_fail++;
 }
 
-const total = cases.length + 9;
+const total = cases.length + 10;
 console.log(`\n${n_ok}/${total} files generated.`);
 console.log(`Next: validate with akn-pt:`);
 console.log(`  python -m akn_pt batch editor/.smoke-output`);
