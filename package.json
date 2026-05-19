@@ -1,5 +1,15 @@
 {
-  "dependencies": {
-    "@xmldom/xmldom": "^0.9.10"
+  "name": "akn-pt",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AKN-PT — perfil nacional português do Akoma Ntoso. Dependências de teste/build do editor.",
+  "license": "EUPL-1.2",
+  "scripts": {
+    "smoke": "node editor/smoke-test.js",
+    "test:ui": "node editor/test-ui.js"
+  },
+  "devDependencies": {
+    "@xmldom/xmldom": "^0.9.10",
+    "jsdom": "^24.1.3"
   }
 }
