@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AKN-PT Editor — v0.1.0 demo</title>
+  <link rel="stylesheet" href="css/editor.css">
+</head>
+<body>
+
+  <!-- ======================================================================
+       LANDING — escolha do tipo de ato
+       ====================================================================== -->
+  <section id="landing" class="screen active">
+    <header class="landing-header">
+      <h1>Editor AKN-PT</h1>
+      <p class="tagline">Demonstração v0.1.0 — perfil nacional português do Akoma Ntoso</p>
+      <p class="subtagline">Escolha o tipo de ato que pretende redigir.</p>
+    </header>
+
+    <div class="type-grid" id="type-grid">
+      <!-- Cards inseridas por JS a partir de templates.js -->
+    </div>
+
+    <footer class="landing-footer">
+      <p>
+        Editor de demonstração · gera XML AKN-PT v0.1.0 validável ·
+        <a href="#" id="open-import">Importar não marcado</a> ·
+        <a href="#" id="open-existing">Abrir AKN-PT</a> ·
+        <a href="#" id="open-amend">Alterar diploma</a> ·
+        <a href="#" id="load-draft">Carregar rascunho</a>
+      </p>
+      <p class="micro">
+        Sem servidor · funciona offline · dados ficam no seu browser · EUPL-1.2
+      </p>
+    </footer>
+    <input type="file" id="file-input-xml" accept=".xml,.akn" hidden>
+    <input type="file" id="file-input-docx" accept=".docx" hidden>
+    <input type="file" id="file-input-amend-xml" accept=".xml,.akn" hidden>
+  </section>
+
+
+  <!-- ======================================================================
+       EDITOR — 3 painéis: TOC | corpo | side-panel (4 tabs)
+       ====================================================================== -->
+  <section id="editor" class="screen">
+
+    <!-- ====== TOPBAR ====== -->
+    <nav class="topbar">
+      <div class="topbar-left">
+        <button class="btn-ghost" id="btn-back" title="Voltar à escolha de tipos">←</button>
+        <span class="doc-info">
+          <strong id="bar-doctype">…</strong>
+          <span id="bar-subtitle"></span>
+        </span>
+      </div>
+
+      <div class="topbar-actions">
+        <!-- Indicadores de estado -->
+        <span id="peers-badge" class="badge badge-ok hidden" title="Tabs ligadas em sincronização">● 1</span>
+        <span id="validation-badge" class="badge badge-pending" title="Estado da validação">●</span>
+
+        <!-- Acções primárias -->
+        <button class="btn-ghost" id="btn-preview" title="Pré-visualizar como documento">Pré-visualizar</button>
+        <button class="btn-ghost" id="btn-validate" title="Verificar consistência">Validar</button>
+
+        <!-- Export — dropdown com 1 acção primária + alternativas -->
+        <div class="menu" data-menu="export">
+          <button class="btn-primary menu-trigger" data-menu-trigger>
+            Exportar <span class="caret">▾</span>
+          </button>
+          <div class="menu-panel" data-menu-panel>
+            <button class="menu-item" data-export="xml">
+              <span class="menu-icon">⤓</span>
+              <span class="menu-label">AKN-PT XML <span class="menu-shortcut">recomendado</span></span>
+            </button>
+            <button class="menu-item" data-export="xml-with-comments">
+              <span class="menu-icon">✎</span>
+              <span class="menu-label">XML + comentários <span class="menu-shortcut">authorialNote</span></span>
+            </button>
+            <div class="menu-divider"></div>
+            <button class="menu-item" data-export="pdf">
+              <span class="menu-icon">📄</span>
+              <span class="menu-label">PDF <span class="menu-shortcut">via impressão</span></span>
+            </button>
+            <button class="menu-item" data-export="docx">
+              <span class="menu-icon">📝</span>
+              <span class="menu-label">Word (.doc)</span>
+            </button>
+            <button class="menu-item" data-export="bluebell">
+              <span class="menu-icon">≣</span>
+              <span class="menu-label">Texto Bluebell-PT</span>
+            </button>
+            <div class="menu-divider"></div>
+            <button class="menu-item" data-export="share-url">
+              <span class="menu-icon">↗</span>
+              <span class="menu-label">Partilhar por URL</span>
+            </button>
+            <button class="menu-item" data-export="amender-xml" id="export-amender-xml" hidden>
+              <span class="menu-icon">±</span>
+              <span class="menu-label">Diploma alterador (XML)</span>
+            </button>
+            <button class="menu-item" data-export="consolidated-xml" id="export-consolidated-xml" hidden>
+              <span class="menu-icon">≡</span>
+              <span class="menu-label">Versão consolidada (XML)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Overflow — tudo o que é secundário -->
+        <div class="menu" data-menu="more">
+          <button class="btn-ghost menu-trigger" data-menu-trigger title="Mais opções">⋯</button>
+          <div class="menu-panel menu-panel-right" data-menu-panel>
+            <button class="menu-item" data-action="open-snapshots">
+              <span class="menu-icon">⟲</span>
+              <span class="menu-label">Snapshots & versões…</span>
+            </button>
+            <button class="menu-item" data-action="open-diff">
+              <span class="menu-icon">⇄</span>
+              <span class="menu-label">Comparar versões…</span>
+            </button>
+            <button class="menu-item" data-action="save-draft">
+              <span class="menu-icon">💾</span>
+              <span class="menu-label">Guardar rascunho agora</span>
+            </button>
+            <div class="menu-divider"></div>
+            <button class="menu-item" data-action="open-text">
+              <span class="menu-icon">≣</span>
+              <span class="menu-label">Editar como texto (Bluebell-PT)…</span>
+            </button>
+            <button class="menu-item" data-action="open-collab">
+              <span class="menu-icon">↗</span>
+              <span class="menu-label">Partilhar / colaborar…</span>
+            </button>
+            <button class="menu-item" data-action="open-ai-settings">
+              <span class="menu-icon">✦</span>
+              <span class="menu-label">Definições do assistente IA…</span>
+            </button>
+            <div class="menu-divider"></div>
+            <button class="menu-item" data-action="open-import">
+              <span class="menu-icon">↥</span>
+              <span class="menu-label">Importar diploma não marcado…</span>
+            </button>
+            <button class="menu-item" data-action="open-amend">
+              <span class="menu-icon">±</span>
+              <span class="menu-label">Modo alterar diploma existente…</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- ====== 3 PAINÉIS ====== -->
+    <div class="layout">
+      <!-- TOC -->
+      <aside class="panel-left" id="toc">
+        <div class="panel-header">
+          <h2>Estrutura</h2>
+        </div>
+        <nav id="toc-nav"></nav>
+        <div class="panel-actions">
+          <button class="btn-small" data-action="add-recital">+ Considerando</button>
+          <button class="btn-small" data-action="add-article">+ Artigo</button>
+          <button class="btn-small" data-action="add-paragraph">+ Ponto resolutivo</button>
+          <button class="btn-small" data-action="add-attachment">+ Anexo</button>
+        </div>
+      </aside>
+
+      <!-- Corpo do documento -->
+      <main class="panel-center" id="document-body"></main>
+
+      <!-- Painel direito — APENAS 4 TABS -->
+      <aside class="panel-right" id="metadata">
+        <div class="tabs">
+          <button class="tab active" data-tab="info">
+            Informação
+          </button>
+          <button class="tab" data-tab="review">
+            Revisão
+            <span class="tab-badge hidden" data-badge="review"></span>
+          </button>
+          <button class="tab" data-tab="links">
+            Ligações
+            <span class="tab-badge hidden" data-badge="links"></span>
+          </button>
+          <button class="tab" data-tab="output">
+            Saída
+          </button>
+        </div>
+
+        <!-- INFO: metadados + pegada legislativa -->
+        <div class="tab-pane active" data-pane="info">
+          <details class="section" open>
+            <summary>Identificação</summary>
+            <div class="section-body" data-section="meta"></div>
+          </details>
+          <details class="section">
+            <summary>Pegada legislativa</summary>
+            <div class="section-body" data-section="footprint"></div>
+          </details>
+        </div>
+
+        <!-- REVIEW: comentários + IA + validação -->
+        <div class="tab-pane" data-pane="review">
+          <details class="section" open>
+            <summary>Validação <span class="muted small" data-summary="validation"></span></summary>
+            <div class="section-body" data-section="validation"></div>
+          </details>
+          <details class="section">
+            <summary>Comentários <span class="muted small" data-summary="comments"></span></summary>
+            <div class="section-body" data-section="comments"></div>
+          </details>
+          <details class="section">
+            <summary>Assistente IA</summary>
+            <div class="section-body" data-section="ai"></div>
+          </details>
+        </div>
+
+        <!-- LINKS: refs cruzadas resolvidas + ajuda DRE -->
+        <div class="tab-pane" data-pane="links">
+          <details class="section" open>
+            <summary>Referências cruzadas <span class="muted small" data-summary="refs"></span></summary>
+            <div class="section-body" data-section="refs"></div>
+          </details>
+          <details class="section">
+            <summary>Base DRE (autocomplete)</summary>
+            <div class="section-body" data-section="dre"></div>
+          </details>
+        </div>
+
+        <!-- OUTPUT: XML preview -->
+        <div class="tab-pane" data-pane="output">
+          <p class="hint">Pré-visualização do XML AKN-PT gerado pelo editor.</p>
+          <pre id="xml-preview"></pre>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+
+  <!-- ======================================================================
+       MODAIS
+       ====================================================================== -->
+
+  <!-- Importar não marcado -->
+  <div id="import-modal" class="modal hidden" data-modal>
+    <div class="modal-content">
+      <header class="modal-header">
+        <h2>Importar diploma não marcado</h2>
+        <button class="btn-close" data-close="import-modal">×</button>
+      </header>
+      <div class="modal-body">
+        <p class="hint">
+          O parser detecta heuristicamente tipo de ato, número, ementa, considerandos,
+          artigos, números, alíneas e assinaturas, com base em convenções da legística
+          portuguesa. Resultado a confirmar manualmente no editor.
+        </p>
+        <div class="import-tabs">
+          <button class="import-tab active" data-import="text">Colar texto</button>
+          <button class="import-tab" data-import="docx">Carregar .docx</button>
+          <button class="import-tab" data-import="example">Exemplo</button>
+        </div>
+        <div class="import-pane" data-import-pane="text">
+          <p class="muted small">Cole o texto completo do diploma (e.g. copy-paste de dre.pt em modo "Texto").</p>
+          <textarea id="import-text" placeholder="Cole o texto do diploma aqui…"></textarea>
+          <button class="btn-primary" id="import-text-btn">Importar texto</button>
+        </div>
+        <div class="import-pane hidden" data-import-pane="docx">
+          <p class="muted small">Carregue um ficheiro <code>.docx</code>. O texto é extraído via mammoth.js e analisado.</p>
+          <button class="btn-primary" id="import-docx-btn">Escolher .docx</button>
+          <p class="muted small" id="docx-status"></p>
+        </div>
+        <div class="import-pane hidden" data-import-pane="example">
+          <p class="muted small">Carregar exemplo de Portaria portuguesa para ver o parser em acção.</p>
+          <button class="btn-primary" id="import-example-btn">Carregar exemplo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preview HTML -->
+  <div id="preview-modal" class="modal hidden" data-modal>
+    <div class="modal-content modal-wide">
+      <header class="modal-header">
+        <h2>Pré-visualização do documento</h2>
+        <button class="btn-close" data-close="preview-modal">×</button>
+      </header>
+      <div class="modal-body" id="preview-body"></div>
+    </div>
+  </div>
+
+  <!-- Snapshots -->
+  <div id="snapshots-modal" class="modal hidden" data-modal>
+    <div class="modal-content">
+      <header class="modal-header">
+        <h2>Snapshots</h2>
+        <button class="btn-close" data-close="snapshots-modal">×</button>
+      </header>
+      <div class="modal-body">
+        <p class="hint">Fotografias nomeadas do diploma, guardadas no seu browser.</p>
+        <div class="snap-new">
+          <input type="text" id="snap-label" placeholder="Etiqueta (ex. revisão DAPL 19/05)">
+          <button class="btn-primary" id="snap-create">+ Criar snapshot</button>
+        </div>
+        <ul id="snap-list" class="snap-list"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Diff -->
+  <div id="diff-modal" class="modal hidden" data-modal>
+    <div class="modal-content modal-wide">
+      <header class="modal-header">
+        <h2>Comparar versões</h2>
+        <button class="btn-close" data-close="diff-modal">×</button>
+      </header>
+      <div class="modal-body">
+        <div class="diff-controls">
+          <label>Base <select id="diff-base"></select></label>
+          <label>Comparar com <select id="diff-compare"></select></label>
+          <button class="btn-primary" id="diff-run">Comparar</button>
+        </div>
+        <div id="diff-result" class="diff-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comment thread -->
+  <div id="comment-thread-modal" class="modal hidden" data-modal>
+    <div class="modal-content">
+      <header class="modal-header">
+        <h2 id="comment-thread-title">Comentários</h2>
+        <button class="btn-close" data-close="comment-thread-modal">×</button>
+      </header>
+      <div class="modal-body" id="comment-thread-body"></div>
+    </div>
+  </div>
+
+  <!-- AI result -->
+  <div id="ai-result-modal" class="modal hidden" data-modal>
+    <div class="modal-content">
+      <header class="modal-header">
+        <h2 id="ai-result-title">Resposta do assistente</h2>
+        <button class="btn-close" data-close="ai-result-modal">×</button>
+      </header>
+      <div class="modal-body">
+        <div id="ai-result-body" class="ai-result-body"></div>
+        <div class="ai-result-actions">
+          <button class="btn-secondary" id="ai-result-copy">Copiar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bluebell editor (modal) -->
+  <div id="text-modal" class="modal hidden" data-modal>
+    <div class="modal-content modal-wide">
+      <header class="modal-header">
+        <h2>Editar como texto (Bluebell-PT)</h2>
+        <button class="btn-close" data-close="text-modal">×</button>
+      </header>
+      <div class="modal-body">
+        <p class="hint">
+          Formato indentado: <code>ARTIGO 1.º — Título</code>, <code>1 -</code> para n.º,
+          <code>a)</code> para alínea, <code>i)</code> para subalínea.
+        </p>
+        <textarea id="bluebell-editor" rows="22"></textarea>
+        <div class="modal-actions">
+          <button class="btn-secondary" id="bluebell-sync">↺ Sincronizar do AKN-PT</button>
+          <button class="btn-primary" id="bluebell-compile">↻ Compilar para AKN-PT</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Collab / share modal -->
+  <div id="collab-modal" class="modal hidden" data-modal>
+    <div class="modal-content">
+      <header class="modal-header">
+        <h2>Partilhar / colaborar</h2>
+        <button class="btn-close" data-close="collab-modal">×</button>
+      </header>
+      <div class="modal-body" id="collab-body"></div>
+    </div>
+  </div>
+
+  <!-- AI settings -->
+  <div id="ai-settings-modal" class="modal hidden" data-modal>
+    <div class="modal-content">
+      <header class="modal-header">
+        <h2>Assistente IA</h2>
+        <button class="btn-close" data-close="ai-settings-modal">×</button>
+      </header>
+      <div class="modal-body" id="ai-settings-body"></div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- Scripts -->
+  <script src="js/templates.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/references.js"></script>
+  <script src="js/dre-mock.js"></script>
+  <script src="js/akn-export.js"></script>
+  <script src="js/validation.js"></script>
+  <script src="js/preview.js"></script>
+  <script src="js/exporters.js"></script>
+  <script src="js/snapshots.js"></script>
+  <script src="js/diff.js"></script>
+  <script src="js/comments.js"></script>
+  <script src="js/amendment.js"></script>
+  <script src="js/loda-inline.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/bluebell-pt.js"></script>
+  <script src="js/collab.js"></script>
+  <script src="js/import-parser.js"></script>
+  <script src="js/editor.js"></script>
+</body>
+</html>

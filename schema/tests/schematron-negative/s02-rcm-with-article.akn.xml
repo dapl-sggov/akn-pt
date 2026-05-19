@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SCHEMATRON NEGATIVE. Expected to PASS xsd but FAIL schematron: RCM com article em body (erro frequente) -->
+<akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17">
+  <act name="res-cm">
+    <meta>
+      <identification source="#dapl">
+        <FRBRWork>
+          <FRBRthis value="https://eli.gov.pt/eli/pt/res-cm/2026/45/pt/!main"/>
+          <FRBRuri value="https://eli.gov.pt/eli/pt/res-cm/2026/45/pt"/>
+          <FRBRdate date="2026-04-20" name="adoption"/>
+          <FRBRauthor href="#cm"/>
+          <FRBRcountry value="pt"/>
+          <FRBRsubtype value="res-cm-normativa"/>
+          <FRBRnumber value="45"/>
+        </FRBRWork>
+        <FRBRExpression>
+          <FRBRthis value="https://eli.gov.pt/eli/pt/res-cm/2026/45/pt/2026-04-25/!main"/>
+          <FRBRuri value="https://eli.gov.pt/eli/pt/res-cm/2026/45/pt/2026-04-25"/>
+          <FRBRdate date="2026-04-25" name="publication"/>
+          <FRBRauthor href="#cm"/>
+          <FRBRlanguage language="por"/>
+        </FRBRExpression>
+        <FRBRManifestation>
+          <FRBRthis value="https://eli.gov.pt/eli/pt/res-cm/2026/45/pt/2026-04-25.xml/!main"/>
+          <FRBRuri value="https://eli.gov.pt/eli/pt/res-cm/2026/45/pt/2026-04-25.xml"/>
+          <FRBRdate date="2026-04-25" name="publication"/>
+          <FRBRauthor href="#dre"/>
+          <FRBRformat value="application/akn+xml; profile=akn-pt-1.0"/>
+        </FRBRManifestation>
+      </identification>
+      <references source="#dapl">
+        <TLCOrganization eId="cm" href="/akn/ontology/organization/pt/cm" showAs="Conselho de Ministros"/>
+        <TLCOrganization eId="dre" href="/akn/ontology/organization/pt/dre" showAs="Diario da Republica"/>
+        <TLCOrganization eId="dapl" href="/akn/ontology/organization/pt/dapl" showAs="DAPL/SGGOV"/>
+        <TLCRole eId="primeiro-ministro" href="/akn/ontology/role/pt/primeiro-ministro" showAs="Primeiro-Ministro"/>
+        <TLCPerson eId="pessoa-pm-2026-04" href="/akn/ontology/person/pt/pm-2026-04" showAs="Primeiro-Ministro"/>
+      </references>
+      <lifecycle source="#dapl">
+        <eventRef eId="e1" date="2026-04-20" source="#cm" type="generation" refersTo="#approval-cm"/>
+        <eventRef eId="e2" date="2026-04-25" source="#dre" type="generation" refersTo="#publication"/>
+      </lifecycle>
+      <analysis source="#dapl"><activeModifications/><passiveModifications/></analysis>
+    </meta>
+    <preface>
+      <p class="docTitle"><docType>Resolucao do Conselho de Ministros</docType> <docNumber>n.o 45/2026</docNumber></p>
+      <shortTitle>Aprova a Estrategia Nacional para X.</shortTitle>
+    </preface>
+    <preamble>
+      <recital eId="rec_1"><p class="formula">Considerando que e necessario aprovar a estrategia.</p></recital>
+    </preamble>
+    <body><article eId="art_1"><num>Artigo 1.o</num><heading>Bad</heading><paragraph eId="art_1__para_1"><content><p>X.</p></content></paragraph></article></body>
+    <conclusions>
+      <formula type="conclusion"><p>Presidencia do Conselho de Ministros, <date date="2026-04-20">20 de abril de 2026</date>.</p></formula>
+      <signature role="signature"><person refersTo="#pessoa-pm-2026-04" as="#primeiro-ministro"/></signature>
+    </conclusions>
+    <attachments>
+      <attachment eId="anx_1">
+        <heading>Anexo I</heading>
+        <subheading>Estrategia Nacional para X</subheading>
+        <mainBody>
+          <p>Conteudo da estrategia.</p>
+        </mainBody>
+      </attachment>
+    </attachments>
+  </act>
+</akomaNtoso>

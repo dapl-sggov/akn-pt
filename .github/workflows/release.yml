@@ -1,0 +1,113 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v0.1.0)'
+        required: true
+
+jobs:
+  build-validator:
+    name: Build validator (wheel + sdist)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Install build
+        run: pip install build
+      - name: Build distributions
+        working-directory: validator
+        run: python -m build
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: validator-dist
+          path: validator/dist/*
+
+  build-pdfs:
+    name: Build specification PDFs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Pandoc + XeLaTeX
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc texlive-xetex texlive-fonts-recommended \
+            texlive-fonts-extra texlive-latex-extra
+      - name: Build PT spec PDF
+        working-directory: docs/spec
+        run: make pt
+      - name: Build EN spec PDF
+        working-directory: docs/spec
+        run: make en
+      - name: Upload PDFs
+        uses: actions/upload-artifact@v4
+        with:
+          name: specification-pdfs
+          path: docs/spec/*.pdf
+
+  docker-publish:
+    name: Build and publish Docker image
+    runs-on: ubuntu-latest
+    needs: build-validator
+    permissions:
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract version
+        id: ver
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: validator
+          file: validator/Dockerfile
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/akn-pt:${{ steps.ver.outputs.version }}
+            ghcr.io/${{ github.repository_owner }}/akn-pt:latest
+          push: true
+
+  publish-pypi:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    needs: build-validator
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: validator-dist
+          path: dist/
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  github-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [build-validator, build-pdfs]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: validator-dist, path: ./release-assets }
+      - uses: actions/download-artifact@v4
+        with: { name: specification-pdfs, path: ./release-assets }
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./release-assets/*
+          body_path: RELEASE-NOTES-v0.1.0.md
+          draft: false
+          prerelease: true

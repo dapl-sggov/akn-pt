@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AKN-PT main schema (v0.1.0) — perfil portugues do Akoma Ntoso 1.0.
+
+  Namespace: http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17
+  (OASIS canonico, ver ADR-0005)
+  Perfil declarado: application/akn+xml; profile=akn-pt-1.0
+  Licenca: EUPL-1.2
+  Estado: v0.1.0 (proposta)
+  Autoridade: DAPL / SGGOV
+
+  Estrategia de conformidade: em producao este schema importara o XSD AKN 1.0
+  OASIS via xs:import e restringira os elementos. Em v0.1.0 e auto-contido,
+  capturando o subset relevante dos elementos AKN necessarios para os tipos
+  de ato cobertos pelo escopo (ADR-0007). Migracao para import+restriction
+  prevista para v0.2.
+
+  Modulos:
+    akn-pt-types.xsd      tipos simples (regex, enums), inlines, blockList
+    akn-pt-metadata.xsd   meta (FRBR, references, lifecycle, analysis)
+    akn-pt-structure.xsd  preface, preamble, body, conclusions, attachments
+
+  Uso:
+    xmllint no out schema akn-pt.xsd document.akn.xml
+    ou via lxml: etree.XMLSchema(etree.parse('akn-pt.xsd'))
+-->
+<xs:schema
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17"
+    targetNamespace="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17"
+    elementFormDefault="qualified"
+    attributeFormDefault="unqualified">
+
+  <xs:include schemaLocation="akn-pt-types.xsd"/>
+  <xs:include schemaLocation="akn-pt-metadata.xsd"/>
+  <xs:include schemaLocation="akn-pt-structure.xsd"/>
+
+  <!-- akomaNtoso: elemento raiz -->
+
+  <xs:element name="akomaNtoso">
+    <xs:annotation>
+      <xs:documentation>
+        Elemento raiz canonico OASIS. Em AKN-PT, contem exactamente um &lt;act&gt;.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="act"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- act: corpo do ato normativo -->
+
+  <xs:element name="act">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="meta"/>
+        <xs:element ref="preface"/>
+        <xs:element ref="preamble" minOccurs="0"/>
+        <xs:element ref="body"/>
+        <xs:element ref="conclusions" minOccurs="0"/>
+        <xs:element ref="attachments" minOccurs="0"/>
+      </xs:sequence>
+      <xs:attribute name="name" type="ActTypeName" use="required">
+        <xs:annotation>
+          <xs:documentation>
+            Tipo de ato — restrito ao catálogo AKN-PT v0.1.0.
+            A coerência entre @name e &lt;FRBRsubtype&gt; é validada por Schematron.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="contains" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+            Para atos que contêm outros (e.g. republicação). Valores: 'singleVersion', 'originalVersion'.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

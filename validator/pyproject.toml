@@ -1,0 +1,63 @@
+[project]
+name = "akn-pt"
+version = "0.1.0"
+description = "Reference validator and library for the AKN-PT profile (Portuguese Akoma Ntoso)."
+readme = "README.md"
+license = { text = "EUPL-1.2" }
+authors = [
+    { name = "DAPL / Secretaria-Geral do Governo", email = "akn-pt@sg.gov.pt" },
+]
+requires-python = ">=3.12"
+keywords = ["akoma-ntoso", "akn-pt", "legaldocml", "legal-xml", "validation"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Legal Industry",
+    "License :: OSI Approved :: European Union Public Licence 1.2 (EUPL-1.2)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Text Processing :: Markup :: XML",
+]
+dependencies = [
+    "lxml>=4.9",
+    "click>=8.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.6",
+]
+web = [
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+]
+
+[project.scripts]
+akn-pt = "akn_pt.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/SGGoverno/akn-pt"
+Documentation = "https://github.com/SGGoverno/akn-pt/blob/main/docs/spec/pt/index.md"
+Repository = "https://github.com/SGGoverno/akn-pt"
+Issues = "https://github.com/SGGoverno/akn-pt/issues"
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"akn_pt.data" = ["*.xsd", "*.sch"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra -q"

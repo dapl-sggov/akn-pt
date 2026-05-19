@@ -1,0 +1,40 @@
+# Auto-detect text files, force LF — evita problemas Windows ↔ Linux/CI
+* text=auto eol=lf
+
+# Específicos
+*.md     text eol=lf
+*.txt    text eol=lf
+*.py     text eol=lf
+*.js     text eol=lf
+*.css    text eol=lf
+*.html   text eol=lf
+*.xml    text eol=lf
+*.xsd    text eol=lf
+*.sch    text eol=lf
+*.json   text eol=lf
+*.yml    text eol=lf
+*.yaml   text eol=lf
+*.toml   text eol=lf
+Makefile text eol=lf
+
+# Binários — não tocar
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.ico    binary
+*.pdf    binary
+*.docx   binary
+*.xlsx   binary
+*.zip    binary
+*.tar.gz binary
+
+# Linguagens — para GitHub Linguist
+*.akn  linguist-language=XML
+*.akn.xml linguist-language=XML
+schema/**/*.xsd linguist-detectable=true
+schema/**/*.sch linguist-detectable=true
+
+# Esconder dirs grandes / gerados das estatísticas de linguagem
+node_modules/* linguist-vendored
+release/*       linguist-generated

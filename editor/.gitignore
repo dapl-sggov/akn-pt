@@ -1,0 +1,3 @@
+.smoke-output/
+*.log
+node_modules/

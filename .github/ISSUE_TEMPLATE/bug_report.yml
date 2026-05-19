@@ -1,0 +1,57 @@
+name: 🐛 Bug
+description: Reportar um problema reproduzível
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por reportar. Antes de submeter, confirme que:
+        - O problema **não é uma vulnerabilidade de segurança** (use [security advisories](https://github.com/dapl-sggov/akn-pt/security/advisories/new) nesse caso)
+        - Já procurou em issues existentes
+  - type: dropdown
+    id: artefacto
+    attributes:
+      label: Em que artefacto encontrou o problema?
+      options:
+        - Validador (Python CLI / lib)
+        - Editor web
+        - Specification (docs/spec/)
+        - Schema XSD
+        - Schematron
+        - Corpus
+        - ELI-PT
+        - Mapping
+        - CI / build / release
+        - Outro
+    validations: { required: true }
+  - type: textarea
+    id: descricao
+    attributes:
+      label: Descrição
+      description: O que aconteceu? O que esperava que acontecesse?
+    validations: { required: true }
+  - type: textarea
+    id: reproducao
+    attributes:
+      label: Como reproduzir
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations: { required: true }
+  - type: input
+    id: versao
+    attributes:
+      label: Versão do AKN-PT
+      placeholder: "v0.1.0"
+    validations: { required: true }
+  - type: input
+    id: ambiente
+    attributes:
+      label: Ambiente
+      placeholder: "Windows 11 · Python 3.12 · Chrome 130"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / mensagens de erro
+      render: shell

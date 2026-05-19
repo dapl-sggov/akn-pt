@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Positive test: minimal Decreto da AR (aprovacao de tratado). -->
+<akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17">
+  <act name="decreto-ar">
+    <meta>
+      <identification source="#dapl">
+        <FRBRWork>
+          <FRBRthis value="https://eli.gov.pt/eli/pt/decreto-ar/2026/5/pt/!main"/>
+          <FRBRuri value="https://eli.gov.pt/eli/pt/decreto-ar/2026/5/pt"/>
+          <FRBRdate date="2026-01-30" name="adoption"/>
+          <FRBRauthor href="#ar"/>
+          <FRBRcountry value="pt"/>
+          <FRBRsubtype value="decreto-ar-tratado"/>
+          <FRBRnumber value="5"/>
+        </FRBRWork>
+        <FRBRExpression>
+          <FRBRthis value="https://eli.gov.pt/eli/pt/decreto-ar/2026/5/pt/2026-02-05/!main"/>
+          <FRBRuri value="https://eli.gov.pt/eli/pt/decreto-ar/2026/5/pt/2026-02-05"/>
+          <FRBRdate date="2026-02-05" name="publication"/>
+          <FRBRauthor href="#ar"/>
+          <FRBRlanguage language="por"/>
+        </FRBRExpression>
+        <FRBRManifestation>
+          <FRBRthis value="https://eli.gov.pt/eli/pt/decreto-ar/2026/5/pt/2026-02-05.xml/!main"/>
+          <FRBRuri value="https://eli.gov.pt/eli/pt/decreto-ar/2026/5/pt/2026-02-05.xml"/>
+          <FRBRdate date="2026-02-05" name="publication"/>
+          <FRBRauthor href="#dre"/>
+          <FRBRformat value="application/akn+xml; profile=akn-pt-1.0"/>
+        </FRBRManifestation>
+      </identification>
+      <references source="#dapl">
+        <TLCOrganization eId="ar" href="/akn/ontology/organization/pt/ar" showAs="Assembleia da Republica"/>
+        <TLCOrganization eId="dre" href="/akn/ontology/organization/pt/dre" showAs="Diario da Republica"/>
+        <TLCOrganization eId="dapl" href="/akn/ontology/organization/pt/dapl" showAs="DAPL/SGGOV"/>
+        <TLCRole eId="presidente-ar" href="/akn/ontology/role/pt/presidente-ar" showAs="Presidente da AR"/>
+        <TLCRole eId="presidente-republica" href="/akn/ontology/role/pt/presidente-republica" showAs="Presidente da Republica"/>
+        <TLCPerson eId="pessoa-par-2026-01" href="/akn/ontology/person/pt/par-2026-01" showAs="Presidente da AR"/>
+        <TLCPerson eId="pessoa-pr-2026-02" href="/akn/ontology/person/pt/pr-2026-02" showAs="Presidente da Republica"/>
+      </references>
+      <lifecycle source="#dapl">
+        <eventRef eId="e1" date="2026-01-30" source="#ar" type="generation" refersTo="#approval-ar"/>
+        <eventRef eId="e2" date="2026-02-02" source="#ar" type="generation" refersTo="#promulgation"/>
+        <eventRef eId="e3" date="2026-02-05" source="#dre" type="generation" refersTo="#publication"/>
+      </lifecycle>
+      <analysis source="#dapl"><activeModifications/><passiveModifications/></analysis>
+    </meta>
+    <preface>
+      <p class="docTitle"><docType>Decreto da Assembleia da Republica</docType> <docNumber>n.o 5/2026</docNumber></p>
+      <p class="docDate"><date date="2026-02-05">de 5 de fevereiro</date></p>
+      <shortTitle>Aprova a Convencao sobre X.</shortTitle>
+    </preface>
+    <preamble>
+      <formula type="enacting">
+        <p>A Assembleia da Republica resolve, nos termos do n.o 5 do artigo 166.o da Constituicao, aprovar a Convencao sobre X.</p>
+      </formula>
+    </preamble>
+    <body>
+      <article eId="art_1">
+        <num>Artigo 1.o</num>
+        <heading>Aprovacao</heading>
+        <paragraph eId="art_1__para_1">
+          <content><p>E aprovada a Convencao sobre X, cujo texto consta do anexo.</p></content>
+        </paragraph>
+      </article>
+    </body>
+    <conclusions>
+      <signature role="signature"><person refersTo="#pessoa-par-2026-01" as="#presidente-ar"/></signature>
+      <formula type="promulgation"><p>Promulgado em <date date="2026-02-02">2 de fevereiro de 2026</date>.</p></formula>
+      <signature role="promulgation"><person refersTo="#pessoa-pr-2026-02" as="#presidente-republica"/></signature>
+    </conclusions>
+    <attachments>
+      <attachment eId="anx_1">
+        <heading>Anexo</heading>
+        <subheading>Texto da Convencao</subheading>
+        <mainBody><p>Texto integral da convencao.</p></mainBody>
+      </attachment>
+    </attachments>
+  </act>
+</akomaNtoso>

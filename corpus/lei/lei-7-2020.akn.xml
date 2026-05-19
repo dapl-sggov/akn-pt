@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AKN-PT corpus #4 — Lei n.o 7/2020, de 10 de abril
+  Diploma real publicado no DR, 1a serie, n.o 72.
+  Subtipo: lei-comum. Coverage: estrutura tipica Lei AR (assinatura PAR
+  antes de promulgacao PR; referenda UNICA do PM); preambulo curto.
+-->
+<akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17">
+  <act name="lei">
+    <meta>
+      <identification source="#dapl">
+        <FRBRWork>
+          <FRBRthis value="https://eli.gov.pt/eli/pt/lei/2020/7/pt/!main"/>
+          <FRBRuri value="https://eli.gov.pt/eli/pt/lei/2020/7/pt"/>
+          <FRBRdate date="2020-04-03" name="adoption"/>
+          <FRBRauthor href="#ar"/>
+          <FRBRcountry value="pt"/>
+          <FRBRsubtype value="lei-comum"/>
+          <FRBRnumber value="7"/>
+        </FRBRWork>
+        <FRBRExpression>
+          <FRBRthis value="https://eli.gov.pt/eli/pt/lei/2020/7/pt/2020-04-10/!main"/>
+          <FRBRuri value="https://eli.gov.pt/eli/pt/lei/2020/7/pt/2020-04-10"/>
+          <FRBRdate date="2020-04-10" name="publication"/>
+          <FRBRauthor href="#ar"/>
+          <FRBRlanguage language="por"/>
+          <FRBRversionNumber value="1"/>
+        </FRBRExpression>
+        <FRBRManifestation>
+          <FRBRthis value="https://eli.gov.pt/eli/pt/lei/2020/7/pt/2020-04-10.xml/!main"/>
+          <FRBRuri value="https://eli.gov.pt/eli/pt/lei/2020/7/pt/2020-04-10.xml"/>
+          <FRBRdate date="2020-04-10" name="publication"/>
+          <FRBRauthor href="#dre"/>
+          <FRBRformat value="application/akn+xml; profile=akn-pt-1.0"/>
+        </FRBRManifestation>
+      </identification>
+      <references source="#dapl">
+        <TLCOrganization eId="ar" href="/akn/ontology/organization/pt/ar" showAs="Assembleia da Republica"/>
+        <TLCOrganization eId="dre" href="/akn/ontology/organization/pt/dre" showAs="Diario da Republica"/>
+        <TLCOrganization eId="dapl" href="/akn/ontology/organization/pt/dapl" showAs="DAPL/SGGOV"/>
+        <TLCRole eId="presidente-ar" href="/akn/ontology/role/pt/presidente-ar" showAs="Presidente da Assembleia da Republica"/>
+        <TLCRole eId="presidente-republica" href="/akn/ontology/role/pt/presidente-republica" showAs="Presidente da Republica"/>
+        <TLCRole eId="primeiro-ministro" href="/akn/ontology/role/pt/primeiro-ministro" showAs="Primeiro-Ministro"/>
+        <TLCPerson eId="pessoa-par-2020-04" href="/akn/ontology/person/pt/par-2020-04" showAs="Presidente da AR"/>
+        <TLCPerson eId="pessoa-pr-2020-04" href="/akn/ontology/person/pt/pr-2020-04" showAs="Presidente da Republica"/>
+        <TLCPerson eId="pessoa-pm-2020-04" href="/akn/ontology/person/pt/pm-2020-04" showAs="Primeiro-Ministro"/>
+      </references>
+      <lifecycle source="#dapl">
+        <eventRef eId="e1" date="2020-04-03" source="#ar" type="generation" refersTo="#approval-ar"/>
+        <eventRef eId="e2" date="2020-04-08" source="#ar" type="generation" refersTo="#promulgation"/>
+        <eventRef eId="e3" date="2020-04-10" source="#dre" type="generation" refersTo="#publication"/>
+        <eventRef eId="e4" date="2020-04-10" source="#ar" type="generation" refersTo="#entry-into-force"/>
+      </lifecycle>
+      <analysis source="#dapl"><activeModifications/><passiveModifications/></analysis>
+    </meta>
+    <preface>
+      <p class="docTitle"><docType>Lei</docType> <docNumber>n.o 7/2020</docNumber></p>
+      <p class="docDate"><date date="2020-04-10">de 10 de abril</date></p>
+      <shortTitle>Estabelece regimes excecionais e temporarios de resposta a epidemia SARS-CoV-2.</shortTitle>
+    </preface>
+    <preamble>
+      <formula type="enacting">
+        <p>A Assembleia da Republica decreta, nos termos da alinea c) do artigo 161.o da Constituicao, o seguinte:</p>
+      </formula>
+    </preamble>
+    <body>
+      <article eId="art_1">
+        <num>Artigo 1.o</num>
+        <heading>Objeto</heading>
+        <paragraph eId="art_1__para_1">
+          <content><p>A presente lei estabelece regimes excecionais e temporarios destinados a responder a situacao epidemiologica provocada pela doenca COVID-19.</p></content>
+        </paragraph>
+      </article>
+      <article eId="art_2">
+        <num>Artigo 2.o</num>
+        <heading>Apoio extraordinario</heading>
+        <paragraph eId="art_2__para_1">
+          <content><p>E' criado um apoio extraordinario ao rendimento dos trabalhadores que se encontrem em situacao de quebra abrupta de rendimento decorrente da pandemia, nos termos a definir por portaria.</p></content>
+        </paragraph>
+      </article>
+      <article eId="art_3">
+        <num>Artigo 3.o</num>
+        <heading>Mecanismos extrajudiciais</heading>
+        <paragraph eId="art_3__para_1">
+          <content><p>Sao reforcados os mecanismos extrajudiciais de protecao das familias e das empresas, em particular em materia de arrendamento e de credito.</p></content>
+        </paragraph>
+      </article>
+      <article eId="art_4">
+        <num>Artigo 4.o</num>
+        <heading>Vigencia</heading>
+        <paragraph eId="art_4__para_1">
+          <content><p>A presente lei vigora ate' 30 de setembro de 2020, podendo o seu prazo ser prorrogado por lei posterior.</p></content>
+        </paragraph>
+      </article>
+      <article eId="art_5">
+        <num>Artigo 5.o</num>
+        <heading>Entrada em vigor</heading>
+        <paragraph eId="art_5__para_1">
+          <content><p>A presente lei entra em vigor no dia seguinte ao da sua publicacao.</p></content>
+        </paragraph>
+      </article>
+    </body>
+    <conclusions>
+      <formula type="conclusion"><p>Aprovada em <date date="2020-04-03">3 de abril de 2020</date>.</p></formula>
+      <signature role="signature"><person refersTo="#pessoa-par-2020-04" as="#presidente-ar"/></signature>
+      <formula type="promulgation"><p>Promulgada em <date date="2020-04-08">8 de abril de 2020</date>.</p></formula>
+      <signature role="promulgation"><person refersTo="#pessoa-pr-2020-04" as="#presidente-republica"/></signature>
+      <formula type="conclusion"><p>Referendada em <date date="2020-04-09">9 de abril de 2020</date>.</p></formula>
+      <signature role="countersignature"><person refersTo="#pessoa-pm-2020-04" as="#primeiro-ministro"/></signature>
+    </conclusions>
+  </act>
+</akomaNtoso>

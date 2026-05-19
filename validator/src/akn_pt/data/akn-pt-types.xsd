@@ -1,0 +1,437 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AKN-PT — types module
+  =====================
+  Tipos simples (patterns regex, enumerations) e tipos complexos reutilizáveis
+  por todos os outros módulos AKN-PT.
+
+  Licence: EUPL-1.2
+  Copyright (c) 2026 SGGOV / DAPL
+-->
+<xs:schema
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17"
+    targetNamespace="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17"
+    elementFormDefault="qualified"
+    attributeFormDefault="unqualified">
+
+  <xs:annotation>
+    <xs:documentation xml:lang="pt">
+      AKN-PT v0.1.0 — módulo de tipos. Define padrões regex e enumerações
+      reutilizáveis. Importado por todos os outros módulos via xs:include.
+    </xs:documentation>
+  </xs:annotation>
+
+  <!-- ====================================================================
+       PADRÕES (regex) — IDENTIFICADORES
+       ==================================================================== -->
+
+  <xs:simpleType name="EIdType">
+    <xs:annotation>
+      <xs:documentation>
+        eId AKN-PT. Duas formas permitidas:
+        (a) hierarquico snake_case com '__' separador, para elementos do
+            articulado: art_5, art_5_a, art_5__para_1__lit_a, anx_1, rec_3, e1.
+        (b) slug kebab-case com hifenes, para actores em &lt;references&gt; e
+            eIds de uso administrativo: primeiro-ministro, pessoa-pm-2026-03.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[a-z][a-z0-9_\-]*(__[a-z][a-z0-9_\-]*)*"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="EliPtUriType">
+    <xs:annotation>
+      <xs:documentation>
+        URI ELI-PT. Aceita Work, Expression e Manifestation, com fragmento opcional.
+        Padrão: https://{domain}/eli/{jurisdiction}/{type}/{year}/{number}/{lang}[/{pit}][.{fmt}][#{frag}][/!main]
+      </xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:anyURI">
+      <xs:pattern value="https?://[a-z0-9.\-]+/eli/pt(-\d{2})?/[a-z\-]+/\d{4}/\d+/[a-z]{2,3}(/\d{4}-\d{2}-\d{2})?(\.[a-z]{3,4})?(/!main)?(#[A-Za-z0-9_]+)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="FrbrAuthorRefType">
+    <xs:annotation>
+      <xs:documentation>Referência interna a um actor declarado em &lt;references&gt;.</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:pattern value="#[a-z]+(-[a-z0-9]+)*"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="OntologyUriType">
+    <xs:annotation>
+      <xs:documentation>URI da ontologia AKN canónica: /akn/ontology/{type}/{country}/{slug}.</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:pattern value="/akn/ontology/[a-z]+/[a-z0-9\-]+/[a-z0-9\-]+"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- ====================================================================
+       ENUMS — JURISDIÇÃO, LÍNGUA, FORMATO
+       ==================================================================== -->
+
+  <xs:simpleType name="JurisdictionType">
+    <xs:annotation>
+      <xs:documentation>ISO 3166-1 alpha-2 + ISO 3166-2 para regiões autónomas.</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="pt"/>
+      <xs:enumeration value="pt-20"/>
+      <xs:enumeration value="pt-30"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="LanguageType">
+    <xs:annotation>
+      <xs:documentation>ISO 639-3. Atos PT são sempre 'por'.</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="por"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="FormatType">
+    <xs:annotation>
+      <xs:documentation>Media type da manifestation.</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="application/akn+xml; profile=akn-pt-1.0"/>
+      <xs:enumeration value="application/xml"/>
+      <xs:enumeration value="text/html"/>
+      <xs:enumeration value="application/pdf"/>
+      <xs:enumeration value="application/json"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- ====================================================================
+       ENUMS — TIPO DE ATO E SUBTIPOS
+       ==================================================================== -->
+
+  <xs:simpleType name="ActTypeName">
+    <xs:annotation>
+      <xs:documentation>Tipos de ato cobertos pelo AKN-PT v0.1.0 (ver ADR-0007).</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="dec-lei"/>
+      <xs:enumeration value="lei"/>
+      <xs:enumeration value="decreto-ar"/>
+      <xs:enumeration value="res-ar"/>
+      <xs:enumeration value="portaria"/>
+      <xs:enumeration value="res-cm"/>
+      <xs:enumeration value="despacho-normativo"/>
+      <xs:enumeration value="dlr"/>
+      <xs:enumeration value="drr"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="SubtypeValue">
+    <xs:annotation>
+      <xs:documentation>
+        Catálogo de subtipos. Schematron faz a validação cruzada
+        com &lt;act name&gt; — o XSD apenas restringe ao catálogo.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <!-- dec-lei -->
+      <xs:enumeration value="dec-lei-ordinario"/>
+      <xs:enumeration value="dec-lei-autorizado"/>
+      <xs:enumeration value="dec-lei-parlamentar"/>
+      <xs:enumeration value="dec-lei-transposicao"/>
+      <xs:enumeration value="dec-lei-alterador"/>
+      <!-- lei -->
+      <xs:enumeration value="lei-comum"/>
+      <xs:enumeration value="lei-organica"/>
+      <xs:enumeration value="lei-de-bases"/>
+      <xs:enumeration value="lei-autorizacao"/>
+      <xs:enumeration value="lei-de-revisao"/>
+      <!-- decreto-ar -->
+      <xs:enumeration value="decreto-ar-tratado"/>
+      <xs:enumeration value="decreto-ar-mandato"/>
+      <xs:enumeration value="decreto-ar-outros"/>
+      <!-- res-ar -->
+      <xs:enumeration value="res-ar-recomendacao"/>
+      <xs:enumeration value="res-ar-aprovacao"/>
+      <xs:enumeration value="res-ar-politica"/>
+      <xs:enumeration value="res-ar-cessacao-vigencia"/>
+      <!-- portaria -->
+      <xs:enumeration value="portaria-regulamentar"/>
+      <xs:enumeration value="portaria-execucao"/>
+      <xs:enumeration value="portaria-extensao"/>
+      <!-- res-cm -->
+      <xs:enumeration value="res-cm-normativa"/>
+      <xs:enumeration value="res-cm-politica"/>
+      <xs:enumeration value="res-cm-administrativa"/>
+      <!-- despacho-normativo -->
+      <xs:enumeration value="despacho-normativo"/>
+      <xs:enumeration value="despacho-conjunto"/>
+      <!-- dlr -->
+      <xs:enumeration value="dlr-ordinario"/>
+      <xs:enumeration value="dlr-autorizado"/>
+      <!-- drr -->
+      <xs:enumeration value="drr-execucao"/>
+      <xs:enumeration value="drr-regulamentar"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- ====================================================================
+       ENUMS — SIGNATURE ROLES, FORMULA TYPES, LIFECYCLE EVENTS
+       ==================================================================== -->
+
+  <xs:simpleType name="SignatureRole">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="signature"/>
+      <xs:enumeration value="countersignature"/>
+      <xs:enumeration value="promulgation"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="FormulaType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="enacting"/>
+      <xs:enumeration value="conclusion"/>
+      <xs:enumeration value="promulgation"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="FrbrDateName">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="adoption"/>
+      <xs:enumeration value="publication"/>
+      <xs:enumeration value="signature"/>
+      <xs:enumeration value="entry-into-force"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="LifecycleEventTarget">
+    <xs:annotation>
+      <xs:documentation>Eventos lifecycle canónicos AKN-PT. Schematron valida a sua relação com o tipo de ato.</xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="#approval-cm"/>
+      <xs:enumeration value="#approval-ar"/>
+      <xs:enumeration value="#promulgation"/>
+      <xs:enumeration value="#signature"/>
+      <xs:enumeration value="#countersignature"/>
+      <xs:enumeration value="#publication"/>
+      <xs:enumeration value="#entry-into-force"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- ====================================================================
+       PEGADA LEGISLATIVA (Lei n.o 5-A/2026) - vocabulario controlado
+       ==================================================================== -->
+
+  <xs:simpleType name="WorkflowStepTarget">
+    <xs:annotation>
+      <xs:documentation>
+        Tipos canonicos de passo no workflow legislativo. Suporta a pegada
+        legislativa exigida pela Lei n.o 5-A/2026. Schematron valida que actos
+        publicados a partir de 27-07-2026 incluem os passos minimos.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="#iniciativa"/>
+      <xs:enumeration value="#anteprojeto"/>
+      <xs:enumeration value="#consulta-publica"/>
+      <xs:enumeration value="#consulta-aberta"/>
+      <xs:enumeration value="#consultas-obrigatorias"/>
+      <xs:enumeration value="#discussao-na-generalidade"/>
+      <xs:enumeration value="#discussao-na-especialidade"/>
+      <xs:enumeration value="#audicao-publica"/>
+      <xs:enumeration value="#votacao-final-global"/>
+      <xs:enumeration value="#aprovacao-cm"/>
+      <xs:enumeration value="#aprovacao-ar"/>
+      <xs:enumeration value="#promulgacao"/>
+      <xs:enumeration value="#assinatura"/>
+      <xs:enumeration value="#publicacao"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="ContributionType">
+    <xs:annotation>
+      <xs:documentation>
+        Tipos canonicos de contributo/input no workflow. Identifica a natureza
+        do contributo de uma entidade externa (parecer, consulta publica,
+        proposta de alteracao, representacao de interesse).
+      </xs:documentation>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="parecer-tecnico"/>
+      <xs:enumeration value="parecer-juridico"/>
+      <xs:enumeration value="parecer-obrigatorio"/>
+      <xs:enumeration value="parecer-facultativo"/>
+      <xs:enumeration value="contributo-consulta-publica"/>
+      <xs:enumeration value="contributo-consulta-aberta"/>
+      <xs:enumeration value="contributo-audicao"/>
+      <xs:enumeration value="proposta-de-alteracao"/>
+      <xs:enumeration value="proposta-de-aditamento"/>
+      <xs:enumeration value="proposta-de-eliminacao"/>
+      <xs:enumeration value="representacao-interesse"/>
+      <xs:enumeration value="parecer-tribunal-de-contas"/>
+      <xs:enumeration value="parecer-conselho-economico-social"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- ====================================================================
+       TIPOS BASE — TEXTO COM INLINES E REFERÊNCIAS
+       ==================================================================== -->
+
+  <xs:complexType name="InlineContent" mixed="true">
+    <xs:annotation>
+      <xs:documentation>
+        Conteúdo inline: texto + elementos de formatação leve + refs.
+        AKN base permite muitos mais; aqui restringimos ao subset relevante.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element ref="b"/>
+      <xs:element ref="i"/>
+      <xs:element ref="u"/>
+      <xs:element ref="sup"/>
+      <xs:element ref="sub"/>
+      <xs:element ref="ref"/>
+      <xs:element ref="rref"/>
+      <xs:element ref="date"/>
+      <xs:element ref="authorialNote"/>
+      <!-- Preface inlines: docType, docNumber, shortTitle -->
+      <xs:element ref="docType"/>
+      <xs:element ref="docNumber"/>
+      <xs:element ref="shortTitle"/>
+    </xs:choice>
+  </xs:complexType>
+
+  <!-- Preface inline elements (defined here so they're available in InlineContent) -->
+  <xs:element name="docType" type="xs:string"/>
+  <xs:element name="docNumber" type="xs:string"/>
+  <xs:element name="shortTitle" type="xs:string"/>
+
+  <!-- Inline formatting -->
+  <xs:element name="b" type="InlineContent"/>
+  <xs:element name="i" type="InlineContent"/>
+  <xs:element name="u" type="InlineContent"/>
+  <xs:element name="sup" type="InlineContent"/>
+  <xs:element name="sub" type="InlineContent"/>
+
+  <xs:element name="ref">
+    <xs:complexType mixed="true">
+      <xs:complexContent>
+        <xs:extension base="InlineContent">
+          <xs:attribute name="href" type="xs:anyURI" use="required"/>
+          <xs:attribute name="eId" type="EIdType"/>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="rref">
+    <xs:complexType mixed="true">
+      <xs:complexContent>
+        <xs:extension base="InlineContent">
+          <xs:attribute name="from" type="xs:string" use="required"/>
+          <xs:attribute name="upTo" type="xs:string" use="required"/>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="date">
+    <xs:complexType mixed="true">
+      <xs:attribute name="date" type="xs:date" use="required"/>
+      <xs:attribute name="eId" type="EIdType"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="authorialNote">
+    <xs:complexType mixed="true">
+      <xs:complexContent>
+        <xs:extension base="InlineContent">
+          <xs:attribute name="eId" type="EIdType"/>
+          <xs:attribute name="marker" type="xs:string"/>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- ====================================================================
+       BLOCK CONTENT — <p>
+       ==================================================================== -->
+
+  <xs:element name="p">
+    <xs:complexType mixed="true">
+      <xs:complexContent>
+        <xs:extension base="InlineContent">
+          <xs:attribute name="eId" type="EIdType"/>
+          <xs:attribute name="class" type="xs:string"/>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:complexType name="BlockListContainer">
+    <xs:sequence>
+      <xs:element name="intro" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element ref="p" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="item" maxOccurs="unbounded">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element ref="p" maxOccurs="unbounded"/>
+          </xs:sequence>
+          <xs:attribute name="eId" type="EIdType"/>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="blockList" type="BlockListContainer"/>
+
+  <!-- ====================================================================
+       <table> simplificado (AKN HTML subset)
+       ==================================================================== -->
+
+  <xs:element name="table">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="tr" maxOccurs="unbounded">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="td" maxOccurs="unbounded">
+                <xs:complexType mixed="true">
+                  <xs:complexContent>
+                    <xs:extension base="InlineContent">
+                      <xs:attribute name="colspan" type="xs:positiveInteger"/>
+                      <xs:attribute name="rowspan" type="xs:positiveInteger"/>
+                    </xs:extension>
+                  </xs:complexContent>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="eId" type="EIdType"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- ====================================================================
+       <img> (para facsimile)
+       ==================================================================== -->
+
+  <xs:element name="img">
+    <xs:complexType>
+      <xs:attribute name="src" type="xs:anyURI" use="required"/>
+      <xs:attribute name="alt" type="xs:string" use="required"/>
+      <xs:attribute name="eId" type="EIdType"/>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

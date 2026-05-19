@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Positive test: DL com subalineas (i, ii, iii) aninhadas dentro de alinea b).
+  Exercita <point> com <list> recursiva (subalineas).
+  XSD aceita (point/list/point e' recursivo). Schematron passa.
+-->
+<akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17">
+  <act name="dec-lei">
+    <meta>
+      <identification source="#dapl">
+        <FRBRWork>
+          <FRBRthis value="https://eli.gov.pt/eli/pt/dec-lei/2026/101/pt/!main"/>
+          <FRBRuri value="https://eli.gov.pt/eli/pt/dec-lei/2026/101/pt"/>
+          <FRBRdate date="2026-03-01" name="adoption"/>
+          <FRBRauthor href="#governo"/>
+          <FRBRcountry value="pt"/>
+          <FRBRsubtype value="dec-lei-ordinario"/>
+          <FRBRnumber value="101"/>
+        </FRBRWork>
+        <FRBRExpression>
+          <FRBRthis value="https://eli.gov.pt/eli/pt/dec-lei/2026/101/pt/2026-03-05/!main"/>
+          <FRBRuri value="https://eli.gov.pt/eli/pt/dec-lei/2026/101/pt/2026-03-05"/>
+          <FRBRdate date="2026-03-05" name="publication"/>
+          <FRBRauthor href="#governo"/>
+          <FRBRlanguage language="por"/>
+          <FRBRversionNumber value="1"/>
+        </FRBRExpression>
+        <FRBRManifestation>
+          <FRBRthis value="https://eli.gov.pt/eli/pt/dec-lei/2026/101/pt/2026-03-05.xml/!main"/>
+          <FRBRuri value="https://eli.gov.pt/eli/pt/dec-lei/2026/101/pt/2026-03-05.xml"/>
+          <FRBRdate date="2026-03-05" name="publication"/>
+          <FRBRauthor href="#dre"/>
+          <FRBRformat value="application/akn+xml; profile=akn-pt-1.0"/>
+        </FRBRManifestation>
+      </identification>
+      <references source="#dapl">
+        <TLCOrganization eId="dre" href="/akn/ontology/organization/pt/dre" showAs="Diário da República"/>
+        <TLCOrganization eId="dapl" href="/akn/ontology/organization/pt/dapl" showAs="DAPL/SGGOV"/>
+        <TLCOrganization eId="governo" href="/akn/ontology/organization/pt/governo" showAs="Governo da República Portuguesa"/>
+        <TLCRole eId="primeiro-ministro" href="/akn/ontology/role/pt/primeiro-ministro" showAs="Primeiro-Ministro"/>
+        <TLCRole eId="presidente-republica" href="/akn/ontology/role/pt/presidente-republica" showAs="Presidente da República"/>
+        <TLCPerson eId="pessoa-primeiro-ministro-2026-03" href="/akn/ontology/person/pt/pessoa-primeiro-ministro-2026-03" showAs="PM"/>
+        <TLCPerson eId="pessoa-presidente-republica-2026-03" href="/akn/ontology/person/pt/pessoa-presidente-republica-2026-03" showAs="PR"/>
+      </references>
+      <lifecycle source="#dapl">
+        <eventRef eId="e1" date="2026-03-01" source="#cm" type="generation" refersTo="#approval-cm"/>
+        <eventRef eId="e2" date="2026-03-05" source="#governo" type="generation" refersTo="#promulgation"/>
+        <eventRef eId="e3" date="2026-03-05" source="#dre" type="generation" refersTo="#publication"/>
+      </lifecycle>
+      <analysis source="#dapl"><activeModifications/><passiveModifications/></analysis>
+    </meta>
+    <preface>
+      <p class="docTitle"><docType>Decreto-Lei</docType> <docNumber>n.º 101/2026</docNumber></p>
+      <p class="docDate"><date date="2026-03-05">de 5 de marco</date></p>
+      <shortTitle>Diploma de teste com subalineas.</shortTitle>
+    </preface>
+    <preamble>
+      <recital eId="rec_1"><p class="formula">Considerando que o … constitui prioridade da política pública de …, importa estabelecer o regime jurídico aplicável a … .</p></recital>
+      <recital eId="rec_2"><p class="formula">Foram ouvidos os órgãos representativos pertinentes, designadamente … .</p></recital>
+      <formula type="enacting"><p>Assim: Nos termos da alínea a) do n.º 1 do artigo 198.º da Constituição, o Governo decreta o seguinte:</p></formula>
+    </preamble>
+    <body>
+      <article eId="art_1">
+        <num>Artigo 1.º</num>
+        <heading>Objeto</heading>
+        <paragraph eId="art_1__para_1">
+          <content><p>O presente decreto-lei estabelece o regime jurídico aplicável a … .</p></content>
+        </paragraph>
+      </article>
+      <article eId="art_2">
+        <num>Artigo 2.º</num>
+        <heading>Definições</heading>
+        <paragraph eId="art_2__para_1">
+          <intro><p>Para efeitos do presente decreto-lei, entende-se por:</p></intro>
+          <list>
+            <point eId="art_2__para_1__lit_a"><num>a)</num><content><p>Item primeiro;</p></content></point>
+            <point eId="art_2__para_1__lit_b">
+              <num>b)</num>
+              <intro><p>Item segundo, designadamente:</p></intro>
+              <list>
+                <point eId="art_2__para_1__lit_b__sublit_i"><num>i)</num><content><p>sub-item 1;</p></content></point>
+                <point eId="art_2__para_1__lit_b__sublit_ii"><num>ii)</num><content><p>sub-item 2;</p></content></point>
+                <point eId="art_2__para_1__lit_b__sublit_iii"><num>iii)</num><content><p>sub-item 3.</p></content></point>
+              </list>
+            </point>
+            <point eId="art_2__para_1__lit_c"><num>c)</num><content><p>Item terceiro.</p></content></point>
+          </list>
+        </paragraph>
+      </article>
+      <article eId="art_3">
+        <num>Artigo 3.º</num>
+        <heading>Âmbito de aplicação</heading>
+        <paragraph eId="art_3__para_1">
+          <content><p>O presente decreto-lei aplica-se a … .</p></content>
+        </paragraph>
+      </article>
+      <article eId="art_4">
+        <num>Artigo 4.º</num>
+        <heading>Entrada em vigor</heading>
+        <paragraph eId="art_4__para_1">
+          <content><p>O presente decreto-lei entra em vigor no dia seguinte ao da sua publicação.</p></content>
+        </paragraph>
+      </article>
+    </body>
+    <conclusions>
+      <formula type="conclusion"><p>Visto e aprovado.</p></formula>
+      <signature role="countersignature"><person refersTo="#pessoa-primeiro-ministro-2026-03" as="#primeiro-ministro"/></signature>
+      <signature role="promulgation"><person refersTo="#pessoa-presidente-republica-2026-03" as="#presidente-republica"/></signature>
+    </conclusions>
+  </act>
+</akomaNtoso>

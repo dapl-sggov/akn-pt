@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- NEGATIVE TEST. Expected XSD failure: <act> sem bloco <meta>. -->
+<akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17">
+  <act name="dec-lei">
+    
+    <preface>
+      <p class="docTitle"><docType>Decreto-Lei</docType> <docNumber>n.o 22/2026</docNumber></p>
+      <p class="docDate"><date date="2026-03-15">de 15 de marco</date></p>
+      <shortTitle>Estabelece o regime juridico de teste.</shortTitle>
+    </preface>
+    <preamble>
+      <recital eId="rec_1"><p class="formula">Considerando que o presente diploma serve para testar o XSD AKN-PT.</p></recital>
+      <formula type="enacting">
+        <p>Assim: Nos termos da alinea a) do n.o 1 do artigo 198.o da Constituicao, o Governo decreta o seguinte:</p>
+      </formula>
+    </preamble>
+    <body>
+      <article eId="art_1">
+        <num>Artigo 1.o</num>
+        <heading>Objeto</heading>
+        <paragraph eId="art_1__para_1">
+          <content><p>O presente decreto-lei serve para validar o XSD AKN-PT.</p></content>
+        </paragraph>
+      </article>
+      <article eId="art_2">
+        <num>Artigo 2.o</num>
+        <heading>Definicoes</heading>
+        <paragraph eId="art_2__para_1">
+          <intro><p>Para efeitos do presente decreto-lei, entende-se por:</p></intro>
+          <list>
+            <point eId="art_2__para_1__lit_a">
+              <num>a)</num>
+              <content><p><b>Autoridade competente</b>, a entidade designada nos termos do <ref href="#art_1">artigo 1.o</ref>;</p></content>
+            </point>
+            <point eId="art_2__para_1__lit_b">
+              <num>b)</num>
+              <content><p><b>Procedimento</b>, o conjunto de atos previstos neste decreto-lei.</p></content>
+            </point>
+          </list>
+        </paragraph>
+      </article>
+    </body>
+    <conclusions>
+      <formula type="conclusion"><p>Visto e aprovado em Conselho de Ministros de <date date="2026-03-10">10 de marco de 2026</date>.</p></formula>
+      <signature role="countersignature"><person refersTo="#pessoa-pm-2026-03" as="#primeiro-ministro"/></signature>
+      <formula type="promulgation"><p>Promulgado em <date date="2026-03-12">12 de marco de 2026</date>.</p></formula>
+      <signature role="promulgation"><person refersTo="#pessoa-pr-2026-03" as="#presidente-republica"/></signature>
+    </conclusions>
+  </act>
+</akomaNtoso>

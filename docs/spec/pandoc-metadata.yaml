@@ -1,0 +1,35 @@
+---
+title: "AKN-PT — Especificação"
+subtitle: "Perfil nacional português do Akoma Ntoso 1.0"
+author: "DAPL / Secretaria-Geral do Governo"
+date: "2026-05-18"
+version: "v0.1.0 (proposta)"
+licence: "EUPL-1.2"
+lang: pt-PT
+mainfont: "DejaVu Serif"
+sansfont: "DejaVu Sans"
+monofont: "DejaVu Sans Mono"
+geometry:
+  - top=2.5cm
+  - bottom=2.5cm
+  - left=2.5cm
+  - right=2.5cm
+fontsize: 11pt
+linestretch: 1.15
+documentclass: report
+papersize: a4
+toc: true
+toc-depth: 2
+numbersections: true
+colorlinks: true
+linkcolor: "blue"
+urlcolor: "blue"
+header-includes:
+  - \usepackage{fancyhdr}
+  - \pagestyle{fancy}
+  - \fancyhf{}
+  - \fancyhead[L]{AKN-PT v0.1.0}
+  - \fancyhead[R]{\rightmark}
+  - \fancyfoot[C]{\thepage}
+  - \renewcommand{\headrulewidth}{0.4pt}
+---

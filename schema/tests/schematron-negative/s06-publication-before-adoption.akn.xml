@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SCHEMATRON NEGATIVE. Expected to PASS xsd but FAIL schematron: Data de publicacao anterior a' adopcao -->
+<akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17">
+  <act name="dec-lei">
+    <meta>
+      <identification source="#dapl">
+        <FRBRWork>
+          <FRBRthis value="https://eli.gov.pt/eli/pt/dec-lei/2026/22/pt/!main"/>
+          <FRBRuri value="https://eli.gov.pt/eli/pt/dec-lei/2026/22/pt"/>
+          <FRBRdate date="2026-03-10" name="adoption"/>
+          <FRBRauthor href="#governo"/>
+          <FRBRcountry value="pt"/>
+          <FRBRsubtype value="dec-lei-ordinario"/>
+          <FRBRnumber value="22"/>
+        </FRBRWork>
+        <FRBRExpression>
+          <FRBRthis value="https://eli.gov.pt/eli/pt/dec-lei/2026/22/pt/2026-03-15/!main"/>
+          <FRBRuri value="https://eli.gov.pt/eli/pt/dec-lei/2026/22/pt/2026-03-15"/>
+          <FRBRdate date="2026-03-15" name="publication"/>
+          <FRBRauthor href="#governo"/>
+          <FRBRlanguage language="por"/>
+        </FRBRExpression>
+        <FRBRManifestation>
+          <FRBRthis value="https://eli.gov.pt/eli/pt/dec-lei/2026/22/pt/2026-03-15.xml/!main"/>
+          <FRBRuri value="https://eli.gov.pt/eli/pt/dec-lei/2026/22/pt/2026-03-15.xml"/>
+          <FRBRdate date="2026-03-15" name="publication"/>
+          <FRBRauthor href="#dre"/>
+          <FRBRformat value="application/akn+xml; profile=akn-pt-1.0"/>
+        </FRBRManifestation>
+      </identification>
+      <references source="#dapl">
+        <TLCOrganization eId="governo" href="/akn/ontology/organization/pt/governo" showAs="Governo da Republica Portuguesa"/>
+        <TLCOrganization eId="dre" href="/akn/ontology/organization/pt/dre" showAs="Diario da Republica"/>
+        <TLCOrganization eId="dapl" href="/akn/ontology/organization/pt/dapl" showAs="DAPL/SGGOV"/>
+        <TLCRole eId="primeiro-ministro" href="/akn/ontology/role/pt/primeiro-ministro" showAs="Primeiro-Ministro"/>
+        <TLCRole eId="presidente-republica" href="/akn/ontology/role/pt/presidente-republica" showAs="Presidente da Republica"/>
+        <TLCPerson eId="pessoa-pm-2026-03" href="/akn/ontology/person/pt/pm-2026-03" showAs="Primeiro-Ministro"/>
+        <TLCPerson eId="pessoa-pr-2026-03" href="/akn/ontology/person/pt/pr-2026-03" showAs="Presidente da Republica"/>
+      </references>
+      <lifecycle source="#dapl">
+        <eventRef eId="e1" date="2026-03-10" source="#governo" type="generation" refersTo="#approval-cm"/>
+        <eventRef eId="e2" date="2026-03-12" source="#governo" type="generation" refersTo="#promulgation"/>
+        <eventRef eId="e3" date="2026-02-01" source="#dre" type="generation" refersTo="#publication"/>
+      </lifecycle>
+      <analysis source="#dapl"><activeModifications/><passiveModifications/></analysis>
+    </meta>
+    <preface>
+      <p class="docTitle"><docType>Decreto-Lei</docType> <docNumber>n.o 22/2026</docNumber></p>
+      <p class="docDate"><date date="2026-03-15">de 15 de marco</date></p>
+      <shortTitle>Estabelece o regime juridico de teste.</shortTitle>
+    </preface>
+    <preamble>
+      <recital eId="rec_1"><p class="formula">Considerando que o presente diploma serve para testar o XSD AKN-PT.</p></recital>
+      <formula type="enacting">
+        <p>Assim: Nos termos da alinea a) do n.o 1 do artigo 198.o da Constituicao, o Governo decreta o seguinte:</p>
+      </formula>
+    </preamble>
+    <body>
+      <article eId="art_1">
+        <num>Artigo 1.o</num>
+        <heading>Objeto</heading>
+        <paragraph eId="art_1__para_1">
+          <content><p>O presente decreto-lei serve para validar o XSD AKN-PT.</p></content>
+        </paragraph>
+      </article>
+      <article eId="art_2">
+        <num>Artigo 2.o</num>
+        <heading>Definicoes</heading>
+        <paragraph eId="art_2__para_1">
+          <intro><p>Para efeitos do presente decreto-lei, entende-se por:</p></intro>
+          <list>
+            <point eId="art_2__para_1__lit_a">
+              <num>a)</num>
+              <content><p><b>Autoridade competente</b>, a entidade designada nos termos do <ref href="#art_1">artigo 1.o</ref>;</p></content>
+            </point>
+            <point eId="art_2__para_1__lit_b">
+              <num>b)</num>
+              <content><p><b>Procedimento</b>, o conjunto de atos previstos neste decreto-lei.</p></content>
+            </point>
+          </list>
+        </paragraph>
+      </article>
+    </body>
+    <conclusions>
+      <formula type="conclusion"><p>Visto e aprovado em Conselho de Ministros de <date date="2026-03-10">10 de marco de 2026</date>.</p></formula>
+      <signature role="countersignature"><person refersTo="#pessoa-pm-2026-03" as="#primeiro-ministro"/></signature>
+      <formula type="promulgation"><p>Promulgado em <date date="2026-03-12">12 de marco de 2026</date>.</p></formula>
+      <signature role="promulgation"><person refersTo="#pessoa-pr-2026-03" as="#presidente-republica"/></signature>
+    </conclusions>
+  </act>
+</akomaNtoso>

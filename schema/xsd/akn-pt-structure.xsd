@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AKN-PT — structure module
+  Define preface, preamble, body (articulado), conclusions, attachments.
+  Estes elementos são comuns a todos os tipos de ato; o module de act-types
+  (akn-pt-act-types.xsd) compõe-os por tipo.
+
+  Licence: EUPL-1.2
+-->
+<xs:schema
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17"
+    targetNamespace="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17"
+    elementFormDefault="qualified">
+
+  <xs:include schemaLocation="akn-pt-types.xsd"/>
+
+  <!-- ====================================================================
+       PREFACE / PREAMBLE / CONCLUSIONS
+       ==================================================================== -->
+
+  <xs:element name="preface">
+    <xs:complexType>
+      <xs:choice minOccurs="1" maxOccurs="unbounded">
+        <xs:element ref="p"/>
+        <xs:element ref="docType"/>
+        <xs:element ref="docNumber"/>
+        <xs:element ref="docDate"/>
+        <xs:element ref="shortTitle"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- docType, docNumber, shortTitle declared in akn-pt-types.xsd. -->
+  <xs:element name="docDate">
+    <xs:complexType mixed="true">
+      <xs:attribute name="date" type="xs:date"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="preamble">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="recital" minOccurs="0" maxOccurs="unbounded"/>
+        <xs:element ref="formula" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="recital">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="p" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="eId" type="EIdType" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="formula">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="p" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="type" type="FormulaType" use="required"/>
+      <xs:attribute name="eId" type="EIdType"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="conclusions">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice maxOccurs="unbounded">
+          <xs:element ref="formula"/>
+          <xs:element ref="p"/>
+          <xs:element ref="signature"/>
+        </xs:choice>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="signature">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="person">
+          <xs:complexType>
+            <xs:attribute name="refersTo" type="FrbrAuthorRefType" use="required"/>
+            <xs:attribute name="as" type="FrbrAuthorRefType"/>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="role" type="SignatureRole" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- ====================================================================
+       BODY — articulado
+       ==================================================================== -->
+
+  <xs:element name="body">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element ref="book"/>
+          <xs:element ref="part"/>
+          <xs:element ref="title"/>
+          <xs:element ref="chapter"/>
+          <xs:element ref="section"/>
+          <xs:element ref="article"/>
+          <xs:element ref="paragraph"/>
+        </xs:choice>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- Container hierárquicos -->
+  <xs:complexType name="HierContainerType">
+    <xs:sequence>
+      <xs:element name="num" type="xs:string" minOccurs="0"/>
+      <xs:element name="heading" type="InlineContent" minOccurs="0"/>
+      <xs:element name="subheading" type="InlineContent" minOccurs="0"/>
+      <xs:choice maxOccurs="unbounded">
+        <xs:element ref="part"/>
+        <xs:element ref="title"/>
+        <xs:element ref="chapter"/>
+        <xs:element ref="section"/>
+        <xs:element ref="subsection"/>
+        <xs:element ref="article"/>
+      </xs:choice>
+    </xs:sequence>
+    <xs:attribute name="eId" type="EIdType" use="required"/>
+  </xs:complexType>
+
+  <xs:element name="book"      type="HierContainerType"/>
+  <xs:element name="part"      type="HierContainerType"/>
+  <xs:element name="title"     type="HierContainerType"/>
+  <xs:element name="chapter"   type="HierContainerType"/>
+  <xs:element name="section"   type="HierContainerType"/>
+  <xs:element name="subsection" type="HierContainerType"/>
+
+  <!-- <article> -->
+  <xs:element name="article">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="num" type="xs:string"/>
+        <xs:element name="heading" type="InlineContent"/>
+        <xs:element name="subheading" type="InlineContent" minOccurs="0"/>
+        <xs:element ref="paragraph" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="eId" type="EIdType" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- <paragraph> -->
+  <xs:element name="paragraph">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="num" type="xs:string" minOccurs="0"/>
+        <xs:choice>
+          <!-- Caso simples: conteúdo directo -->
+          <xs:element ref="content"/>
+          <!-- Caso lista: intro + list + (opcional wrap-up) -->
+          <xs:sequence>
+            <xs:element ref="intro" minOccurs="0"/>
+            <xs:element ref="list"/>
+            <xs:element ref="wrapUp" minOccurs="0"/>
+          </xs:sequence>
+        </xs:choice>
+      </xs:sequence>
+      <xs:attribute name="eId" type="EIdType" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="content">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice maxOccurs="unbounded">
+          <xs:element ref="p"/>
+          <xs:element ref="blockList"/>
+          <xs:element ref="table"/>
+          <xs:element ref="quotedStructure"/>
+        </xs:choice>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="intro">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="p" maxOccurs="unbounded"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="wrapUp">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="p" maxOccurs="unbounded"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="list">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="point" maxOccurs="unbounded"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="point">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="num" type="xs:string"/>
+        <xs:choice>
+          <xs:element ref="content"/>
+          <xs:sequence>
+            <xs:element ref="intro" minOccurs="0"/>
+            <xs:element ref="list"/>
+            <xs:element ref="wrapUp" minOccurs="0"/>
+          </xs:sequence>
+        </xs:choice>
+      </xs:sequence>
+      <xs:attribute name="eId" type="EIdType" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- <quotedStructure> para citações com estrutura interna (artigos alterados) -->
+  <xs:element name="quotedStructure">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice maxOccurs="unbounded">
+          <xs:element ref="article"/>
+          <xs:element ref="paragraph"/>
+          <xs:element ref="p"/>
+        </xs:choice>
+      </xs:sequence>
+      <xs:attribute name="startQuote" type="xs:string"/>
+      <xs:attribute name="endQuote" type="xs:string"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- ====================================================================
+       ATTACHMENTS
+       ==================================================================== -->
+
+  <xs:element name="attachments">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="attachment" maxOccurs="unbounded"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="attachment">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="heading" type="xs:string"/>
+        <xs:element name="subheading" type="xs:string" minOccurs="0"/>
+        <xs:element ref="mainBody"/>
+      </xs:sequence>
+      <xs:attribute name="eId" type="EIdType" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="mainBody">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element ref="article"/>
+          <xs:element ref="paragraph"/>
+          <xs:element ref="p"/>
+          <xs:element ref="blockList"/>
+          <xs:element ref="table"/>
+          <xs:element ref="img"/>
+        </xs:choice>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

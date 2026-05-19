@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AKN-PT — metadata module (<meta> block: FRBR, references, lifecycle, analysis)
+  Licence: EUPL-1.2
+-->
+<xs:schema
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17"
+    targetNamespace="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17"
+    elementFormDefault="qualified">
+
+  <xs:include schemaLocation="akn-pt-types.xsd"/>
+
+  <!-- ====================================================================
+       <meta>
+       ==================================================================== -->
+
+  <xs:element name="meta">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="identification"/>
+        <xs:element ref="references"/>
+        <xs:element ref="lifecycle"/>
+        <xs:element ref="workflow" minOccurs="0"/>
+        <xs:element ref="analysis" minOccurs="0"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- ====================================================================
+       <identification> — FRBR triple
+       ==================================================================== -->
+
+  <xs:element name="identification">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="FRBRWork"/>
+        <xs:element ref="FRBRExpression"/>
+        <xs:element ref="FRBRManifestation"/>
+      </xs:sequence>
+      <xs:attribute name="source" type="FrbrAuthorRefType" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- FRBRWork -->
+  <xs:element name="FRBRWork">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="FRBRthis"><xs:complexType><xs:attribute name="value" type="EliPtUriType" use="required"/></xs:complexType></xs:element>
+        <xs:element name="FRBRuri"><xs:complexType><xs:attribute name="value" type="EliPtUriType" use="required"/></xs:complexType></xs:element>
+        <xs:element name="FRBRdate">
+          <xs:complexType>
+            <xs:attribute name="date" type="xs:date" use="required"/>
+            <xs:attribute name="name" type="FrbrDateName" use="required"/>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="FRBRauthor">
+          <xs:complexType>
+            <xs:attribute name="href" type="FrbrAuthorRefType" use="required"/>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="FRBRcountry">
+          <xs:complexType>
+            <xs:attribute name="value" type="JurisdictionType" use="required"/>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="FRBRsubtype" minOccurs="0">
+          <xs:complexType>
+            <xs:attribute name="value" type="SubtypeValue" use="required"/>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="FRBRnumber" minOccurs="0">
+          <xs:complexType>
+            <xs:attribute name="value" type="xs:string" use="required"/>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- FRBRExpression -->
+  <xs:element name="FRBRExpression">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="FRBRthis"><xs:complexType><xs:attribute name="value" type="EliPtUriType" use="required"/></xs:complexType></xs:element>
+        <xs:element name="FRBRuri"><xs:complexType><xs:attribute name="value" type="EliPtUriType" use="required"/></xs:complexType></xs:element>
+        <xs:element name="FRBRdate">
+          <xs:complexType>
+            <xs:attribute name="date" type="xs:date" use="required"/>
+            <xs:attribute name="name" type="FrbrDateName" use="required"/>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="FRBRauthor">
+          <xs:complexType>
+            <xs:attribute name="href" type="FrbrAuthorRefType" use="required"/>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="FRBRlanguage">
+          <xs:complexType>
+            <xs:attribute name="language" type="LanguageType" use="required"/>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="FRBRversionNumber" minOccurs="0">
+          <xs:complexType>
+            <xs:attribute name="value" type="xs:positiveInteger" use="required"/>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- FRBRManifestation -->
+  <xs:element name="FRBRManifestation">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="FRBRthis"><xs:complexType><xs:attribute name="value" type="EliPtUriType" use="required"/></xs:complexType></xs:element>
+        <xs:element name="FRBRuri"><xs:complexType><xs:attribute name="value" type="EliPtUriType" use="required"/></xs:complexType></xs:element>
+        <xs:element name="FRBRdate">
+          <xs:complexType>
+            <xs:attribute name="date" type="xs:date" use="required"/>
+            <xs:attribute name="name" type="FrbrDateName" use="required"/>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="FRBRauthor">
+          <xs:complexType>
+            <xs:attribute name="href" type="FrbrAuthorRefType" use="required"/>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="FRBRformat">
+          <xs:complexType>
+            <xs:attribute name="value" type="FormatType" use="required"/>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- ====================================================================
+       <references> — TLC actors
+       ==================================================================== -->
+
+  <xs:element name="references">
+    <xs:complexType>
+      <xs:choice minOccurs="1" maxOccurs="unbounded">
+        <xs:element name="TLCOrganization" type="TLCType"/>
+        <xs:element name="TLCPerson" type="TLCType"/>
+        <xs:element name="TLCRole" type="TLCType"/>
+        <xs:element name="TLCConcept" type="TLCType"/>
+        <xs:element name="TLCLocation" type="TLCType"/>
+        <xs:element name="TLCEvent" type="TLCType"/>
+        <xs:element name="TLCReference" type="TLCType"/>
+        <xs:element name="TLCObject" type="TLCType"/>
+      </xs:choice>
+      <xs:attribute name="source" type="FrbrAuthorRefType" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:complexType name="TLCType">
+    <xs:attribute name="eId" type="EIdType" use="required"/>
+    <xs:attribute name="href" type="OntologyUriType" use="required"/>
+    <xs:attribute name="showAs" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <!-- ====================================================================
+       <lifecycle>
+       ==================================================================== -->
+
+  <xs:element name="lifecycle">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="eventRef" maxOccurs="unbounded">
+          <xs:complexType>
+            <xs:attribute name="eId" type="EIdType" use="required"/>
+            <xs:attribute name="date" type="xs:date" use="required"/>
+            <xs:attribute name="source" type="FrbrAuthorRefType" use="required"/>
+            <xs:attribute name="type" use="required">
+              <xs:simpleType>
+                <xs:restriction base="xs:string">
+                  <xs:enumeration value="generation"/>
+                  <xs:enumeration value="amendment"/>
+                  <xs:enumeration value="repeal"/>
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="refersTo" type="LifecycleEventTarget"/>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="source" type="FrbrAuthorRefType" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- ====================================================================
+       <workflow> — opcional v0.2+
+       ==================================================================== -->
+
+  <!--
+    <workflow> — pegada legislativa (Lei n.o 5-A/2026)
+    Cada <step> representa uma fase do procedimento legislativo. Pode conter
+    descricao textual e zero ou mais <input> registando contributos de
+    entidades externas. Schematron impoe presenca em actos publicados a
+    partir de 2026-07-27 (publication phase).
+  -->
+  <xs:element name="workflow">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="step" minOccurs="1" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="source" type="FrbrAuthorRefType" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="step">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="description" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element ref="p" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element ref="input" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="eId" type="EIdType" use="required"/>
+      <xs:attribute name="date" type="xs:date" use="required"/>
+      <xs:attribute name="refersTo" type="WorkflowStepTarget" use="required"/>
+      <xs:attribute name="source" type="FrbrAuthorRefType" use="required"/>
+      <xs:attribute name="outcome" type="xs:string"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="input">
+    <xs:annotation>
+      <xs:documentation>
+        Um contributo de entidade externa num passo do workflow. A natureza do
+        contributo e' classificada via @type (catalogo ContributionType).
+        @source aponta para uma TLCOrganization ou TLCPerson em &lt;references&gt;.
+        @affects (opcional) aponta para o(s) eId(s) de articulado afectado(s).
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="description" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element ref="p" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="affects" minOccurs="0" maxOccurs="unbounded">
+          <xs:complexType>
+            <xs:attribute name="href" type="xs:string" use="required"/>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="eId" type="EIdType" use="required"/>
+      <xs:attribute name="date" type="xs:date" use="required"/>
+      <xs:attribute name="source" type="FrbrAuthorRefType" use="required"/>
+      <xs:attribute name="type" type="ContributionType" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- ====================================================================
+       <analysis> — vazio em v0.1.0 mas presente
+       ==================================================================== -->
+
+  <xs:element name="analysis">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="activeModifications">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="textualMod" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:attribute name="eId" type="EIdType" use="required"/>
+                  <xs:attribute name="type" type="xs:string"/>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="passiveModifications">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="textualMod" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:attribute name="eId" type="EIdType" use="required"/>
+                  <xs:attribute name="type" type="xs:string"/>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="source" type="FrbrAuthorRefType" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

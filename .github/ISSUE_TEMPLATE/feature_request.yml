@@ -1,0 +1,46 @@
+name: ✨ Sugestão / nova funcionalidade
+description: Propor uma nova funcionalidade ou melhoria
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Para mudanças com impacto na **estrutura AKN-PT** (schema, mapping, ELI-PT),
+        considere abrir uma **discussão** primeiro antes de uma issue.
+  - type: textarea
+    id: problema
+    attributes:
+      label: Qual é o problema a resolver?
+      description: Descreva a motivação — não a solução
+    validations: { required: true }
+  - type: textarea
+    id: proposta
+    attributes:
+      label: Proposta de solução
+    validations: { required: true }
+  - type: textarea
+    id: alternativas
+    attributes:
+      label: Alternativas consideradas
+  - type: dropdown
+    id: tipo
+    attributes:
+      label: Tipo de mudança
+      options:
+        - Schema / mapping (impacto na conformidade — ADR-evolutiva)
+        - Validator (CLI / lib)
+        - Editor (UI / UX / features)
+        - Documentation
+        - CI / release / tooling
+        - Outro
+    validations: { required: true }
+  - type: dropdown
+    id: compat
+    attributes:
+      label: Compatibilidade
+      description: Cf. SemVer + ADR-0005 sobre evolução
+      options:
+        - PATCH — não afecta documentos existentes
+        - MINOR — adiciona opcionais; preserva validade de documentos existentes
+        - MAJOR — quebra compatibilidade
+        - Não aplicável
