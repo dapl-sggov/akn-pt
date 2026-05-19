@@ -329,14 +329,15 @@ const Editor = (() => {
             el('button', { on: { click: () => { State.removeArticle(a.id); refresh(); } } }, '× remover artigo')
           )
         ),
-        el('div', null,
-          el('input', { type: 'text', class: 'article-num', value: a.num,
-            on: { input: e => State.updateArticle(a.id, { num: e.target.value }) }
-          }),
-          el('textarea', { class: 'article-heading autosize', rows: 1, placeholder: 'Epígrafe',
-            on: { input: e => { State.updateArticle(a.id, { heading: e.target.value }); _autosize(e.target); } }
-          }, a.heading || ''),
-        ),
+        // num e heading como filhos directos do grid (article-block tem
+        // grid-template-columns: 8em 1fr) — para num ficar na coluna 1
+        // estreita e heading ocupar toda a coluna 2 (1fr, larga).
+        el('input', { type: 'text', class: 'article-num', value: a.num,
+          on: { input: e => State.updateArticle(a.id, { num: e.target.value }) }
+        }),
+        el('textarea', { class: 'article-heading autosize', rows: 1, placeholder: 'Epígrafe',
+          on: { input: e => { State.updateArticle(a.id, { heading: e.target.value }); _autosize(e.target); } }
+        }, a.heading || ''),
         // Botão "+ parágrafo no início" do articulado interno (apenas se já houver paragrafos)
         a.paragraphs.length ? renderInsertHere(() => {
           State.insertParagraphAt(a.id, null); refresh();
