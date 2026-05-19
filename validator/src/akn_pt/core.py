@@ -311,9 +311,9 @@ def validate(
         report.elapsed_ms = int((time.monotonic() - started) * 1000)
         return report
 
-    # Step 2: Schematron
+    # Step 2: Schematron — validate() returns bool but we read the report directly.
     sch = get_schematron()
-    sch_ok_xpath = sch.validate(tree)
+    sch.validate(tree)
     sch_errors, sch_warnings = _collect_schematron_issues(sch.validation_report)
 
     # Filter by phase: keep only issues from patterns active in this phase.
