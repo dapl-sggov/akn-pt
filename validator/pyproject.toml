@@ -39,10 +39,10 @@ web = [
 akn-pt = "akn_pt.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/SGGoverno/akn-pt"
-Documentation = "https://github.com/SGGoverno/akn-pt/blob/main/docs/spec/pt/index.md"
-Repository = "https://github.com/SGGoverno/akn-pt"
-Issues = "https://github.com/SGGoverno/akn-pt/issues"
+Homepage = "https://github.com/dapl-sggov/akn-pt"
+Documentation = "https://github.com/dapl-sggov/akn-pt/blob/main/docs/spec/pt/index.md"
+Repository = "https://github.com/dapl-sggov/akn-pt"
+Issues = "https://github.com/dapl-sggov/akn-pt/issues"
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]

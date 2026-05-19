@@ -156,7 +156,7 @@ jobs:
 ```
 
 A SGGOV publica este workflow como GitHub Action reusável em
-`SGGoverno/akn-pt-validate-action@v1` (planeado).
+`dapl-sggov/akn-pt-validate-action@v1` (planeado).
 
 ## 13.8 Quando o validador deve mudar
 

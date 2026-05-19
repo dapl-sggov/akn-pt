@@ -28,7 +28,7 @@ pip install akn-pt
 Or, from source:
 
 ```bash
-git clone https://github.com/SGGoverno/akn-pt
+git clone https://github.com/dapl-sggov/akn-pt
 cd akn-pt/validator
 pip install -e .[dev]
 ```
