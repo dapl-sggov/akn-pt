@@ -73,3 +73,10 @@ TODO-*.md
 
 # ===== Releases locais (só CI publica) =====
 release/v*/
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
