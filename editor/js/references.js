@@ -248,6 +248,48 @@ const References = (() => {
     return div.innerHTML;
   }
 
+  // Lista detalhada de todas as refs num doc, com localização ("where")
+  // e flag broken (apenas para refs internas cujo eId alvo não existe).
+  // Devolve [{kind, raw, href, where, broken}] em ordem natural de leitura.
+  function listAllForDoc(doc) {
+    if (!doc) return [];
+    const eIds = _collectEids(doc) || new Set();
+    const out = [];
+    const collect = (text, where) => {
+      if (!text) return;
+      findAll(text, doc).forEach(r => {
+        let broken = false;
+        if (r.href.startsWith('#')) {
+          broken = !eIds.has(r.href.slice(1));
+        }
+        out.push({ kind: r.kind, raw: r.raw, href: r.href, where, broken });
+      });
+    };
+    (doc.recitals || []).forEach((r, i) => collect(r.text, `Considerando ${i + 1}`));
+    if (doc.formula) collect(doc.formula, 'Fórmula');
+    if (doc.shortTitle) collect(doc.shortTitle, 'Ementa');
+    if (doc.body && doc.body.kind === 'articles') {
+      (doc.body.items || []).forEach(a => {
+        collect(a.heading, `${a.num || a.id} (epígrafe)`);
+        (a.paragraphs || []).forEach(p => {
+          collect(p.content, `${a.num || a.id} ${p.num || ''}`.trim());
+          (p.subPoints || []).forEach(sp => {
+            collect(sp.content, `${a.num || a.id} ${p.num || ''} ${sp.num}`.trim());
+            (sp.subPoints || []).forEach(ssp =>
+              collect(ssp.content, `${a.num || a.id} ${p.num || ''} ${sp.num} ${ssp.num}`.trim()));
+          });
+        });
+      });
+    } else if (doc.body) {
+      (doc.body.items || []).forEach(p => {
+        collect(p.content, p.num || p.id);
+        (p.subPoints || []).forEach(sp =>
+          collect(sp.content, `${p.num || p.id} ${sp.num}`.trim()));
+      });
+    }
+    return out;
+  }
+
   // Stats: quantas refs foram detectadas em todo o doc
   function statsForDoc(doc) {
     const counters = { internal: 0, externalPt: 0, externalUe: 0, total: 0 };
@@ -283,7 +325,7 @@ const References = (() => {
     return counters;
   }
 
-  return { findAll, toXmlEscaped, toHtmlPreview, statsForDoc };
+  return { findAll, toXmlEscaped, toHtmlPreview, statsForDoc, listAllForDoc };
 })();
 
 if (typeof window !== "undefined") window.References = References;

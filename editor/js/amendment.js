@@ -94,25 +94,130 @@ const Amendment = (() => {
   let _nextAmId = 1;
   function _amId() { return `am_${Date.now().toString(36)}_${_nextAmId++}`; }
 
-  function addReplace(amender, articleId, newArticle) {
-    amender.amendments.push({ id: _amId(), op: 'replace', articleId, payload: { article: newArticle } });
+  // effectiveDate ∈ ISO 'YYYY-MM-DD' | null
+  //   null  → alteração "sem data" (aplica-se sempre que se pede consolidação por data)
+  //   ISO   → alteração só entra em consolidações com isoDate >= effectiveDate
+
+  function addReplace(amender, articleId, newArticle, effectiveDate) {
+    amender.amendments.push({
+      id: _amId(), op: 'replace', articleId,
+      payload: { article: newArticle },
+      effectiveDate: effectiveDate || null,
+    });
   }
-  function addRevoke(amender, articleId) {
-    amender.amendments.push({ id: _amId(), op: 'revoke', articleId });
+  function addRevoke(amender, articleId, effectiveDate) {
+    amender.amendments.push({
+      id: _amId(), op: 'revoke', articleId,
+      effectiveDate: effectiveDate || null,
+    });
   }
-  function addAddAfter(amender, articleId, newArticle) {
-    amender.amendments.push({ id: _amId(), op: 'add-after', articleId, payload: { article: newArticle } });
+  function addAddAfter(amender, articleId, newArticle, effectiveDate) {
+    amender.amendments.push({
+      id: _amId(), op: 'add-after', articleId,
+      payload: { article: newArticle },
+      effectiveDate: effectiveDate || null,
+    });
   }
-  function addAddBefore(amender, articleId, newArticle) {
-    amender.amendments.push({ id: _amId(), op: 'add-before', articleId, payload: { article: newArticle } });
+  function addAddBefore(amender, articleId, newArticle, effectiveDate) {
+    amender.amendments.push({
+      id: _amId(), op: 'add-before', articleId,
+      payload: { article: newArticle },
+      effectiveDate: effectiveDate || null,
+    });
   }
+
+  // ----- Surgical builders (paragraph / subPoint level) -------------------
+
+  function addReplaceParagraph(amender, articleId, paraId, newParagraph, effectiveDate) {
+    amender.amendments.push({
+      id: _amId(), op: 'replace-paragraph', articleId, paraId,
+      payload: { paragraph: newParagraph },
+      effectiveDate: effectiveDate || null,
+    });
+  }
+  function addReplaceSubPoint(amender, articleId, paraId, subPointId, newSubPoint, effectiveDate) {
+    amender.amendments.push({
+      id: _amId(), op: 'replace-subpoint', articleId, paraId, subPointId,
+      payload: { subPoint: newSubPoint },
+      effectiveDate: effectiveDate || null,
+    });
+  }
+  function addRevokeParagraph(amender, articleId, paraId, effectiveDate) {
+    amender.amendments.push({
+      id: _amId(), op: 'revoke-paragraph', articleId, paraId,
+      effectiveDate: effectiveDate || null,
+    });
+  }
+  function addRevokeSubPoint(amender, articleId, paraId, subPointId, effectiveDate) {
+    amender.amendments.push({
+      id: _amId(), op: 'revoke-subpoint', articleId, paraId, subPointId,
+      effectiveDate: effectiveDate || null,
+    });
+  }
+
   function removeAmendment(amender, id) {
     amender.amendments = amender.amendments.filter(a => a.id !== id);
   }
 
   // ----- Consolidation ----------------------------------------------------
 
-  function applyAll(amender) {
+  // Aplica uma única alteração a `items` (array de articles), in-place.
+  function _applyOne(items, am) {
+    const idx = items.findIndex(a => a.id === am.articleId);
+    if (idx < 0) return;
+    if (am.op === 'replace') {
+      items[idx] = am.payload.article;
+      items[idx].id = am.articleId;  // preservar eId original
+    } else if (am.op === 'revoke') {
+      items.splice(idx, 1);
+    } else if (am.op === 'add-after') {
+      items.splice(idx + 1, 0, am.payload.article);
+    } else if (am.op === 'add-before') {
+      items.splice(idx, 0, am.payload.article);
+    } else if (am.op === 'replace-paragraph') {
+      const article = items[idx];
+      const pIdx = (article.paragraphs || []).findIndex(p => p.id === am.paraId);
+      if (pIdx < 0) return;
+      const newPara = JSON.parse(JSON.stringify(am.payload.paragraph));
+      newPara.id = am.paraId;  // preservar eId original
+      article.paragraphs[pIdx] = newPara;
+    } else if (am.op === 'revoke-paragraph') {
+      const article = items[idx];
+      const pIdx = (article.paragraphs || []).findIndex(p => p.id === am.paraId);
+      if (pIdx < 0) return;
+      article.paragraphs.splice(pIdx, 1);
+    } else if (am.op === 'replace-subpoint') {
+      const article = items[idx];
+      const para = (article.paragraphs || []).find(p => p.id === am.paraId);
+      if (!para) return;
+      const spIdx = (para.subPoints || []).findIndex(sp => sp.id === am.subPointId);
+      if (spIdx < 0) return;
+      const newSp = JSON.parse(JSON.stringify(am.payload.subPoint));
+      newSp.id = am.subPointId;  // preservar eId original
+      para.subPoints[spIdx] = newSp;
+    } else if (am.op === 'revoke-subpoint') {
+      const article = items[idx];
+      const para = (article.paragraphs || []).find(p => p.id === am.paraId);
+      if (!para) return;
+      const spIdx = (para.subPoints || []).findIndex(sp => sp.id === am.subPointId);
+      if (spIdx < 0) return;
+      para.subPoints.splice(spIdx, 1);
+    }
+  }
+
+  // Comparador estável para datas ISO: null primeiro (alterações "sempre vigentes"),
+  // depois por data ascendente. Preserva a ordem original em caso de empate
+  // (Array.prototype.sort é estável desde ES2019).
+  function _cmpEffective(a, b) {
+    const da = a.effectiveDate || null;
+    const db = b.effectiveDate || null;
+    if (da === db) return 0;
+    if (da === null) return -1;
+    if (db === null) return 1;
+    return da < db ? -1 : 1;
+  }
+
+  function applyAtDate(amender, isoDate) {
     if (!amender.target) throw new Error('Sem diploma alvo.');
     const consolidated = JSON.parse(JSON.stringify(amender.target.state));
     if (consolidated.body.kind !== 'articles') {
@@ -121,25 +226,40 @@ const Amendment = (() => {
     }
     const items = consolidated.body.items;
 
-    amender.amendments.forEach(am => {
-      const idx = items.findIndex(a => a.id === am.articleId);
-      if (idx < 0) return;
-      if (am.op === 'replace') {
-        items[idx] = am.payload.article;
-        items[idx].id = am.articleId;  // preservar eId original
-      } else if (am.op === 'revoke') {
-        items.splice(idx, 1);
-      } else if (am.op === 'add-after') {
-        items.splice(idx + 1, 0, am.payload.article);
-      } else if (am.op === 'add-before') {
-        items.splice(idx, 0, am.payload.article);
-      }
+    // 1. Filtrar: alterações com effectiveDate <= isoDate (null aplicam-se sempre).
+    const inForce = amender.amendments.filter(am => {
+      const eff = am.effectiveDate || null;
+      if (eff === null) return true;
+      return eff <= isoDate;
     });
+
+    // 2. Ordenar por effectiveDate ascendente (nulls primeiro).
+    const ordered = inForce.slice().sort(_cmpEffective);
+
+    // 3. Aplicar.
+    ordered.forEach(am => _applyOne(items, am));
 
     // marcar como nova expressão (FRBR — point in time)
     consolidated.publicationDate = amender.publicationDate || consolidated.publicationDate;
     consolidated._consolidatedFrom = amender.target.uri;
+    consolidated._consolidatedAt = isoDate;
     return consolidated;
+  }
+
+  function applyAll(amender) {
+    // Equivalente a "aplica TUDO": data sentinela no futuro distante garante
+    // que toda a alteração com effectiveDate definido cai dentro da janela.
+    return applyAtDate(amender, '9999-12-31');
+  }
+
+  // Lista única e ordenada (ascendente) das datas distintas com alterações.
+  // Exclui null (não-datadas). Útil para a UI desenhar um slider temporal.
+  function timeline(amender) {
+    const set = new Set();
+    (amender.amendments || []).forEach(am => {
+      if (am.effectiveDate) set.add(am.effectiveDate);
+    });
+    return Array.from(set).sort();
   }
 
   // ----- Export AKN-PT (diploma alterador) -------------------------------
@@ -308,8 +428,11 @@ ${paras}
   }
 
   return {
-    fromTarget, applyAll, toAknXml,
-    addReplace, addRevoke, addAddAfter, addAddBefore, removeAmendment,
+    fromTarget, applyAll, applyAtDate, timeline, toAknXml,
+    addReplace, addRevoke, addAddAfter, addAddBefore,
+    addReplaceParagraph, addReplaceSubPoint,
+    addRevokeParagraph, addRevokeSubPoint,
+    removeAmendment,
   };
 })();
 

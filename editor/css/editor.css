@@ -2120,12 +2120,44 @@ textarea.point-content:focus {
   color: var(--color-ink);
   font-weight: 600;
 }
+/* Mini-TOC: wrap mantém o eixo do flex do breadcrumb (margin-left:auto
+   empurra para a direita), e a faixa interna faz overflow-x.
+   Fade-mask à direita sinaliza que há mais artigos para lá do recorte. */
+.breadcrumb-mini-toc-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-left: auto;
+  min-width: 0;            /* permite encolher dentro do flex */
+  max-width: 60%;          /* não invade os crumbs anteriores */
+}
 .breadcrumb-mini-toc {
   display: flex;
   gap: 4px;
-  margin-left: auto;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+  padding-bottom: 2px;     /* espaço para a scrollbar não cortar chips */
+  /* fade-mask: revela só ao ter conteúdo cortado à direita */
+  -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 18px), transparent 100%);
+          mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 18px), transparent 100%);
+}
+.breadcrumb-mini-toc::-webkit-scrollbar { height: 6px; }
+.breadcrumb-mini-toc::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 3px;
+}
+.breadcrumb-mini-toc .mini-toc-chip { scroll-snap-align: start; }
+.mini-toc-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-faint);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .mini-toc-chip {
   font-family: var(--font-mono);
@@ -2340,6 +2372,137 @@ textarea.point-content:focus {
 /* Live events distinguem-se subtilmente do log persistido */
 .activity-item.live { background: color-mix(in oklab, var(--color-navy) 2%, transparent); }
 
+/* Lista expandida de referências dentro do item "Refs" do feed.
+   <details> nativo para a11y; contraste discreto sobre o feed. */
+.refs-detail {
+  margin-top: 6px;
+  border-left: 2px solid var(--color-navy-soft);
+  padding-left: var(--sp-2);
+}
+.refs-detail-summary {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--color-navy);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  padding: 2px 0;
+  letter-spacing: 0.02em;
+}
+.refs-detail-summary::-webkit-details-marker { display: none; }
+.refs-detail-summary::before {
+  content: "▸ ";
+  color: var(--color-faint);
+  font-size: 10px;
+  transition: transform var(--dur-fast) var(--ease);
+  display: inline-block;
+}
+.refs-detail[open] > .refs-detail-summary::before { content: "▾ "; }
+.refs-detail-summary:hover { color: var(--color-navy-hover); }
+.refs-detail-broken {
+  color: var(--color-accent);
+  font-weight: 500;
+}
+.refs-detail-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin: 6px 0 4px;
+}
+.refs-detail-chip {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-muted);
+  padding: 1px 6px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease);
+}
+.refs-detail-chip:hover {
+  border-color: var(--color-navy);
+  color: var(--color-navy);
+}
+.refs-detail-chip.active {
+  background: var(--color-navy);
+  color: #fff;
+  border-color: var(--color-navy);
+}
+.refs-detail-chip.broken {
+  color: var(--color-accent);
+  border-color: var(--color-accent-soft);
+}
+.refs-detail-chip.broken.active {
+  background: var(--color-accent);
+  color: #fff;
+  border-color: var(--color-accent);
+}
+.refs-detail-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 280px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+.refs-detail-list .ref-row {
+  border-bottom: 1px dotted color-mix(in oklab, var(--color-border) 60%, transparent);
+}
+.refs-detail-list .ref-row:last-child { border-bottom: none; }
+.refs-detail-list .ref-row-link {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--sp-2);
+  align-items: baseline;
+  padding: 4px 4px 4px 0;
+  text-decoration: none;
+  color: inherit;
+}
+.refs-detail-list .ref-row-link:hover {
+  background: var(--color-navy-faint);
+  text-decoration: none;
+}
+.refs-detail-list .ref-row-raw {
+  font-family: var(--font-text);
+  font-size: 12px;
+  color: var(--color-ink-soft);
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.refs-detail-list .ref-row-where {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-faint);
+  white-space: nowrap;
+}
+.refs-detail-list .ref-row.broken .ref-row-raw {
+  color: var(--color-accent);
+  text-decoration: line-through;
+}
+.refs-detail-list .ref-row.broken::before {
+  content: "⚠";
+  color: var(--color-accent);
+  margin-right: 4px;
+  font-size: 10px;
+}
+.refs-detail-list .ref-row.kind-external-pt .ref-row-raw::after {
+  content: " ↗";
+  color: var(--color-navy);
+  font-size: 10px;
+}
+.refs-detail-list .ref-row.kind-external-ue .ref-row-raw::after {
+  content: " UE";
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--color-amber);
+  letter-spacing: 0.05em;
+}
+
 /* ---------- CMD-K PALETTE -------------------------------------------- */
 .cmdk-overlay {
   position: fixed;
@@ -2547,4 +2710,201 @@ textarea.point-content:focus {
   50%  { transform: scale(1.012); }
   100% { transform: scale(1); }
 }
+
+/* ---------- AMENDER MODE — Time travel da consolidada -------------- */
+.amend-target-doc {
+  border: 1px solid var(--color-navy-soft);
+  background: var(--color-navy-faint);
+  padding: var(--sp-4) var(--sp-5);
+  margin-bottom: var(--sp-4);
+  border-left: 3px solid var(--color-navy);
+}
+.amend-target-doc h3 {
+  margin: 0 0 4px;
+  font-family: var(--font-display);
+  color: var(--color-navy);
+}
+.amend-toolbar { margin-top: var(--sp-3); }
+
+.amend-time-travel {
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-amber);
+  background: linear-gradient(
+    to right,
+    color-mix(in oklab, var(--color-amber-soft) 28%, transparent),
+    transparent 40%);
+  padding: var(--sp-4) var(--sp-5);
+  margin-bottom: var(--sp-4);
+}
+.amend-time-travel .tt-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-3);
+}
+.amend-time-travel h4 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-lg);
+  color: var(--color-ink);
+  letter-spacing: -0.01em;
+}
+.tt-date-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+.tt-date-input {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 4px 6px;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-bg-emph);
+  border-radius: 3px;
+  color: var(--color-ink);
+}
+.tt-date-input:focus {
+  outline: none;
+  border-color: var(--color-amber);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-amber) 22%, transparent);
+}
+.tt-now {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 500;
+  padding: 3px 10px;
+  background: transparent;
+  border: 1px solid var(--color-amber);
+  color: var(--color-amber);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease);
+}
+.tt-now:hover {
+  background: var(--color-amber);
+  color: var(--color-bg);
+}
+.tt-timeline {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: var(--sp-2) 0 var(--sp-3);
+  padding-top: var(--sp-2);
+  border-top: 1px dashed color-mix(in oklab, var(--color-border) 60%, transparent);
+}
+.tt-timeline-label {
+  color: var(--color-muted);
+  margin-right: var(--sp-2);
+}
+.tt-chip {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--color-bg-emph);
+  border: 1px solid var(--color-border);
+  color: var(--color-ink-soft);
+  padding: 3px 8px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease);
+}
+.tt-chip:hover {
+  border-color: var(--color-amber);
+  color: var(--color-amber);
+}
+.tt-chip.active {
+  background: var(--color-amber);
+  border-color: var(--color-amber);
+  color: var(--color-bg);
+  font-weight: 500;
+}
+.tt-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--color-border);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--color-ink-soft);
+  flex-wrap: wrap;
+}
+
+/* Bloco de uma alteração (com effective-date editor) */
+.amend-block {
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-navy-soft);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-3);
+  background: var(--color-bg-emph);
+}
+.amend-block-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+.amend-block-date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--color-muted);
+}
+.amend-effective-date {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  padding: 2px 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  border-radius: 2px;
+}
+.amend-effective-date:focus {
+  outline: none;
+  border-color: var(--color-amber);
+}
+.amend-op {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: 2px;
+  margin-right: 4px;
+  background: var(--color-navy-faint);
+  color: var(--color-navy);
+}
+.amend-op.op-revoke,
+.amend-op.op-revoke-paragraph,
+.amend-op.op-revoke-subpoint {
+  background: var(--color-accent-faint);
+  color: var(--color-accent);
+}
+.amend-op.op-add-after,
+.amend-op.op-add-before {
+  background: color-mix(in oklab, var(--color-green-soft) 60%, transparent);
+  color: var(--color-green);
+}
+
+/* Banner no modal de preview quando consolidada por data */
+.preview-time-banner {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  margin: 0 0 var(--sp-4);
+  background: var(--color-amber-soft);
+  border-left: 3px solid var(--color-amber);
+  font-family: var(--font-ui);
+}
+.preview-time-banner strong { color: var(--color-ink); }
 

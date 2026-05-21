@@ -428,6 +428,162 @@ try {
   n_fail++;
 }
 
+// 5bis. Test amendment temporal dimension + surgical ops
+try {
+  function buildTarget() {
+    const target = global.newDocument('dec-lei');
+    target.number = '21'; target.year = 2023;
+    target.shortTitle = 'Diploma alvo (testes temporais + cirúrgicos).';
+    target.adoptionDate = '2023-03-23'; target.publicationDate = '2023-03-27';
+    target.docDate = '2023-03-27'; target.docDateText = '27 de março';
+    target.body.items[0].heading = 'Objeto';
+    target.body.items[0].paragraphs[0].content = 'O presente diploma estabelece X.';
+    target.body.items[1].heading = 'Definições';
+    target.body.items[1].paragraphs[0].num = '1 -';
+    target.body.items[1].paragraphs[0].content = 'Para efeitos do presente diploma:';
+    target.body.items[1].paragraphs[0].subPoints = [
+      { id: 'art_2__para_1__lit_a', num: 'a)', content: 'Definição A original;', subPoints: [] },
+      { id: 'art_2__para_1__lit_b', num: 'b)', content: 'Definição B original;', subPoints: [] },
+      { id: 'art_2__para_1__lit_c', num: 'c)', content: 'Definição C original.', subPoints: [] },
+    ];
+    return target;
+  }
+
+  function assert(cond, msg) { if (!cond) throw new Error(msg); }
+
+  // (a) applyAtDate antes da data → alteração NÃO aplica
+  {
+    const amender = global.Amendment.fromTarget(buildTarget());
+    const newArt2 = JSON.parse(JSON.stringify(amender.target.state.body.items[1]));
+    newArt2.heading = 'Definições (revistas em 2025)';
+    global.Amendment.addReplace(amender, 'art_2', newArt2, '2025-01-01');
+
+    const before = global.Amendment.applyAtDate(amender, '2024-12-31');
+    assert(before.body.items[1].heading === 'Definições',
+      `(a) antes da data devia manter heading original; vi "${before.body.items[1].heading}"`);
+    assert(before._consolidatedAt === '2024-12-31', '(a) _consolidatedAt não foi marcado');
+  }
+
+  // (b) applyAtDate exactamente na data → APLICA
+  {
+    const amender = global.Amendment.fromTarget(buildTarget());
+    const newArt2 = JSON.parse(JSON.stringify(amender.target.state.body.items[1]));
+    newArt2.heading = 'Definições (revistas em 2025)';
+    global.Amendment.addReplace(amender, 'art_2', newArt2, '2025-01-01');
+
+    const onDate = global.Amendment.applyAtDate(amender, '2025-01-01');
+    assert(onDate.body.items[1].heading === 'Definições (revistas em 2025)',
+      `(b) na data devia aplicar; vi "${onDate.body.items[1].heading}"`);
+  }
+
+  // (c) replace-paragraph actualiza só o parágrafo
+  {
+    const target = buildTarget();
+    // Garantir que art_1 tem >1 parágrafo para verificar isolamento
+    target.body.items[0].paragraphs.push({
+      id: 'art_1__para_2', num: '2 -',
+      content: 'Segundo número do objeto, INTOCADO.', subPoints: [],
+    });
+    const amender = global.Amendment.fromTarget(target);
+    const newPara = {
+      id: 'IGNORADO_PELO_APPLY', num: '1 -',
+      content: 'Novo conteúdo cirúrgico do n.º 1.',
+      subPoints: [],
+    };
+    global.Amendment.addReplaceParagraph(amender, 'art_1', 'art_1__para_1', newPara);
+
+    const out = global.Amendment.applyAll(amender);
+    const art1 = out.body.items[0];
+    assert(art1.paragraphs[0].id === 'art_1__para_1',
+      '(c) id original do parágrafo deve ser preservado');
+    assert(art1.paragraphs[0].content === 'Novo conteúdo cirúrgico do n.º 1.',
+      `(c) parágrafo alvo não foi substituído; vi "${art1.paragraphs[0].content}"`);
+    assert(art1.paragraphs[1].content === 'Segundo número do objeto, INTOCADO.',
+      '(c) parágrafo vizinho foi inadvertidamente afectado');
+  }
+
+  // (d) replace-subpoint actualiza só a alínea alvo
+  {
+    const amender = global.Amendment.fromTarget(buildTarget());
+    const newSp = {
+      id: 'IGNORADO', num: 'b)',
+      content: 'Definição B REVISTA;',
+      subPoints: [],
+    };
+    global.Amendment.addReplaceSubPoint(
+      amender, 'art_2', 'art_2__para_1', 'art_2__para_1__lit_b', newSp,
+    );
+
+    const out = global.Amendment.applyAll(amender);
+    const sps = out.body.items[1].paragraphs[0].subPoints;
+    assert(sps.length === 3, `(d) número de alíneas deve manter-se em 3; vi ${sps.length}`);
+    assert(sps[0].content === 'Definição A original;', '(d) alínea a) foi afectada');
+    assert(sps[1].id === 'art_2__para_1__lit_b', '(d) id original da alínea b) deve manter-se');
+    assert(sps[1].content === 'Definição B REVISTA;', `(d) alínea b) não foi substituída; vi "${sps[1].content}"`);
+    assert(sps[2].content === 'Definição C original.', '(d) alínea c) foi afectada');
+  }
+
+  // (e) applyAll ≡ aplicar tudo (sentinela 9999) — duas alterações datadas + uma sem data
+  {
+    const amender = global.Amendment.fromTarget(buildTarget());
+    const newArt2_2024 = JSON.parse(JSON.stringify(amender.target.state.body.items[1]));
+    newArt2_2024.heading = 'Definições v2024';
+    global.Amendment.addReplace(amender, 'art_2', newArt2_2024, '2024-06-01');
+
+    const newArt2_2026 = JSON.parse(JSON.stringify(amender.target.state.body.items[1]));
+    newArt2_2026.heading = 'Definições v2026';
+    global.Amendment.addReplace(amender, 'art_2', newArt2_2026, '2026-01-15');
+
+    global.Amendment.addRevoke(amender, 'art_3');  // sem data → entra sempre
+
+    const out = global.Amendment.applyAll(amender);
+    // A última a aplicar (data mais alta) ganha — v2026
+    assert(out.body.items[1].heading === 'Definições v2026',
+      `(e) applyAll devia terminar em v2026; vi "${out.body.items[1].heading}"`);
+    // E o revoke (sem data) também deve estar aplicado
+    assert(!out.body.items.some(a => a.id === 'art_3'),
+      '(e) revoke sem data não foi aplicado em applyAll');
+
+    // Cross-check intermédio: em 2024-06-01 devia ver v2024
+    const mid = global.Amendment.applyAtDate(amender, '2024-06-01');
+    assert(mid.body.items[1].heading === 'Definições v2024',
+      `(e) em 2024-06-01 devia ver v2024; vi "${mid.body.items[1].heading}"`);
+    // E o revoke sem data também aplica aí
+    assert(!mid.body.items.some(a => a.id === 'art_3'),
+      '(e) revoke sem data não foi aplicado em applyAtDate');
+  }
+
+  // (f) timeline devolve datas distintas ordenadas (excluindo null)
+  {
+    const amender = global.Amendment.fromTarget(buildTarget());
+    const dummy = JSON.parse(JSON.stringify(amender.target.state.body.items[1]));
+    global.Amendment.addReplace(amender, 'art_2', dummy, '2026-01-15');
+    global.Amendment.addReplace(amender, 'art_2', dummy, '2024-06-01');
+    global.Amendment.addReplace(amender, 'art_2', dummy, '2024-06-01'); // duplicada
+    global.Amendment.addRevoke(amender, 'art_3'); // sem data → excluída
+
+    const tl = global.Amendment.timeline(amender);
+    const expected = ['2024-06-01', '2026-01-15'];
+    assert(JSON.stringify(tl) === JSON.stringify(expected),
+      `(f) timeline esperada ${JSON.stringify(expected)}; vi ${JSON.stringify(tl)}`);
+  }
+
+  // (g) backward compat: addReplace sem effectiveDate → effectiveDate null
+  {
+    const amender = global.Amendment.fromTarget(buildTarget());
+    const dummy = JSON.parse(JSON.stringify(amender.target.state.body.items[1]));
+    global.Amendment.addReplace(amender, 'art_2', dummy);
+    assert(amender.amendments[0].effectiveDate === null,
+      `(g) addReplace sem data devia produzir effectiveDate null; vi ${amender.amendments[0].effectiveDate}`);
+  }
+
+  console.log(`  OK   amendment-temporal+surgical  (7 sub-testes: a,b,c,d,e,f,g)`);
+  n_ok++;
+} catch (e) {
+  console.log(`  FAIL amendment-temporal+surgical: ${e.message}`);
+  n_fail++;
+}
+
 // 6. Test Bluebell-PT roundtrip (serialize → parse → serialize, deve ser estável)
 try {
   const doc = global.newDocument('dec-lei');
@@ -594,6 +750,123 @@ try {
   n_fail++;
 }
 
+// 9bis. Test ImportParser signature detection — multi-line bloco assinaturas
+//       (DL com PR + PM + 2 ministros em LINHAS SEPARADAS).
+try {
+  const dlText = `Decreto-Lei n.º 99/2026
+de 15 de março
+Estabelece o regime experimental do programa Y.
+
+Considerando que importa fixar as condições.
+
+Assim:
+Nos termos da alínea a) do n.º 1 do artigo 198.º da Constituição, o Governo decreta o seguinte:
+
+Artigo 1.º
+Objeto
+O presente decreto-lei estabelece o regime experimental do programa Y.
+
+Artigo 2.º
+Entrada em vigor
+O presente diploma entra em vigor no dia seguinte ao da sua publicação.
+
+Visto e aprovado em Conselho de Ministros de 10 de março de 2026.
+O Primeiro-Ministro, Luís Montenegro.
+O Ministro de Estado e das Finanças, Joaquim Miranda Sarmento.
+O Ministro da Presidência, António Leitão Amaro.
+Promulgado em 12 de março de 2026.
+Publique-se.
+O Presidente da República, Marcelo Rebelo de Sousa.
+Referendado em 14 de março de 2026.
+O Primeiro-Ministro, Luís Montenegro.`;
+  const parsed = global.ImportParser.parse(dlText);
+  const sigs = parsed.signatures;
+  const checks = [
+    ['type=dec-lei', parsed.actType === 'dec-lei'],
+    ['PM capturado', sigs.some(s => s.as === 'primeiro-ministro' && s.name.includes('Montenegro'))],
+    ['PR capturado', sigs.some(s => s.as === 'presidente-republica' && s.name.includes('Marcelo'))],
+    ['Ministro Finanças', sigs.some(s => /finan/i.test(s.as) && s.name.includes('Miranda'))],
+    ['Ministro Presidência', sigs.some(s => /presidencia/i.test(s.as) && s.name.includes('Leitão'))],
+    ['promulgation role para PR', sigs.some(s => s.as === 'presidente-republica' && s.role === 'promulgation')],
+  ];
+  const fails = checks.filter(([, ok]) => !ok);
+  if (fails.length) throw new Error('Falhas: ' + fails.map(f => f[0]).join(', ') + ' | sigs=' + JSON.stringify(sigs.map(s => ({as: s.as, name: s.name}))));
+  console.log(`  OK   ImportParser DL multi-linha (${checks.length}/${checks.length}; PR+PM+2 ministros)`);
+  n_ok++;
+} catch (e) {
+  console.log(`  FAIL ImportParser DL multi-linha: ${e.message}`);
+  n_fail++;
+}
+
+// 9ter. Test ImportParser — Portaria com 3 ministros em LINHAS SEPARADAS.
+try {
+  const portText = `Portaria n.º 777/2026
+de 5 de junho
+Aprova o regulamento conjunto Z.
+
+Manda o Governo, pelo Ministro de Estado e das Finanças, pela Ministra da Saúde e pelo Ministro da Educação, ao abrigo do disposto no artigo 8.º do Decreto-Lei n.º 1/2025, o seguinte:
+
+Artigo 1.º
+Objeto
+A presente portaria aprova o regulamento Z.
+
+Artigo 2.º
+Entrada em vigor
+A presente portaria entra em vigor no dia seguinte ao da sua publicação.
+
+Em 1 de junho de 2026.
+O Ministro de Estado e das Finanças, Joaquim Miranda Sarmento.
+A Ministra da Saúde, Ana Paula Martins.
+O Ministro da Educação, Fernando Alexandre.`;
+  const parsed = global.ImportParser.parse(portText);
+  const sigs = parsed.signatures;
+  const checks = [
+    ['type=portaria', parsed.actType === 'portaria'],
+    ['3 ministros assinantes', sigs.filter(s => s.name && /^ministr/i.test(s.as)).length === 3],
+    ['Finanças', sigs.some(s => /finan/i.test(s.as) && s.name.includes('Miranda'))],
+    ['Saúde', sigs.some(s => /saude/i.test(s.as) && s.name.includes('Ana Paula'))],
+    ['Educação', sigs.some(s => /educacao/i.test(s.as) && s.name.includes('Fernando'))],
+  ];
+  const fails = checks.filter(([, ok]) => !ok);
+  if (fails.length) throw new Error('Falhas: ' + fails.map(f => f[0]).join(', ') + ' | sigs=' + JSON.stringify(sigs.map(s => ({as: s.as, name: s.name}))));
+  console.log(`  OK   ImportParser Portaria 3 ministros multi-linha (${checks.length}/${checks.length})`);
+  n_ok++;
+} catch (e) {
+  console.log(`  FAIL ImportParser Portaria 3 ministros multi-linha: ${e.message}`);
+  n_fail++;
+}
+
+// 9quater. Test ImportParser — "Promulgado em DD/MM/YYYY." numa linha e
+//          "O Presidente da República, Nome." na linha seguinte.
+try {
+  const dlText = `Decreto-Lei n.º 50/2026
+de 1 de fevereiro
+Aprova X.
+
+Assim:
+Nos termos da alínea a) do n.º 1 do artigo 198.º da Constituição, o Governo decreta o seguinte:
+
+Artigo 1.º
+Objeto
+O presente decreto-lei aprova X.
+
+Visto e aprovado em Conselho de Ministros de 25 de janeiro de 2026.
+O Primeiro-Ministro, Luís Montenegro.
+Promulgado em 28 de janeiro de 2026.
+O Presidente da República, Marcelo Rebelo de Sousa.`;
+  const parsed = global.ImportParser.parse(dlText);
+  const sigs = parsed.signatures;
+  const pr = sigs.find(s => s.as === 'presidente-republica');
+  if (!pr) throw new Error('PR não capturado | sigs=' + JSON.stringify(sigs.map(s => ({as: s.as, name: s.name}))));
+  if (!pr.name || !pr.name.includes('Marcelo')) throw new Error('PR sem nome correcto: ' + JSON.stringify(pr));
+  if (pr.role !== 'promulgation') throw new Error('PR role errado: ' + pr.role);
+  console.log(`  OK   ImportParser PR via "Promulgado em…" + linha seguinte`);
+  n_ok++;
+} catch (e) {
+  console.log(`  FAIL ImportParser PR via Promulgado em: ${e.message}`);
+  n_fail++;
+}
+
 // 10. Test DRE mock suggest
 try {
   const res = global.DreMock.suggest('21 2023');
@@ -611,7 +884,7 @@ try {
   n_fail++;
 }
 
-const total = cases.length + 10;
+const total = cases.length + 14;
 console.log(`\n${n_ok}/${total} files generated.`);
 console.log(`Next: validate with akn-pt:`);
 console.log(`  python -m akn_pt batch editor/.smoke-output`);

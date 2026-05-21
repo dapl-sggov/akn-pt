@@ -1163,6 +1163,16 @@ const Editor = (() => {
   }
   // Override do renderBody quando estamos em modo amender
   const _originalRenderBody = renderBody;
+  // UI state — data seleccionada na barra "time-travel" do modo amender.
+  // Não é persistida no rascunho; reinicia-se a cada sessão (default: hoje).
+  let _amenderViewDate = null;
+  function _todayIso() { return new Date().toISOString().slice(0, 10); }
+  function _fmtPtDate(iso) {
+    if (!iso) return '';
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
   function _maybeRenderAmenderBody(doc) {
     if (doc.kind !== 'amender') return false;
     const main = $('#document-body');
@@ -1175,18 +1185,64 @@ const Editor = (() => {
         el('button', { class: 'btn-secondary', on: { click: () => addAmendmentDialog() } }, '+ Alteração'),
       ),
     ));
+
+    // ---- Time-travel — versão consolidada por data ----
+    main.appendChild(_renderTimeTravelBar(doc));
+
     // Lista de alterações já feitas
     (doc.amendments || []).forEach(am => {
       const orig = (doc.target.state.body.items || []).find(a => a.id === am.articleId);
+      // Editor inline da effectiveDate (ISO YYYY-MM-DD)
+      const dateInput = el('input', {
+        type: 'date',
+        class: 'amend-effective-date',
+        value: am.effectiveDate || '',
+        title: am.effectiveDate
+          ? `Em vigor desde ${_fmtPtDate(am.effectiveDate)}`
+          : 'Sem data — aplica-se sempre',
+        on: { change: (e) => {
+          am.effectiveDate = e.target.value || null;
+          State.saveDraft();
+          refresh();
+        }},
+      });
+      // Descritor amigável da operação para o caso de ser cirúrgica
+      const opLabel = {
+        'replace':           'Substituir artigo',
+        'revoke':            'Revogar artigo',
+        'add-after':         'Aditar artigo depois de',
+        'add-before':        'Aditar artigo antes de',
+        'replace-paragraph': 'Substituir n.º',
+        'revoke-paragraph':  'Revogar n.º',
+        'replace-subpoint':  'Substituir alínea',
+        'revoke-subpoint':   'Revogar alínea',
+      }[am.op] || am.op;
+      const targetLabel = am.op.includes('paragraph')
+        ? `${orig ? orig.num : am.articleId} · ${am.paraId}`
+        : am.op.includes('subpoint')
+        ? `${orig ? orig.num : am.articleId} · ${am.paraId} · ${am.subPointId}`
+        : (orig ? orig.num : am.articleId);
       main.appendChild(el('div', { class: 'amend-block' },
-        el('div', null,
-          el('span', { class: 'amend-op op-' + am.op }, am.op),
-          el('strong', null, ` ${orig ? orig.num : am.articleId}`),
-          orig && orig.heading ? el('em', null, ` — ${orig.heading}`) : null,
+        el('div', { class: 'amend-block-head' },
+          el('div', null,
+            el('span', { class: 'amend-op op-' + am.op }, opLabel),
+            el('strong', null, ` ${targetLabel}`),
+            orig && orig.heading ? el('em', null, ` — ${orig.heading}`) : null,
+          ),
+          el('div', { class: 'amend-block-date' },
+            el('label', { class: 'micro' }, 'Em vigor desde:'),
+            dateInput,
+          ),
         ),
         am.payload?.article
           ? el('div', { class: 'muted small', style: 'margin-top:6px' },
               `Novo texto: ${am.payload.article.heading || ''} · ${am.payload.article.paragraphs?.length || 0} parágrafo(s)`)
+          : am.payload?.paragraph
+          ? el('div', { class: 'muted small', style: 'margin-top:6px' },
+              `Novo n.º: "${(am.payload.paragraph.content || '').slice(0, 80)}${am.payload.paragraph.content?.length > 80 ? '…' : ''}"`)
+          : am.payload?.subPoint
+          ? el('div', { class: 'muted small', style: 'margin-top:6px' },
+              `Nova alínea: "${(am.payload.subPoint.content || '').slice(0, 80)}${am.payload.subPoint.content?.length > 80 ? '…' : ''}"`)
           : null,
         el('div', { style: 'margin-top:8px;display:flex;gap:6px' },
           el('button', { class: 'btn-small btn-danger', on: { click: () => {
@@ -1251,6 +1307,106 @@ const Editor = (() => {
     });
     return true;
   }
+
+  // ---- Time-travel: barra de data + preview da consolidada nessa data ----
+  function _renderTimeTravelBar(doc) {
+    if (!_amenderViewDate) _amenderViewDate = _todayIso();
+    const timeline = Amendment.timeline(doc);   // datas distintas, ascendente
+
+    const wrap = el('section', { class: 'amend-time-travel', 'aria-label': 'Versão consolidada por data' });
+
+    // Cabeçalho da barra
+    const head = el('div', { class: 'tt-head' },
+      el('h4', null, 'Versão consolidada'),
+      el('label', { class: 'tt-date-label' },
+        el('span', { class: 'micro' }, 'em vigor em'),
+        el('input', {
+          type: 'date',
+          class: 'tt-date-input',
+          value: _amenderViewDate,
+          on: { change: (e) => {
+            _amenderViewDate = e.target.value || _todayIso();
+            refresh();
+          }},
+        }),
+      ),
+      el('button', {
+        class: 'btn-small tt-now',
+        type: 'button',
+        on: { click: () => { _amenderViewDate = _todayIso(); refresh(); }},
+      }, 'Hoje'),
+    );
+    wrap.appendChild(head);
+
+    // Chips com as datas-marco do timeline (mostra a evolução do diploma)
+    if (timeline.length) {
+      const chips = el('div', { class: 'tt-timeline' },
+        el('span', { class: 'micro tt-timeline-label' }, 'Datas relevantes:'),
+      );
+      // "Antes" — situação inicial (antes da primeira alteração datada)
+      const before = new Date(timeline[0]);
+      before.setDate(before.getDate() - 1);
+      const beforeIso = before.toISOString().slice(0, 10);
+      chips.appendChild(_ttChip(beforeIso, 'Original', 'antes da 1.ª alteração'));
+      timeline.forEach(d => {
+        chips.appendChild(_ttChip(d, _fmtPtDate(d), `${_countAtDate(doc, d)} alteração(ões) acumulada(s)`));
+      });
+      wrap.appendChild(chips);
+    } else {
+      wrap.appendChild(el('p', { class: 'muted small' },
+        'Nenhuma alteração tem data de entrada em vigor definida — defina-a abaixo, em cada alteração, para activar o time-travel.'));
+    }
+
+    // Resultado: contagem do que está em vigor + botão "ver consolidada"
+    const inForceCount = _countAtDate(doc, _amenderViewDate);
+    const totalCount = (doc.amendments || []).length;
+    const summary = el('div', { class: 'tt-summary' },
+      el('span', null,
+        el('strong', null, `${inForceCount}`),
+        ' de ',
+        el('strong', null, `${totalCount}`),
+        ` alteração(ões) em vigor a ${_fmtPtDate(_amenderViewDate)}.`,
+      ),
+      el('button', {
+        class: 'btn-secondary btn-small',
+        type: 'button',
+        on: { click: () => _openConsolidatedPreview(doc, _amenderViewDate) },
+      }, 'Ver versão consolidada →'),
+    );
+    wrap.appendChild(summary);
+
+    return wrap;
+  }
+  function _ttChip(iso, label, title) {
+    const isActive = iso === _amenderViewDate;
+    return el('button', {
+      class: 'tt-chip' + (isActive ? ' active' : ''),
+      type: 'button',
+      title,
+      on: { click: () => { _amenderViewDate = iso; refresh(); }},
+    }, label);
+  }
+  function _countAtDate(doc, isoDate) {
+    return (doc.amendments || []).filter(am => {
+      const eff = am.effectiveDate || null;
+      if (eff === null) return true;
+      return eff <= isoDate;
+    }).length;
+  }
+  function _openConsolidatedPreview(doc, isoDate) {
+    const consolidated = Amendment.applyAtDate(doc, isoDate);
+    const body = $('#preview-body');
+    if (!body) return;
+    body.innerHTML = '';
+    body.appendChild(el('div', { class: 'preview-time-banner' },
+      el('strong', null, `Versão consolidada a ${_fmtPtDate(isoDate)}`),
+      el('span', { class: 'micro' }, ` · ${doc.target.label}`),
+    ));
+    const html = Preview.render(consolidated);
+    body.appendChild(el('div', { html }));
+    openModal('preview-modal');
+  }
+
   function addAmendmentDialog() {
     const doc = State.get();
     const list = (doc.target.state.body.items || []).map(a => `${a.id} — ${a.num} ${a.heading || ''}`).join('\n');
@@ -1390,14 +1546,21 @@ const Editor = (() => {
       }
     });
 
-    // Mini-TOC expansível com hover — chips com os artigos
+    // Mini-TOC scrollable — chips com TODOS os artigos
+    // (sem limite arbitrário; scroll horizontal + fade no fim como indicador)
     if (doc.body && doc.body.items && doc.body.items.length > 1) {
-      const mini = el('div', { class: 'breadcrumb-mini-toc' });
-      const items = doc.body.items.slice(0, 12);
+      const wrap = el('div', { class: 'breadcrumb-mini-toc-wrap' });
+      const mini = el('div', {
+        class: 'breadcrumb-mini-toc',
+        role: 'tablist',
+        'aria-label': 'Navegar para artigo',
+      });
+      const items = doc.body.items;
       items.forEach(a => {
         mini.appendChild(el('a', {
           class: 'mini-toc-chip',
           href: '#' + a.id,
+          title: a.heading ? `${a.num || a.id} — ${a.heading}` : (a.num || a.id),
           on: { click: (ev) => {
             ev.preventDefault();
             const target = document.querySelector('#' + a.id);
@@ -1405,10 +1568,11 @@ const Editor = (() => {
           }}
         }, a.num || a.id));
       });
-      if (doc.body.items.length > 12) {
-        mini.appendChild(el('span', { class: 'mini-toc-more' }, `+${doc.body.items.length - 12}`));
-      }
-      bc.appendChild(mini);
+      wrap.appendChild(mini);
+      // Contador discreto (não interfere com o scroll)
+      wrap.appendChild(el('span', { class: 'mini-toc-count' },
+        `${items.length} ${items.length === 1 ? 'artigo' : 'artigos'}`));
+      bc.appendChild(wrap);
     }
   }
 
@@ -1454,6 +1618,7 @@ const Editor = (() => {
     let title = '';
     let body = '';
     let target = null;
+    let extra = null;   // bloco opcional adicional (e.g. lista expandida de refs)
 
     switch (e.kind) {
       case 'validation':
@@ -1482,6 +1647,7 @@ const Editor = (() => {
         body = e.live
           ? `${e.data.total} (${e.data.internal} int. · ${e.data.externalPt} PT · ${e.data.externalUe} UE)`
           : (e.data.label || '');
+        if (e.live) extra = _renderRefsExpanded(doc);
         break;
       case 'import':
         title = 'Importação';
@@ -1517,8 +1683,110 @@ const Editor = (() => {
             }
           }}
         }, '→ ir ao ' + target) : null,
+        extra,
       ),
     );
+  }
+
+  // Lista detalhada de referências, embutida no item "Referências" do feed.
+  // Usa <details>/<summary> para ter expand/collapse nativo (a11y + sem state JS).
+  function _renderRefsExpanded(doc) {
+    if (typeof References === 'undefined' || !References.listAllForDoc) return null;
+    const all = References.listAllForDoc(doc);
+    if (!all.length) return null;
+
+    const details = el('details', { class: 'refs-detail' });
+    const broken = all.filter(r => r.broken).length;
+    const summary = el('summary', { class: 'refs-detail-summary' },
+      el('span', null, 'Ver lista'),
+      broken
+        ? el('span', { class: 'refs-detail-broken' }, ` · ${broken} alvo${broken === 1 ? '' : 's'} inexistente${broken === 1 ? '' : 's'}`)
+        : null,
+    );
+    details.appendChild(summary);
+
+    // Filtros por tipo (chip toggle) — clientside, sem rerender do feed
+    const filters = el('div', { class: 'refs-detail-filters' });
+    const counts = {
+      all: all.length,
+      internal: all.filter(r => r.href.startsWith('#') && !r.broken).length,
+      broken: broken,
+      'external-pt': all.filter(r => r.kind === 'external-pt').length,
+      'external-ue': all.filter(r => r.kind === 'external-ue').length,
+    };
+    const FILTER_LABEL = {
+      all: 'Todas', internal: 'Internas', broken: 'Broken',
+      'external-pt': 'PT', 'external-ue': 'UE',
+    };
+    const list = el('ul', { class: 'refs-detail-list' });
+    let activeFilter = 'all';
+    function matches(r, f) {
+      if (f === 'all') return true;
+      if (f === 'internal') return r.href.startsWith('#') && !r.broken;
+      if (f === 'broken') return r.broken;
+      return r.kind === f;
+    }
+    function rerender() {
+      list.innerHTML = '';
+      const visible = all.filter(r => matches(r, activeFilter));
+      if (!visible.length) {
+        list.appendChild(el('li', { class: 'muted small' }, 'Nenhuma neste filtro.'));
+        return;
+      }
+      visible.forEach(r => {
+        const isInternal = r.href.startsWith('#');
+        const cls = 'ref-row'
+          + (r.broken ? ' broken' : '')
+          + (isInternal ? ' kind-internal' : ` kind-${r.kind}`);
+        const onClick = (ev) => {
+          if (isInternal && !r.broken) {
+            ev.preventDefault();
+            const tEl = document.querySelector(r.href);
+            if (tEl) {
+              tEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              tEl.classList.add('flash');
+              setTimeout(() => tEl.classList.remove('flash'), 1200);
+            }
+          }
+          // externos: deixar o browser abrir o link
+        };
+        list.appendChild(el('li', { class: cls },
+          el('a', {
+            class: 'ref-row-link',
+            href: r.href,
+            target: isInternal ? null : '_blank',
+            rel: isInternal ? null : 'noopener noreferrer',
+            title: r.href,
+            on: { click: onClick },
+          },
+            el('span', { class: 'ref-row-raw' }, `"${r.raw}"`),
+            el('span', { class: 'ref-row-where' }, r.where),
+          ),
+        ));
+      });
+    }
+    Object.entries(counts).forEach(([k, n]) => {
+      if (!n && k !== 'all') return;
+      const chip = el('button', {
+        class: 'refs-detail-chip' + (k === activeFilter ? ' active' : '')
+          + (k === 'broken' ? ' broken' : ''),
+        type: 'button',
+        on: { click: (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          activeFilter = k;
+          filters.querySelectorAll('.refs-detail-chip').forEach(c =>
+            c.classList.toggle('active', c.dataset.f === k));
+          rerender();
+        }},
+        'data-f': k,
+      }, `${FILTER_LABEL[k]} ${n}`);
+      filters.appendChild(chip);
+    });
+    details.appendChild(filters);
+    details.appendChild(list);
+    rerender();
+    return details;
   }
 
   function _relativeTime(iso) {
@@ -1942,21 +2210,79 @@ const Editor = (() => {
       toast('Texto sincronizado.', 'success');
     });
 
-    // Amendment mode — link na landing + file input
+    // Amendment mode — modal com 3 fontes (texto / docx / xml)
     $('#open-amend')?.addEventListener('click', (e) => {
       e.preventDefault();
-      $('#file-input-amend-xml').click();
+      openModal('amend-modal');
     });
+    // tabs
+    $$('[data-amend-tab]').forEach(t => {
+      t.addEventListener('click', () => {
+        $$('[data-amend-tab]').forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        $$('[data-amend-pane]').forEach(p => p.classList.add('hidden'));
+        $(`[data-amend-pane="${t.dataset.amendTab}"]`).classList.remove('hidden');
+      });
+    });
+    // texto colado
+    $('#amend-text-btn')?.addEventListener('click', () => {
+      const text = $('#amend-text').value.trim();
+      if (!text) { toast('Cole o texto do diploma original.', 'warn'); return; }
+      try {
+        const parsed = ImportParser.parse(text);
+        const targetDoc = ImportParser.toDocState(parsed);
+        _startAmendFromDoc(targetDoc);
+      } catch (err) { toast('Erro ao analisar texto: ' + err.message, 'error'); }
+    });
+    // .docx
+    $('#amend-docx-btn')?.addEventListener('click', () =>
+      $('#file-input-amend-docx').click());
+    $('#file-input-amend-docx')?.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const status = $('#amend-docx-status');
+      status.textContent = 'A carregar mammoth.js da CDN...';
+      try {
+        const buffer = await file.arrayBuffer();
+        status.textContent = 'A extrair texto e analisar...';
+        const parsed = await ImportParser.parseDocx(buffer);
+        const targetDoc = ImportParser.toDocState(parsed);
+        status.textContent = '';
+        _startAmendFromDoc(targetDoc);
+      } catch (err) {
+        status.textContent = '';
+        toast('Erro ao carregar .docx: ' + err.message, 'error');
+      }
+    });
+    // AKN-PT XML (fluxo legado — agora via modal)
+    $('#amend-xml-btn')?.addEventListener('click', () =>
+      $('#file-input-amend-xml').click());
     $('#file-input-amend-xml')?.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = ev => {
-        try { startAmendment(ev.target.result); }
+        try { startAmendment(ev.target.result); closeModal('amend-modal'); }
         catch (err) { toast('Erro: ' + err.message, 'error'); }
       };
       reader.readAsText(file);
     });
+  }
+
+  // Inicia o modo amender a partir de um docState já parseado (de texto/docx/xml).
+  // Reusado pelas três fontes para garantir comportamento idêntico.
+  function _startAmendFromDoc(targetDoc) {
+    const amender = Amendment.fromTarget(targetDoc);
+    State.init(amender);
+    if (typeof Stack !== 'undefined') Stack.add(amender);
+    State.saveDraft();
+    closeModal('amend-modal');
+    showScreen('editor');
+    refresh();
+    if (typeof Activity !== 'undefined') Activity.log('import', {
+      summary: `Modo alteração: ${targetDoc.actName || 'doc'} n.º ${targetDoc.number || '?'}/${targetDoc.year || '?'}`,
+    });
+    toast('Modo alteração iniciado — adicione alterações no painel central.', 'success');
   }
 
   // Helpers de download para alterador. Antes de gerar, propagamos as edições

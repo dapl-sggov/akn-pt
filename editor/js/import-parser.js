@@ -590,10 +590,15 @@ const ImportParser = (() => {
   ];
 
   // Extrai segmentos da linha de assinaturas. Separadores típicos: " - ",
-  // ".\s+-\s+", " — " (em dash), ". —". O parser conserva apenas segmentos
-  // não vazios com pelo menos um nome próprio (heurística: começa por maiúscula).
+  // ".\s+-\s+", " — " (em dash), ". —", e também `\n` (cada cargo em sua linha).
+  // O parser conserva apenas segmentos não vazios.
+  // Lookahead alargado: aceita "O/A/Os/As ", "U[mn] " e ainda
+  // "Promulgad/Assinad/Referendad" (segmentos só de evento + nome).
   function _splitSignatureLine(line) {
-    const segments = line.split(/\s*[-—–]\s*(?=[OAU])/);  // split antes de "O ", "A ", "U "
+    // \n como separador adicional + lookahead alargado
+    const segments = line.split(
+      /(?:\s*[-—–]\s*|\n+)(?=O\s|A\s|Os\s|As\s|U[mn]a?\s|Promulgad|Assinad|Referendad)/i,
+    );
     if (segments.length <= 1) return [line];
     return segments.map(s => s.trim()).filter(Boolean);
   }
@@ -606,6 +611,26 @@ const ImportParser = (() => {
   //   Isto preserva o título completo na pegada ELI-PT e permite ao
   //   exporter gerar `<TLCRole>` com `showAs` adequado.
   function _parseSignatureSegment(seg) {
+    // Caso especial: segmento começa por "Promulgado/Assinado/Referendado em DD/MM/YYYY"
+    // — não tem cargo explícito, só nome. Inferir papel pelo verbo:
+    //   Promulgado → presidente-republica
+    //   Referendado → primeiro-ministro
+    //   Assinado → (ambíguo; deixar marcador 'evento-assinado' para 2ª passagem)
+    const eventMatch = seg.match(
+      /^(Promulgad[oa]|Referendad[oa]|Assinad[oa])\b[^-—–.]*[-—–.]\s*(.+?)\.?\s*$/i,
+    );
+    if (eventMatch) {
+      const verb = eventMatch[1].toLowerCase();
+      const name = eventMatch[2].trim();
+      // Saneamento: nome deve parecer um nome próprio (começa por maiúscula
+      // e tem pelo menos 4 chars). Evita capturar "no uso da competência…".
+      if (!/^[A-ZÁÉÍÓÚÂÊÔÃÕÇ]/.test(name) || name.length < 4) return null;
+      let as = null;
+      if (/^promulgad/i.test(verb)) as = 'presidente-republica';
+      else if (/^referendad/i.test(verb)) as = 'primeiro-ministro';
+      else as = '__evento-assinado__';  // marcador para 2ª passagem
+      return { as, name, title: '', viaEvent: verb };
+    }
     const m = seg.match(/^(?:O|A|Os|As|U[mn]a?)?\s*(.+?),\s*(.+?)\.?\s*$/);
     if (!m) return null;
     const title = m[1].trim();
@@ -642,43 +667,147 @@ const ImportParser = (() => {
   }
 
   function detectSignatures(lines, r) {
-    // 1. Procurar linha(s) de assinatura nas últimas 30 linhas.
-    //    Ignorar anexos (já capturados) e linhas curtas.
-    const tail = lines.slice(-30).filter(Boolean);
+    // 1. Identificar bloco final de assinaturas. Procurar do fim para cima
+    //    até um delimitador: artigo, anexo, fórmula promulgatória, ou ~50
+    //    linhas (cap superior). Não fazer break na primeira linha de
+    //    assinaturas — ACUMULAR de todas as linhas do bloco para apanhar
+    //    PR + PM + ministros mesmo quando cada um está em sua linha.
+    const CAP = 50;
+    let startIdx = Math.max(0, lines.length - CAP);
+    for (let i = lines.length - 1; i >= startIdx; i--) {
+      const ln = lines[i];
+      if (ART_RE.test(ln) || ART_INLINE_RE.test(ln) || ANNEX_RE.test(ln) || FORMULA_RE.test(ln)) {
+        startIdx = i + 1;
+        break;
+      }
+    }
+    const tail = lines.slice(startIdx).filter(Boolean);
     const tailText = tail.join(' ');
     const parsedSigs = [];
 
     // Heurística: a linha de assinaturas começa com "O " ou "A " seguido de
     // um título de cargo (Ministro/Primeiro-Ministro/Presidente/Secretário…)
     // e tem uma vírgula com nome próprio a seguir. Pode conter vários
-    // segmentos separados por " - ".
+    // segmentos separados por " - ", \n, ou ponto-final + Novo cargo.
     const titleStarter = /(?:^|[-—–]\s+)(?:O|A|Os|As)\s+(Ministr[oa]|Primeiro[- ]Ministro|Secret[áa]ri[oa]|Presidente|Representante)\b/;
-    for (let i = tail.length - 1; i >= 0; i--) {
+    // Iterar de cima para baixo no tail para preservar ordem natural.
+    for (let i = 0; i < tail.length; i++) {
       const ln = tail[i];
       if (ART_RE.test(ln) || ART_INLINE_RE.test(ln)) continue;
-      if (!titleStarter.test(ln)) continue;
-      const segments = _splitSignatureLine(ln);
-      segments.forEach(seg => {
-        const sig = _parseSignatureSegment(seg);
-        if (sig) parsedSigs.push(sig);
-      });
-      if (parsedSigs.length) break;  // achou — não procurar mais acima
+      if (EM_DATE_RE.test(ln)) continue;  // "Em DD de mês de YYYY." só marca início
+
+      // Caso A: linha inteira é uma linha de assinaturas (formato compacto
+      // ou multi-linha "O Ministro X, Nome A. - O Ministro Y, Nome B.")
+      if (titleStarter.test(ln)) {
+        const segments = _splitSignatureLine(ln);
+        segments.forEach(seg => {
+          const sig = _parseSignatureSegment(seg);
+          if (sig) parsedSigs.push(sig);
+        });
+        continue;
+      }
+
+      // Caso B: bloco multi-linha "O Ministro X,\nJoão Silva."
+      // — linha começa por cargo SEM vírgula final com nome, mas próxima
+      // linha tem só o nome (começa por maiúscula, sem cargo).
+      const headOnly = ln.match(/^(?:O|A|Os|As)\s+(Ministr[oa]|Primeiro[- ]Ministro|Secret[áa]ri[oa]|Presidente|Representante)\b.*?[,.]?\s*$/i);
+      if (headOnly && !/,\s*\S+/.test(ln) && tail[i + 1]) {
+        const nameLine = tail[i + 1];
+        if (/^[A-ZÁÉÍÓÚÂÊÔÃÕÇ][a-zA-ZÀ-ÿ' .-]+\.?$/.test(nameLine)) {
+          const seg = ln.replace(/[.,]?\s*$/, '') + ', ' + nameLine.replace(/\.\s*$/, '');
+          const sig = _parseSignatureSegment(seg);
+          if (sig) parsedSigs.push(sig);
+          i++;
+          continue;
+        }
+      }
+
+      // Caso C: evento — "Promulgado em DD/MM/YYYY." numa linha,
+      // nome do PR na linha seguinte (com ou sem "O Presidente da República,").
+      if (PROMULGADO_RE.test(ln) || REFERENDADO_RE.test(ln) || ASSINADO_RE.test(ln)) {
+        const verb = PROMULGADO_RE.test(ln) ? 'promulgado'
+                   : REFERENDADO_RE.test(ln) ? 'referendado'
+                   : 'assinado';
+        // Sub-caso C1: mesmo segmento contém o nome
+        // ("Promulgado em ... - Nome." ou "Referendado em ... — Nome.")
+        const inline = ln.match(/[-—–.]\s*([A-ZÁÉÍÓÚÂÊÔÃÕÇ][a-zA-ZÀ-ÿ' .-]{3,})\.?\s*$/);
+        if (inline) {
+          const name = inline[1].trim();
+          let as = verb === 'promulgado' ? 'presidente-republica'
+                 : verb === 'referendado' ? 'primeiro-ministro'
+                 : '__evento-assinado__';
+          parsedSigs.push({ as, name, title: '', viaEvent: verb });
+          continue;
+        }
+        // Sub-caso C2: nome está na(s) próxima(s) linha(s). Saltar
+        // instruções imperativas comuns ("Publique-se.", "Veja-se.", etc.).
+        // Procurar nas próximas até 3 linhas.
+        for (let k = 1; k <= 3 && (i + k) < tail.length; k++) {
+          const nxt = tail[i + k];
+          if (!nxt) continue;
+          // Instruções imperativas curtas — ignorar e continuar a procurar.
+          if (/^(Publique|Veja|Registe|Promulgue|Publica)[\-\s]?se\.?\s*$/i.test(nxt)) continue;
+          // Se a linha seguinte é "O Presidente da República, Nome." ou
+          // "O Primeiro-Ministro, Nome." trata-se via titleStarter — não
+          // duplicar aqui (será capturado na iteração desse índice).
+          if (titleStarter.test(nxt)) break;
+          // Linha só com nome próprio: requer >=2 tokens (nome + apelido).
+          const onlyName = nxt.match(/^([A-ZÁÉÍÓÚÂÊÔÃÕÇ][a-zA-ZÀ-ÿ' .-]{3,})\.?\s*$/);
+          if (onlyName && /\s/.test(onlyName[1].trim())) {
+            const name = onlyName[1].trim();
+            let as = verb === 'promulgado' ? 'presidente-republica'
+                   : verb === 'referendado' ? 'primeiro-ministro'
+                   : '__evento-assinado__';
+            parsedSigs.push({ as, name, title: '', viaEvent: verb });
+            i += k;
+            break;
+          }
+          // Linha não imperativa e não nome: parar (evita falsos positivos)
+          break;
+        }
+      }
     }
+
+    // De-duplicar (mesmo `as` + nome) preservando ordem
+    const seen = new Set();
+    const dedup = [];
+    for (const s of parsedSigs) {
+      const k = `${s.as}|${(s.name || '').toLowerCase()}`;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      dedup.push(s);
+    }
+    parsedSigs.length = 0;
+    parsedSigs.push(...dedup);
+
+    // Promover segmentos "__evento-assinado__" para PR (contexto: dec-lei
+    // tipicamente "Assinado em ... O Presidente da República, Nome").
+    // Se já existe um PR, ignorar.
+    const hasPRalready = parsedSigs.some(s => s.as === 'presidente-republica');
+    parsedSigs.forEach(s => {
+      if (s.as === '__evento-assinado__') {
+        s.as = hasPRalready ? null : 'presidente-republica';
+      }
+    });
 
     // 2. Determinar papel-base (signature / countersignature / promulgation)
     //    com base no tipo de acto + sinais textuais
     const sigs = [];
     const hasPromulgated = /promulgad[oa]/i.test(tailText);
     const hasReferended = /referendad[oa]/i.test(tailText);
+    const hasAssinadoPR = /assinad[oa]\s+em\b[\s\S]{0,80}Presidente\s+da\s+Rep[úu]blica/i.test(tailText);
+    const prFound = parsedSigs.find(s => s.as === 'presidente-republica');
 
     if (r.actType === 'dec-lei') {
       const pm = parsedSigs.find(s => s.as === 'primeiro-ministro');
       sigs.push({ role: 'countersignature', as: 'primeiro-ministro',
                   name: pm?.name || '', title: pm?.title || '', date: r.adoptionDate });
-      if (hasPromulgated) {
-        const pr = parsedSigs.find(s => s.as === 'presidente-republica');
+      // Incluir PR se houver "promulgado", "Assinado em ... Presidente da
+      // República", ou se já conseguimos extrair um nome de PR (via evento
+      // ou cargo explícito).
+      if (hasPromulgated || hasAssinadoPR || prFound) {
         sigs.push({ role: 'promulgation', as: 'presidente-republica',
-                    name: pr?.name || '', title: pr?.title || '', date: r.adoptionDate });
+                    name: prFound?.name || '', title: prFound?.title || '', date: r.adoptionDate });
       }
       // Ministros adicionais (referendados) — preservar título específico
       parsedSigs.filter(s => /^ministr/i.test(s.as) && s.as !== 'primeiro-ministro').forEach(s => {
@@ -686,10 +815,9 @@ const ImportParser = (() => {
       });
     } else if (r.actType === 'lei') {
       const par = parsedSigs.find(s => s.as === 'presidente-ar');
-      const pr = parsedSigs.find(s => s.as === 'presidente-republica');
       const pm = parsedSigs.find(s => s.as === 'primeiro-ministro');
       sigs.push({ role: 'signature', as: 'presidente-ar', name: par?.name || '', title: par?.title || '', date: r.adoptionDate });
-      sigs.push({ role: 'promulgation', as: 'presidente-republica', name: pr?.name || '', title: pr?.title || '', date: r.adoptionDate });
+      sigs.push({ role: 'promulgation', as: 'presidente-republica', name: prFound?.name || '', title: prFound?.title || '', date: r.adoptionDate });
       sigs.push({ role: 'countersignature', as: 'primeiro-ministro', name: pm?.name || '', title: pm?.title || '', date: r.adoptionDate });
     } else if (r.actType === 'res-cm') {
       const pm = parsedSigs.find(s => s.as === 'primeiro-ministro');
@@ -712,8 +840,7 @@ const ImportParser = (() => {
       const par = parsedSigs.find(s => s.as === 'presidente-ar');
       sigs.push({ role: 'signature', as: 'presidente-ar', name: par?.name || '', date: r.adoptionDate });
       if (r.actType === 'decreto-ar') {
-        const pr = parsedSigs.find(s => s.as === 'presidente-republica');
-        sigs.push({ role: 'promulgation', as: 'presidente-republica', name: pr?.name || '', date: r.adoptionDate });
+        sigs.push({ role: 'promulgation', as: 'presidente-republica', name: prFound?.name || '', date: r.adoptionDate });
       }
     } else if (r.actType === 'dlr') {
       const reg = r.country === 'pt-30' ? 'madeira' : 'acores';
