@@ -199,6 +199,17 @@ const EliMetadata = (() => {
     if (doc.habilitante) {
       obj['eli:based_on'] = { '@id': doc.habilitante };
     }
+    // Assuntos (descritores nacionais INCM) → eli:is_about, com os URIs
+    // canónicos data.dre.pt/eli/authority/legal-subject/{código}.
+    if (Array.isArray(doc.subjects) && doc.subjects.length) {
+      obj['eli:is_about'] = doc.subjects.map((s) => {
+        const code = typeof s === 'string' ? s : s.code;
+        const o = { '@id': `http://data.dre.pt/eli/authority/legal-subject/${code}` };
+        const lbl = typeof s === 'object' ? s.label : null;
+        if (lbl) o['skos:prefLabel'] = { '@value': lbl, '@language': 'pt' };
+        return o;
+      });
+    }
     if (doc.subtype === 'dec-lei-transposicao' && doc.transposesUri) {
       obj['eli:transposes'] = { '@id': doc.transposesUri };
     }
