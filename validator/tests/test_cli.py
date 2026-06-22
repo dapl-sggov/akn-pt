@@ -72,7 +72,9 @@ def test_validate_footprint_present(runner):
 def test_batch_corpus_ok(runner):
     result = runner.invoke(main, ["batch", str(CORPUS_DIR)])
     assert result.exit_code == 0
-    assert "10/10 OK" in result.output
+    # Corpus pode crescer (e.g. pressure tests v0.1.1 — CIRS excerpt em
+    # Maio/2026); só asserto que TODOS são OK (zero falhas).
+    assert "0 failed" in result.output
 
 
 def test_schema_path(runner):

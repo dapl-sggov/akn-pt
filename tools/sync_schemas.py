@@ -41,6 +41,7 @@ SOURCES = [
     REPO_ROOT / "schema" / "xsd" / "akn-pt-types.xsd",
     REPO_ROOT / "schema" / "xsd" / "akn-pt-metadata.xsd",
     REPO_ROOT / "schema" / "xsd" / "akn-pt-structure.xsd",
+    REPO_ROOT / "schema" / "xsd" / "akn-pt-extensions.xsd",
     REPO_ROOT / "schema" / "schematron" / "akn-pt-rules.sch",
 ]
 

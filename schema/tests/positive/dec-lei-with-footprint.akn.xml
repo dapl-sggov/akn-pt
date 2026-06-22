@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Positive test: DL publicado apos 2026-07-27, com workflow (pegada legislativa). -->
-<akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17">
+<akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17"
+            xmlns:akn-pt="http://eli.gov.pt/ns/akn-pt/1.0">
   <act name="dec-lei">
     <meta>
       <identification source="#dapl">
@@ -45,27 +46,27 @@
         <eventRef eId="e2" date="2026-08-10" source="#governo" type="generation" refersTo="#promulgation"/>
         <eventRef eId="e3" date="2026-08-15" source="#dre" type="generation" refersTo="#publication"/>
       </lifecycle>
-      <workflow source="#dapl">
-        <step eId="step_iniciativa" date="2026-04-15" refersTo="#iniciativa" source="#governo">
-          <description><p>Decisao do Governo de iniciar a elaboracao do diploma.</p></description>
-        </step>
-        <step eId="step_anteprojeto" date="2026-05-20" refersTo="#anteprojeto" source="#dapl">
-          <description><p>Anteprojeto de DL elaborado pela DAPL.</p></description>
-        </step>
-        <step eId="step_consulta_publica" date="2026-06-01" refersTo="#consulta-publica" source="#dapl">
-          <description><p>Consulta publica aberta por 30 dias.</p></description>
-          <input eId="input_cip" date="2026-06-15" source="#org-cip" type="contributo-consulta-publica">
-            <description><p>Comentarios da CIP sobre o artigo 8.o.</p></description>
-            <affects href="#art_8"/>
-          </input>
-          <input eId="input_ces" date="2026-06-20" source="#org-ces" type="parecer-conselho-economico-social">
-            <description><p>Parecer do CES.</p></description>
-          </input>
-        </step>
-        <step eId="step_aprovacao_cm" date="2026-08-01" refersTo="#aprovacao-cm" source="#cm"/>
-        <step eId="step_promulgacao" date="2026-08-10" refersTo="#promulgacao" source="#governo"/>
-        <step eId="step_publicacao" date="2026-08-15" refersTo="#publicacao" source="#dre"/>
-      </workflow>
+      <akn-pt:workflow source="#dapl">
+        <akn-pt:step eId="step_iniciativa" date="2026-04-15" refersTo="#iniciativa" source="#governo">
+          <akn-pt:description><p>Decisao do Governo de iniciar a elaboracao do diploma.</p></akn-pt:description>
+        </akn-pt:step>
+        <akn-pt:step eId="step_anteprojeto" date="2026-05-20" refersTo="#anteprojeto" source="#dapl">
+          <akn-pt:description><p>Anteprojeto de DL elaborado pela DAPL.</p></akn-pt:description>
+        </akn-pt:step>
+        <akn-pt:step eId="step_consulta_publica" date="2026-06-01" refersTo="#consulta-publica" source="#dapl">
+          <akn-pt:description><p>Consulta publica aberta por 30 dias.</p></akn-pt:description>
+          <akn-pt:input eId="input_cip" date="2026-06-15" source="#org-cip" type="contributo-consulta-publica">
+            <akn-pt:description><p>Comentarios da CIP sobre o artigo 8.o.</p></akn-pt:description>
+            <akn-pt:affects href="#art_8"/>
+          </akn-pt:input>
+          <akn-pt:input eId="input_ces" date="2026-06-20" source="#org-ces" type="parecer-conselho-economico-social">
+            <akn-pt:description><p>Parecer do CES.</p></akn-pt:description>
+          </akn-pt:input>
+        </akn-pt:step>
+        <akn-pt:step eId="step_aprovacao_cm" date="2026-08-01" refersTo="#aprovacao-cm" source="#cm"/>
+        <akn-pt:step eId="step_promulgacao" date="2026-08-10" refersTo="#promulgacao" source="#governo"/>
+        <akn-pt:step eId="step_publicacao" date="2026-08-15" refersTo="#publicacao" source="#dre"/>
+      </akn-pt:workflow>
       <analysis source="#dapl"><activeModifications/><passiveModifications/></analysis>
     </meta>
     <preface>

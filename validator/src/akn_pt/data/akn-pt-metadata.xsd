@@ -6,10 +6,17 @@
 <xs:schema
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
     xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17"
+    xmlns:akn-pt="http://eli.gov.pt/ns/akn-pt/1.0"
     targetNamespace="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17"
     elementFormDefault="qualified">
 
   <xs:include schemaLocation="akn-pt-types.xsd"/>
+
+  <!-- Extensões PT-específicas (workflow/step/input) vivem num namespace
+       nacional separado para serem inequivocamente identificáveis como
+       extensão (ADR-0011). -->
+  <xs:import namespace="http://eli.gov.pt/ns/akn-pt/1.0"
+             schemaLocation="akn-pt-extensions.xsd"/>
 
   <!-- ====================================================================
        <meta>
@@ -21,7 +28,8 @@
         <xs:element ref="identification"/>
         <xs:element ref="references"/>
         <xs:element ref="lifecycle"/>
-        <xs:element ref="workflow" minOccurs="0"/>
+        <!-- workflow vive no namespace akn-pt: (ADR-0011) — extensão nacional explícita -->
+        <xs:element ref="akn-pt:workflow" minOccurs="0"/>
         <xs:element ref="analysis" minOccurs="0"/>
       </xs:sequence>
     </xs:complexType>
@@ -84,7 +92,11 @@
       <xs:sequence>
         <xs:element name="FRBRthis"><xs:complexType><xs:attribute name="value" type="EliPtUriType" use="required"/></xs:complexType></xs:element>
         <xs:element name="FRBRuri"><xs:complexType><xs:attribute name="value" type="EliPtUriType" use="required"/></xs:complexType></xs:element>
-        <xs:element name="FRBRdate">
+        <!-- v0.1.1+: maxOccurs=2 para suportar Expressões consolidadas /
+             rectificadas — uma FRBRdate name="publication" obrigatória +
+             uma opcional name="consolidation"|"rectification" (cf. cap. 11
+             da spec; ADR-0011 para extensões PT no <meta>). -->
+        <xs:element name="FRBRdate" maxOccurs="2">
           <xs:complexType>
             <xs:attribute name="date" type="xs:date" use="required"/>
             <xs:attribute name="name" type="FrbrDateName" use="required"/>
@@ -190,76 +202,11 @@
     </xs:complexType>
   </xs:element>
 
-  <!-- ====================================================================
-       <workflow> — opcional v0.2+
-       ==================================================================== -->
-
   <!--
-    <workflow> — pegada legislativa (Lei n.o 5-A/2026)
-    Cada <step> representa uma fase do procedimento legislativo. Pode conter
-    descricao textual e zero ou mais <input> registando contributos de
-    entidades externas. Schematron impoe presenca em actos publicados a
-    partir de 2026-07-27 (publication phase).
+    <workflow>/<step>/<input> migraram para o namespace `akn-pt:` em v0.1.1
+    (ADR-0011) — definições em `akn-pt-extensions.xsd`. A referência ao
+    `<akn-pt:workflow>` no `<meta>` está acima.
   -->
-  <xs:element name="workflow">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element ref="step" minOccurs="1" maxOccurs="unbounded"/>
-      </xs:sequence>
-      <xs:attribute name="source" type="FrbrAuthorRefType" use="required"/>
-    </xs:complexType>
-  </xs:element>
-
-  <xs:element name="step">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element name="description" minOccurs="0">
-          <xs:complexType>
-            <xs:sequence>
-              <xs:element ref="p" maxOccurs="unbounded"/>
-            </xs:sequence>
-          </xs:complexType>
-        </xs:element>
-        <xs:element ref="input" minOccurs="0" maxOccurs="unbounded"/>
-      </xs:sequence>
-      <xs:attribute name="eId" type="EIdType" use="required"/>
-      <xs:attribute name="date" type="xs:date" use="required"/>
-      <xs:attribute name="refersTo" type="WorkflowStepTarget" use="required"/>
-      <xs:attribute name="source" type="FrbrAuthorRefType" use="required"/>
-      <xs:attribute name="outcome" type="xs:string"/>
-    </xs:complexType>
-  </xs:element>
-
-  <xs:element name="input">
-    <xs:annotation>
-      <xs:documentation>
-        Um contributo de entidade externa num passo do workflow. A natureza do
-        contributo e' classificada via @type (catalogo ContributionType).
-        @source aponta para uma TLCOrganization ou TLCPerson em &lt;references&gt;.
-        @affects (opcional) aponta para o(s) eId(s) de articulado afectado(s).
-      </xs:documentation>
-    </xs:annotation>
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element name="description" minOccurs="0">
-          <xs:complexType>
-            <xs:sequence>
-              <xs:element ref="p" maxOccurs="unbounded"/>
-            </xs:sequence>
-          </xs:complexType>
-        </xs:element>
-        <xs:element name="affects" minOccurs="0" maxOccurs="unbounded">
-          <xs:complexType>
-            <xs:attribute name="href" type="xs:string" use="required"/>
-          </xs:complexType>
-        </xs:element>
-      </xs:sequence>
-      <xs:attribute name="eId" type="EIdType" use="required"/>
-      <xs:attribute name="date" type="xs:date" use="required"/>
-      <xs:attribute name="source" type="FrbrAuthorRefType" use="required"/>
-      <xs:attribute name="type" type="ContributionType" use="required"/>
-    </xs:complexType>
-  </xs:element>
 
   <!-- ====================================================================
        <analysis> — vazio em v0.1.0 mas presente
@@ -273,6 +220,21 @@
             <xs:sequence>
               <xs:element name="textualMod" minOccurs="0" maxOccurs="unbounded">
                 <xs:complexType>
+                  <xs:sequence>
+                    <!-- v0.1.1+: source/destination explícitos para passiveModifications
+                         de consolidações e retificações. Forma simplificada do modelo
+                         canónico AKN (cf. cap. 11 da spec; ADR-0011). -->
+                    <xs:element name="source" minOccurs="0">
+                      <xs:complexType>
+                        <xs:attribute name="href" type="xs:string" use="required"/>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="destination" minOccurs="0">
+                      <xs:complexType>
+                        <xs:attribute name="href" type="xs:string" use="required"/>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
                   <xs:attribute name="eId" type="EIdType" use="required"/>
                   <xs:attribute name="type" type="xs:string"/>
                 </xs:complexType>
@@ -285,6 +247,21 @@
             <xs:sequence>
               <xs:element name="textualMod" minOccurs="0" maxOccurs="unbounded">
                 <xs:complexType>
+                  <xs:sequence>
+                    <!-- v0.1.1+: source/destination explícitos para passiveModifications
+                         de consolidações e retificações. Forma simplificada do modelo
+                         canónico AKN (cf. cap. 11 da spec; ADR-0011). -->
+                    <xs:element name="source" minOccurs="0">
+                      <xs:complexType>
+                        <xs:attribute name="href" type="xs:string" use="required"/>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="destination" minOccurs="0">
+                      <xs:complexType>
+                        <xs:attribute name="href" type="xs:string" use="required"/>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
                   <xs:attribute name="eId" type="EIdType" use="required"/>
                   <xs:attribute name="type" type="xs:string"/>
                 </xs:complexType>

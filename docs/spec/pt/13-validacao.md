@@ -47,6 +47,31 @@ tudo.
 Mais detalhe em `schema/schematron/akn-pt-rules.sch` no repositório, e
 para o pattern `legislative-footprint` ver [cap. 12](12-pegada-legislativa.md).
 
+### 13.3.1 IDs estáveis de mensagens (v0.1.1+)
+
+Cada `<sch:assert>`/`<sch:report>` no Schematron tem um ID estável no formato
+`[CODE-NNNN]` no início da mensagem. O validador extrai-o e expõe-o como
+campo `id` no JSON. Estes IDs são estáveis entre versões e podem ser
+referenciados em testes, supressões editoriais ou regras de filtragem CI.
+
+| Prefixo | Pattern | Cobre | Range em v0.1.1 |
+|---|---|---|---|
+| `STR-` | structural-integrity | Estrutura básica do documento (1 act, article tem heading/num, body não vazio, chapter com filhos, paragraph com content/list) | STR-0001 – STR-0006 |
+| `STR-` (Python) | referential-integrity (suplemento) | Coerência eId↔num (artigo, parágrafo, alínea) — não exprimível em XPath 1.0 | STR-0010 – STR-0012 |
+| `REF-` | referential-integrity | eId único; refs internas resolvem para eId existente | REF-0001 – REF-0003 |
+| `META-` | metadata-completeness | FRBR Work/Expression/Manifestation, datas, língua, preface | META-0001 – META-0009 |
+| `ACT-` | act-type-coherence | Cardinalidade de signatures, habilitantes, jurisdição regional, etc. — por tipo | ACT-0001 – ACT-0020 |
+| `SUB-` | subtype-coherence | FRBRsubtype começa por act/@name | SUB-0001 |
+| `LEG-` | legistica-conventions | Convenções de redacção (Considerando, epígrafe não vazia, num "Artigo …") | LEG-0001 – LEG-0003 |
+| `LIFE-` | lifecycle-coherence | Evento publication presente; data publicação ≥ adopção | LIFE-0001 – LIFE-0002 |
+| `FOOT-` | legislative-footprint | Pegada Lei 5-A/2026 — workflow + steps mínimos + input.@source | FOOT-0001 – FOOT-0006 |
+| `FRBR-` | frbr-uri-consistency | URI Work contém /{type}/; Expression estende Work; Manifestation estende Expression | FRBR-0001 – FRBR-0003 |
+
+| `TIMP-` | temporal-consistency | Coerência temporal de Expressões consolidadas/rectificadas (versionNumber ≥ 2; data ≥ publication; passiveModifications exige FRBRdate name=consolidation) | TIMP-0001 – TIMP-0004 |
+
+IDs não atribuídos hoje (gap explícito, reservados para evoluções de v0.2):
+- `EXT-` (extensions — validação de elementos no namespace `akn-pt:`) — ver cap. 14.
+
 ## 13.4 Output do validador
 
 O validador de referência produz três formatos de saída:

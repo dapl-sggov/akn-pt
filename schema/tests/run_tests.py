@@ -28,6 +28,17 @@ POS_DIR = ROOT / "schema" / "tests" / "positive"
 NEG_DIR = ROOT / "schema" / "tests" / "negative"
 SCH_NEG_DIR = ROOT / "schema" / "tests" / "schematron-negative"
 
+# Para negative-tests que precisam da pipeline completa do validador (e.g. o
+# check Python eId↔num — STR-0010..STR-0012), importamos opcionalmente
+# o package akn_pt. Se não estiver instalado, o runner cai para o modo
+# antigo (só Schematron) e marca o teste como skipped.
+try:
+    from akn_pt.core import validate as akn_validate
+    _AKN_AVAILABLE = True
+except ImportError:
+    akn_validate = None
+    _AKN_AVAILABLE = False
+
 
 def _load_xsd() -> etree.XMLSchema:
     return etree.XMLSchema(etree.parse(str(XSD)))
@@ -93,7 +104,7 @@ def run(verbose: bool) -> int:
             if verbose:
                 print(f"        {xsd.error_log[0].message[:160]}")
 
-    print(f"\nSchematron negative ({len(sch_neg)}) — must pass XSD but FAIL Schematron:")
+    print(f"\nSchematron negative ({len(sch_neg)}) — must pass XSD but FAIL validation:")
     for f in sch_neg:
         doc = etree.parse(str(f))
         xsd_ok = xsd.validate(doc)
@@ -102,6 +113,12 @@ def run(verbose: bool) -> int:
             print(f"  FAIL {f.name}: XSD rejected (should pass XSD)")
             continue
         sch_ok = sch.validate(doc)
+        # Para testes que dependem da pipeline Python (eId↔num check, etc.),
+        # consultamos também o akn_pt.validate(). Documentamos a convenção:
+        # ficheiros com prefixo `s13` ou mais dependem do validador full.
+        if sch_ok and _AKN_AVAILABLE:
+            r = akn_validate(str(f), phase="publication")
+            sch_ok = r.valid
         if sch_ok:
             failures.append(f.name)
             print(f"  FAIL {f.name}: Schematron accepted (should reject)")

@@ -2,6 +2,7 @@
 """Core validation engine — XSD + Schematron for AKN-PT documents."""
 from __future__ import annotations
 
+import re
 import time
 from dataclasses import dataclass, field
 from enum import Enum
@@ -15,6 +16,21 @@ from . import i18n
 
 # Type alias for input
 XmlInput = Union[bytes, str, Path]
+
+# Stable message ID extraction. Schematron asserts/reports are prefixed with
+# "[CODE-NNNN] message" (e.g. "[STR-0001] akomaNtoso deve conter...").
+# This regex extracts the ID and strips it from the visible message.
+_MSG_ID_RE = re.compile(r"^\s*\[([A-Z]{2,5}-\d{4})\]\s*(.*)$", re.DOTALL)
+
+
+def _split_message_id(text: str) -> tuple[str, str]:
+    """Return (message_id, clean_message). If no ID prefix, returns ("", text)."""
+    if not text:
+        return "", ""
+    m = _MSG_ID_RE.match(text)
+    if not m:
+        return "", text.strip()
+    return m.group(1), m.group(2).strip()
 
 
 class Phase(str, Enum):
@@ -40,6 +56,7 @@ class Issue:
     location: str        # XPath of the offending element
     message: str         # human-readable message (PT by default)
     line: int = 0
+    message_id: str = "" # stable ID extracted from message prefix (e.g. "STR-0001")
 
 
 @dataclass
@@ -77,15 +94,17 @@ class ValidationReport:
                 "valid": self.schematron_ok,
                 "errors": [
                     {
-                        "severity": e.severity.value, "pattern": e.pattern,
-                        "rule": e.rule, "location": e.location, "message": e.message,
+                        "id": e.message_id, "severity": e.severity.value,
+                        "pattern": e.pattern, "rule": e.rule,
+                        "location": e.location, "message": e.message,
                     }
                     for e in self.errors if e.source == "schematron"
                 ],
                 "warnings": [
                     {
-                        "severity": w.severity.value, "pattern": w.pattern,
-                        "rule": w.rule, "location": w.location, "message": w.message,
+                        "id": w.message_id, "severity": w.severity.value,
+                        "pattern": w.pattern, "rule": w.rule,
+                        "location": w.location, "message": w.message,
                     }
                     for w in self.warnings
                 ],
@@ -140,6 +159,7 @@ def get_schematron() -> isoschematron.Schematron:
 # Validation pipeline
 # -----------------------------------------------------------------------------
 AKN_NS = "http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17"
+AKN_PT_NS = "http://eli.gov.pt/ns/akn-pt/1.0"
 SVRL_NS = "http://purl.oclc.org/dsdl/svrl"
 
 
@@ -175,11 +195,13 @@ def _extract_metadata(tree: etree._ElementTree) -> dict:
     if number is not None:
         info["doc_number"] = number.get("value", "")
 
-    workflow = root.find(".//akn:meta/akn:workflow", ns)
+    # workflow vive no namespace akn-pt: (ADR-0011)
+    ns_pt = {"akn": AKN_NS, "akn-pt": AKN_PT_NS}
+    workflow = root.find(".//akn:meta/akn-pt:workflow", ns_pt)
     if workflow is not None:
         info["has_footprint"] = True
-        steps = workflow.findall("akn:step", ns)
-        inputs = workflow.findall(".//akn:input", ns)
+        steps = workflow.findall("akn-pt:step", ns_pt)
+        inputs = workflow.findall(".//akn-pt:input", ns_pt)
         info["footprint_summary"] = {
             "n_steps": len(steps),
             "n_inputs": len(inputs),
@@ -221,13 +243,16 @@ def _collect_schematron_issues(report) -> tuple[list[Issue], list[Issue]]:
     for fa in report.findall(f".//{{{SVRL_NS}}}failed-assert"):
         sev = Severity.WARNING if fa.get("role") == "warning" else Severity.ERROR
         text = fa.find(f"{{{SVRL_NS}}}text")
+        raw = (text.text or "") if text is not None else ""
+        mid, clean = _split_message_id(raw)
         issue = Issue(
             severity=sev,
             source="schematron",
             pattern=_find_pattern_id(fa),
             rule=fa.get("test", ""),
             location=fa.get("location", ""),
-            message=(text.text or "").strip() if text is not None else "",
+            message=clean,
+            message_id=mid,
         )
         (warnings if sev == Severity.WARNING else errors).append(issue)
 
@@ -235,16 +260,119 @@ def _collect_schematron_issues(report) -> tuple[list[Issue], list[Issue]]:
         # successful-report = sch:report fired = a (typically warning) condition was met
         sev = Severity.WARNING if sr.get("role") == "warning" else Severity.INFO
         text = sr.find(f"{{{SVRL_NS}}}text")
+        raw = (text.text or "") if text is not None else ""
+        mid, clean = _split_message_id(raw)
         warnings.append(Issue(
             severity=sev,
             source="schematron",
             pattern=_find_pattern_id(sr),
             rule=sr.get("test", ""),
             location=sr.get("location", ""),
-            message=(text.text or "").strip() if text is not None else "",
+            message=clean,
+            message_id=mid,
         ))
 
     return errors, warnings
+
+
+# eId vs num coherence check (Python, não Schematron — XPath 1.0 não permite
+# expressar isto de forma robusta). Activa em todas as fases (parte do
+# pattern lógico "referential-integrity"). IDs reservados:
+#   STR-0010  artigo: eId art_N não bate com num "Artigo N.º"
+#   STR-0011  paragrafo: eId art_N__para_M não bate com num "M -" (ou "M.")
+#   STR-0012  alínea: eId art_N__para_M__lit_X não bate com num "X)"
+_RE_ART_EID  = re.compile(r"^art_(\d+)$")
+_RE_ART_NUM  = re.compile(r"^\s*Artigo\s+(\d+)\.[ºo°]?\s*$", re.IGNORECASE)
+_RE_PARA_EID = re.compile(r"^art_\d+__para_(\d+)$|^para_(\d+)$")
+_RE_PARA_NUM = re.compile(r"^\s*(\d+)\s*[-.–—]\s*$")
+_RE_LIT_EID  = re.compile(r"^.+__lit_([a-z])$")
+_RE_LIT_NUM  = re.compile(r"^\s*([a-z])\s*\)\s*$")
+
+
+def _check_eid_num_coherence(tree: etree._ElementTree) -> list[Issue]:
+    """Verifica que o eId e o <num> visível são coerentes em ordem sequencial.
+
+    Limitações conscientes (não falha):
+      - Artigos com sufixo intencional (num "Artigo 5.º-A" → eId art_6) — skip;
+      - Parágrafos com num vazio (intro/único) — skip;
+      - eIds não-canónicos (e.g. quoted__art_1 em diplomas alteradores) — skip.
+    """
+    issues: list[Issue] = []
+    ns = {"akn": AKN_NS}
+
+    # Artigos
+    for art in tree.findall(".//akn:body//akn:article", ns):
+        eId = art.get("eId", "")
+        num_el = art.find("akn:num", ns)
+        if not eId or num_el is None:
+            continue
+        num_text = (num_el.text or "").strip()
+        m_eid = _RE_ART_EID.match(eId)
+        m_num = _RE_ART_NUM.match(num_text)
+        if not (m_eid and m_num):
+            continue  # sufixos ou formatos não-canónicos — skip silenciosamente
+        if m_eid.group(1) != m_num.group(1):
+            issues.append(Issue(
+                severity=Severity.ERROR,
+                source="schematron",
+                pattern="referential-integrity",
+                rule="eId↔num coherence (article)",
+                location=f"//article[@eId='{eId}']",
+                message=(f"eId '{eId}' não bate com num '{num_text}' — "
+                         f"o eId indica artigo {m_eid.group(1)} mas o num indica artigo {m_num.group(1)}."),
+                message_id="STR-0010",
+            ))
+
+    # Parágrafos numerados (paragraph com num "N -" e eId terminado em para_N)
+    for p in tree.findall(".//akn:paragraph", ns):
+        eId = p.get("eId", "")
+        num_el = p.find("akn:num", ns)
+        if not eId or num_el is None:
+            continue
+        num_text = (num_el.text or "").strip()
+        if not num_text:
+            continue  # paragraph único / intro — skip
+        m_eid = _RE_PARA_EID.match(eId)
+        m_num = _RE_PARA_NUM.match(num_text)
+        if not (m_eid and m_num):
+            continue
+        eid_n = m_eid.group(1) or m_eid.group(2)
+        if eid_n != m_num.group(1):
+            issues.append(Issue(
+                severity=Severity.ERROR,
+                source="schematron",
+                pattern="referential-integrity",
+                rule="eId↔num coherence (paragraph)",
+                location=f"//paragraph[@eId='{eId}']",
+                message=(f"eId '{eId}' não bate com num '{num_text}' — "
+                         f"o eId indica parágrafo {eid_n} mas o num indica {m_num.group(1)}."),
+                message_id="STR-0011",
+            ))
+
+    # Alíneas (point) com num "a)", "b)", ... e eId ...__lit_a, ...__lit_b
+    for pt in tree.findall(".//akn:point", ns):
+        eId = pt.get("eId", "")
+        num_el = pt.find("akn:num", ns)
+        if not eId or num_el is None:
+            continue
+        num_text = (num_el.text or "").strip()
+        m_eid = _RE_LIT_EID.match(eId)
+        m_num = _RE_LIT_NUM.match(num_text)
+        if not (m_eid and m_num):
+            continue
+        if m_eid.group(1).lower() != m_num.group(1).lower():
+            issues.append(Issue(
+                severity=Severity.ERROR,
+                source="schematron",
+                pattern="referential-integrity",
+                rule="eId↔num coherence (point)",
+                location=f"//point[@eId='{eId}']",
+                message=(f"eId '{eId}' não bate com num '{num_text}' — "
+                         f"o eId indica alínea {m_eid.group(1)} mas o num indica {m_num.group(1)}."),
+                message_id="STR-0012",
+            ))
+
+    return issues
 
 
 def _find_pattern_id(node) -> str:
@@ -316,6 +444,12 @@ def validate(
     sch.validate(tree)
     sch_errors, sch_warnings = _collect_schematron_issues(sch.validation_report)
 
+    # Step 2b: Python-side eId↔num coherence (não exprimível em XPath 1.0).
+    # Pertence logicamente a referential-integrity, portanto sujeita-se ao
+    # filtro de fase como qualquer outro pattern do Schematron.
+    eid_num_issues = _check_eid_num_coherence(tree)
+    sch_errors.extend(eid_num_issues)
+
     # Filter by phase: keep only issues from patterns active in this phase.
     active_patterns = _active_patterns(phase)
     sch_errors = [i for i in sch_errors if not i.pattern or i.pattern in active_patterns]
@@ -340,7 +474,7 @@ _PHASE_PATTERNS = {
         "structural-integrity", "referential-integrity",
         "metadata-completeness", "act-type-coherence", "subtype-coherence",
         "legistica-conventions", "lifecycle-coherence", "frbr-uri-consistency",
-        "legislative-footprint",
+        "legislative-footprint", "temporal-consistency",
     },
 }
 

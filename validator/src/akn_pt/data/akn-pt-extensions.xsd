@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AKN-PT — extensions module (namespace `akn-pt:`)
+  ================================================
+
+  Este módulo declara elementos PT-specíficos que NÃO existem na spec OASIS
+  Akoma Ntoso canónica e que, por isso, vivem num namespace nacional separado
+  (`http://eli.gov.pt/ns/akn-pt/1.0`).
+
+  Motivação (ADR-0011): em v0.1.0 os elementos `<workflow>/<step>/<input>`
+  da pegada legislativa (Lei n.º 5-A/2026) eram declarados no namespace
+  OASIS canónico. Tal poderia ser interpretado pela OASIS LegalDocML TC como
+  "extensão mascarada" — risco identificado em LESSONS-AND-OPEN-QUESTIONS.md.
+  Movê-los para namespace nacional dedicado torna a extensão explícita e
+  alinha-se com o padrão canónico AKN para extensões nacionais.
+
+  Surface migrada (v0.1.1):
+    <akn-pt:workflow>   bloco raíz da pegada
+    <akn-pt:step>       fase do procedimento
+    <akn-pt:input>      contributo de entidade externa num step
+
+  Tipos partilhados (e.g. EIdType, FrbrAuthorRefType, ContributionType,
+  WorkflowStepTarget) continuam definidos no namespace OASIS em
+  `akn-pt-types.xsd` e são referenciados aqui via prefixo `akn:`.
+
+  Licença: EUPL-1.2
+  Copyright (c) 2026 SGGOV / DAPL
+-->
+<xs:schema
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns="http://eli.gov.pt/ns/akn-pt/1.0"
+    xmlns:akn="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17"
+    targetNamespace="http://eli.gov.pt/ns/akn-pt/1.0"
+    elementFormDefault="qualified">
+
+  <xs:import namespace="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17"
+             schemaLocation="akn-pt-types.xsd"/>
+
+  <!-- ====================================================================
+       <akn-pt:workflow> — pegada legislativa (Lei n.º 5-A/2026)
+       ==================================================================== -->
+
+  <xs:element name="workflow">
+    <xs:annotation>
+      <xs:documentation>
+        Pegada legislativa do diploma. Cada &lt;step&gt; representa uma fase
+        do procedimento legislativo. Schematron impõe presença em actos
+        publicados a partir de 2026-07-27 (phase publication).
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="step" minOccurs="1" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="source" type="akn:FrbrAuthorRefType" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="step">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="description" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element ref="akn:p" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element ref="input" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="eId" type="akn:EIdType" use="required"/>
+      <xs:attribute name="date" type="xs:date" use="required"/>
+      <xs:attribute name="refersTo" type="akn:WorkflowStepTarget" use="required"/>
+      <xs:attribute name="source" type="akn:FrbrAuthorRefType" use="required"/>
+      <xs:attribute name="outcome" type="xs:string"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="input">
+    <xs:annotation>
+      <xs:documentation>
+        Um contributo de entidade externa num passo do workflow. A natureza
+        do contributo é classificada via @type (catálogo ContributionType).
+        @source aponta para uma TLCOrganization ou TLCPerson em
+        &lt;references&gt;. @affects (opcional) aponta para o(s) eId(s) de
+        articulado afectado(s).
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="description" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element ref="akn:p" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="affects" minOccurs="0" maxOccurs="unbounded">
+          <xs:complexType>
+            <xs:attribute name="href" type="xs:string" use="required"/>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="eId" type="akn:EIdType" use="required"/>
+      <xs:attribute name="date" type="xs:date" use="required"/>
+      <xs:attribute name="source" type="akn:FrbrAuthorRefType" use="required"/>
+      <xs:attribute name="type" type="akn:ContributionType" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

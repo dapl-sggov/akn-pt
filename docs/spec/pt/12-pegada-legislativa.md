@@ -15,45 +15,61 @@ A pegada legislativa é o registo estruturado, por cada diploma, de:
    consultivos);
 4. **Quando** foi aprovado, promulgado, publicado e entrou em vigor.
 
-O AKN-PT v0.1.0 materializa-a através do bloco `<workflow>` em `<meta>`, com
-vocabulário controlado para fases e tipos de contributo.
+O AKN-PT v0.1.1 materializa-a através do bloco `<akn-pt:workflow>` em
+`<meta>`, com vocabulário controlado para fases e tipos de contributo. O
+prefixo `akn-pt:` resolve para o namespace nacional
+`http://eli.gov.pt/ns/akn-pt/1.0` (cf. **ADR-0011**) — extensão explícita
+relativamente ao namespace OASIS canónico.
 
-## 12.2 Estrutura `<workflow>`
+> **Migração v0.1.0 → v0.1.1:** se um documento foi marcado com `<workflow>`
+> sem prefixo no namespace OASIS, é considerado **inválido**. Converter com
+> `xsltproc validator/scripts/migrate-ns.xsl doc.akn.xml > doc.migrated.akn.xml`.
+> O corpus institucional não tem documentos afectados; apenas pipelines
+> externos que tenham emitido o formato antigo.
+
+## 12.2 Estrutura `<akn-pt:workflow>`
 
 ```xml
-<workflow source="#dapl">
-  <step eId="step_iniciativa" date="2026-04-15"
-        refersTo="#iniciativa" source="#governo">
-    <description><p>Decisão do Governo de iniciar a elaboração.</p></description>
-  </step>
-  <step eId="step_anteprojeto" date="2026-05-20"
-        refersTo="#anteprojeto" source="#dapl">
-    <description><p>Anteprojecto elaborado pela DAPL.</p></description>
-  </step>
-  <step eId="step_consulta_publica" date="2026-06-01"
-        refersTo="#consulta-publica" source="#dapl">
-    <description><p>Consulta pública aberta por 30 dias.</p></description>
-    <input eId="input_cip" date="2026-06-15"
-           source="#org-cip" type="contributo-consulta-publica">
-      <description><p>Comentários da CIP sobre o artigo 8.º.</p></description>
-      <affects href="#art_8"/>
-    </input>
-    <input eId="input_ces" date="2026-06-20"
-           source="#org-ces" type="parecer-conselho-economico-social">
-      <description><p>Parecer do CES.</p></description>
-    </input>
-  </step>
-  <step eId="step_aprovacao_cm" date="2026-08-01"
-        refersTo="#aprovacao-cm" source="#cm"/>
-  <step eId="step_promulgacao" date="2026-08-10"
-        refersTo="#promulgacao" source="#governo"/>
-  <step eId="step_publicacao" date="2026-08-15"
-        refersTo="#publicacao" source="#dre"/>
-</workflow>
+<akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17"
+            xmlns:akn-pt="http://eli.gov.pt/ns/akn-pt/1.0">
+  ...
+  <meta>
+    ...
+    <akn-pt:workflow source="#dapl">
+      <akn-pt:step eId="step_iniciativa" date="2026-04-15"
+            refersTo="#iniciativa" source="#governo">
+        <akn-pt:description><p>Decisão do Governo de iniciar a elaboração.</p></akn-pt:description>
+      </akn-pt:step>
+      <akn-pt:step eId="step_anteprojeto" date="2026-05-20"
+            refersTo="#anteprojeto" source="#dapl">
+        <akn-pt:description><p>Anteprojecto elaborado pela DAPL.</p></akn-pt:description>
+      </akn-pt:step>
+      <akn-pt:step eId="step_consulta_publica" date="2026-06-01"
+            refersTo="#consulta-publica" source="#dapl">
+        <akn-pt:description><p>Consulta pública aberta por 30 dias.</p></akn-pt:description>
+        <akn-pt:input eId="input_cip" date="2026-06-15"
+               source="#org-cip" type="contributo-consulta-publica">
+          <akn-pt:description><p>Comentários da CIP sobre o artigo 8.º.</p></akn-pt:description>
+          <akn-pt:affects href="#art_8"/>
+        </akn-pt:input>
+        <akn-pt:input eId="input_ces" date="2026-06-20"
+               source="#org-ces" type="parecer-conselho-economico-social">
+          <akn-pt:description><p>Parecer do CES.</p></akn-pt:description>
+        </akn-pt:input>
+      </akn-pt:step>
+      <akn-pt:step eId="step_aprovacao_cm" date="2026-08-01"
+            refersTo="#aprovacao-cm" source="#cm"/>
+      <akn-pt:step eId="step_promulgacao" date="2026-08-10"
+            refersTo="#promulgacao" source="#governo"/>
+      <akn-pt:step eId="step_publicacao" date="2026-08-15"
+            refersTo="#publicacao" source="#dre"/>
+    </akn-pt:workflow>
+  </meta>
 ```
 
-O `<workflow>` é filho directo de `<meta>` (ao mesmo nível de `<identification>`,
-`<references>`, `<lifecycle>` e `<analysis>`).
+O `<akn-pt:workflow>` é filho directo de `<meta>` (ao mesmo nível de
+`<identification>`, `<references>`, `<lifecycle>` e `<analysis>`, que vivem
+no namespace canónico OASIS).
 
 ## 12.3 `<step>` — atributos e sub-elementos
 

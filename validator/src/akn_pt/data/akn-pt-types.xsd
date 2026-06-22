@@ -46,10 +46,14 @@
       <xs:documentation>
         URI ELI-PT. Aceita Work, Expression e Manifestation, com fragmento opcional.
         Padrão: https://{domain}/eli/{jurisdiction}/{type}/{year}/{number}/{lang}[/{pit}][.{fmt}][#{frag}][/!main]
+
+        Número aceita sufixo `-LETRA` (ex.: 442-A/88, 5-A/2026) — convenção
+        legística PT para diplomas extra-numerários (corrigido em v0.1.1
+        após pressure test com CIRS / DL 442-A/88).
       </xs:documentation>
     </xs:annotation>
     <xs:restriction base="xs:anyURI">
-      <xs:pattern value="https?://[a-z0-9.\-]+/eli/pt(-\d{2})?/[a-z\-]+/\d{4}/\d+/[a-z]{2,3}(/\d{4}-\d{2}-\d{2})?(\.[a-z]{3,4})?(/!main)?(#[A-Za-z0-9_]+)?"/>
+      <xs:pattern value="https?://[a-z0-9.\-]+/eli/pt(-\d{2})?/[a-z\-]+/\d{4}/\d+(-[A-Z])?/[a-z]{2,3}(/\d{4}-\d{2}-\d{2})?(\.[a-z]{3,4})?(/!main)?(#[A-Za-z0-9_]+)?"/>
     </xs:restriction>
   </xs:simpleType>
 
@@ -204,6 +208,9 @@
       <xs:enumeration value="publication"/>
       <xs:enumeration value="signature"/>
       <xs:enumeration value="entry-into-force"/>
+      <!-- v0.1.1+: para Expressões consolidadas e rectificadas (cap. 11) -->
+      <xs:enumeration value="consolidation"/>
+      <xs:enumeration value="rectification"/>
     </xs:restriction>
   </xs:simpleType>
 
@@ -219,6 +226,8 @@
       <xs:enumeration value="#countersignature"/>
       <xs:enumeration value="#publication"/>
       <xs:enumeration value="#entry-into-force"/>
+      <!-- v0.1.2: rectificação como evento lifecycle (cf. cap. 11.5 da spec) -->
+      <xs:enumeration value="#rectification"/>
     </xs:restriction>
   </xs:simpleType>
 
