@@ -97,12 +97,12 @@ Exemplo real resolvível: `http://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre/pt
 
 ### 3.1 Camadas FRBR
 
-- **Work:** até `{day}`. Identifica o ato como obra.
-  `https://data.dre.pt/eli/dec-lei/83/2016/12/16`
-- **Expression (como publicada):** acrescenta `/p/dre/{lang}`.
+- **Work:** termina em `/{p|a|m}/dre`. Identifica o ato como obra.
+  `https://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre`
+- **Expression (como publicada):** acrescenta `/{lang}`.
   `https://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre/pt`
-- **Expression (consolidada):** o `p` passa a `{point-in-time}`.
-  `https://data.dre.pt/eli/dec-lei/83/2016/12/16/2024-01-01/dre/pt`
+- **Expression (consolidada):** o Work usa `/{ano}/{p|a|m}/cons/{AAAAMMDD}`.
+  `https://data.dre.pt/eli/dec-lei/83/2016/p/cons/20240101/pt`
 - **Manifestation:** acrescenta `/{format}` (segmento).
   `https://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre/pt/xml`
 - **Fragmento:** acrescenta `#{fragment}`.

@@ -181,6 +181,12 @@ const EliMetadata = (() => {
         'skos:prefLabel': { '@value': author.label, '@language': 'pt' },
       },
       'eli:title': { '@value': title, '@language': 'pt' },
+      // Constantes alinhadas com os metadados ELI da INCM (paridade com data.dre.pt).
+      'eli:uri_schema': { '@id': 'https://dre.pt/identificador-europeu-legislacao' },
+      'eli:publisher': { '@value': 'INCM' },
+      'eli:publisher_agent': { '@id': `${domain}/authority/legal-institution/incm` },
+      'eli:rightsholder_agent': { '@id': `${domain}/authority/legal-institution/incm` },
+      'eli:legal_value': { '@id': `${ELI_ONTOLOGY}LegalValue-unofficial` },
       'eli:is_realized_by': expression,
     };
     if (doc.adoptionDate) {

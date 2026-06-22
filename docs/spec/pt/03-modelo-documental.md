@@ -23,8 +23,8 @@ Cada documento AKN-PT contém os três elementos FRBR em `<meta>/<identification
 ```xml
 <identification source="#dapl">
   <FRBRWork>
-    <FRBRthis    value="https://data.dre.pt/eli/dec-lei/22/2026/03/15/!main"/>
-    <FRBRuri     value="https://data.dre.pt/eli/dec-lei/22/2026/03/15"/>
+    <FRBRthis    value="https://data.dre.pt/eli/dec-lei/22/2026/03/15/p/dre/!main"/>
+    <FRBRuri     value="https://data.dre.pt/eli/dec-lei/22/2026/03/15/p/dre"/>
     <FRBRdate    date="2026-03-10" name="adoption"/>
     <FRBRauthor  href="#governo"/>
     <FRBRcountry value="pt"/>
@@ -63,9 +63,9 @@ Cenário: o DL n.º 22/2026 (originário) é alterado pelo DL n.º 80/2026.
 
 | Camada | Antes da alteração | Depois |
 |---|---|---|
-| Work | `data.dre.pt/eli/dec-lei/22/2026/03/15` (único) | Mantém-se. Não muda. |
-| Expression | `…/03/15/p/dre/pt` (originária) | mantém-se; cria-se `…/03/15/2026-08-20/dre/pt` para a consolidada. |
-| Manifestation | `…/p/dre/pt/xml` | Mantém-se; cria-se `…/2026-08-20/dre/pt/xml`. |
+| Work | `data.dre.pt/eli/dec-lei/22/2026/03/15/p/dre` (único) | Mantém-se. Não muda. |
+| Expression | `…/03/15/p/dre/pt` (originária) | mantém-se; cria-se `…/2026/p/cons/20260820/pt` para a consolidada. |
+| Manifestation | `…/p/dre/pt/xml` | Mantém-se; cria-se `…/2026/p/cons/20260820/pt/xml`. |
 
 Importante:
 
