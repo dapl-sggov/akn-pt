@@ -1565,6 +1565,16 @@ try {
     ['JSON-LD parseável', (() => { try { JSON.parse(global.EliMetadata.toJsonLdString(doc)); return true; } catch { return false; } })()],
     ['RDFa tem typeof LegalResource', rdfa.includes('typeof="eli:LegalResource"')],
     ['toScriptTag application/ld+json', global.EliMetadata.toScriptTag(doc).includes('application/ld+json')],
+    // Paridade INCM: constantes + is_about (descritores nacionais)
+    ['legal_value unofficial', ld['eli:legal_value']['@id'].endsWith('LegalValue-unofficial')],
+    ['publisher_agent INCM', ld['eli:publisher_agent']['@id'].includes('legal-institution/incm')],
+    ['is_about (subjects → eli:is_about com URI INCM)', (() => {
+      const d2 = Object.assign({}, doc, { subjects: [{ code: '29923275', label: 'Abandono de Funções' }] });
+      const l2 = global.EliMetadata.buildJsonLd(d2);
+      return Array.isArray(l2['eli:is_about'])
+        && l2['eli:is_about'][0]['@id'] === 'http://data.dre.pt/eli/authority/legal-subject/29923275'
+        && l2['eli:is_about'][0]['skos:prefLabel']['@value'] === 'Abandono de Funções';
+    })()],
   ];
   const fails = checks.filter(([, ok]) => !ok);
   if (fails.length) throw new Error('Falhas: ' + fails.map(f => f[0]).join(', '));
