@@ -52,24 +52,27 @@ https://data.dre.pt/eli/diario/{série}/{número}/{ano}/{suplemento}/{lang}/{fmt
 
 ## Tipos de acto (escopo v0.1.0 → v0.2)
 
-| Tipo PT | Slug | Exemplo Work |
+| Tipo PT (`<act name>`) | Slug ELI real (INCM) | Exemplo Work |
 |---|---|---|
-| Decreto-Lei | `dec-lei` | `https://data.dre.pt/eli/dec-lei/83/2016/12/16` |
-| Lei (AR) | `lei` | `https://data.dre.pt/eli/lei/7/2020/04/10` |
-| Decreto da AR | `decreto-ar` | `https://data.dre.pt/eli/decreto-ar/32/2021/04/23` |
-| Resolução da AR | `res-ar` | `https://data.dre.pt/eli/res-ar/87/2026/05/02` |
-| Portaria | `portaria` | `https://data.dre.pt/eli/portaria/249/2021/11/22` |
-| Resolução do CM | `res-cm` | `https://data.dre.pt/eli/res-cm/53/2020/07/10` |
-| Despacho normativo | `despacho-normativo` | `https://data.dre.pt/eli/despacho-normativo/1/2022/01/07` |
-| Decreto Legislativo Regional | `dlr` | `https://data.dre.pt/eli/dlr/19/2020/06/30` |
-| Decreto Regulamentar Regional | `drr` | `https://data.dre.pt/eli/drr/2/2026/03/04` |
+| Decreto-Lei | `dec-lei` | `https://data.dre.pt/eli/dec-lei/18/2008/01/29/p/dre` |
+| Lei (AR) | `lei` | `https://data.dre.pt/eli/lei/7/2009/02/12/p/dre` |
+| Decreto da AR | `dec` | `https://data.dre.pt/eli/dec/1/2018/01/11/p/dre` |
+| Resolução da AR | `resolassrep` | `https://data.dre.pt/eli/resolassrep/28/2022/06/24/p/dre` |
+| Portaria | `port` | `https://data.dre.pt/eli/port/164-a/2022/06/24/p/dre` |
+| Resolução do CM | `resolconsmin` | `https://data.dre.pt/eli/resolconsmin/67/2022/07/25/p/dre` |
+| Despacho normativo | `despnorm` | `https://data.dre.pt/eli/despnorm/36/2006/06/26/p/dre` |
+| Decreto Legislativo Regional | `declegreg` | `https://data.dre.pt/eli/declegreg/12/2022/05/25/a/dre` (Açores) |
+| Decreto Regulamentar Regional | `decregulreg` | `https://data.dre.pt/eli/decregulreg/10/2022/07/22/a/dre` (Açores) |
 
-> **Actos regionais (DLR/DRR):** o template `data.dre.pt` não tem segmento de
-> jurisdição. Por decisão de 2026-06-22 usa-se a mesma forma para todos os
-> actos; a região permanece em `<FRBRcountry>` (`pt-20`/`pt-30`). Nota: os
-> diplomas regionais são publicados nos jornais oficiais regionais
-> (JORAA/JORAM), não no DR série I — a resolução ELI regional fica a confirmar
-> com a INCM e as Regiões.
+> O `<act name>` AKN-PT mantém o nome legível; o **slug ELI real da INCM** aparece
+> no URI (ver [`incm-eli-reference.md`](incm-eli-reference.md)). Os exemplos acima
+> são diplomas **reais** cujo ELI resolve no DR.
+
+> **Actos regionais (DLR/DRR):** o território está **no URI**, no slot do `p`:
+> `a` (Açores) ou `m` (Madeira) — ex. `…/declegreg/12/2022/05/25/a/dre`. O
+> `<FRBRcountry>` acompanha (`pt-20`/`pt-30`). Alguns tipos têm ainda slug
+> regional próprio (`decrepraa`/`decrepram`, `resolalraa`/`resolalram`). A
+> articulação com os jornais regionais (JORAA/JORAM) fica a confirmar com a INCM.
 
 ## Construtibilidade e citações (a confirmar na reunião INCM)
 
