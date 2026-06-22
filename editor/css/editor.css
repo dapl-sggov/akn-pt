@@ -151,7 +151,13 @@ body {
   font-family: var(--font-ui);
   font-size: var(--fs-base);
   color: var(--color-ink);
-  background: var(--color-bg);
+  /* Atmosfera: marfim com glows radiais (navy em cima à direita, oxblood em
+     baixo à esquerda) — profundidade em vez de chapado. */
+  background:
+    radial-gradient(62% 48% at 88% -8%, color-mix(in oklab, var(--color-navy) 11%, transparent), transparent 60%),
+    radial-gradient(46% 38% at -8% 108%, color-mix(in oklab, var(--color-accent) 8%, transparent), transparent 55%),
+    var(--color-bg);
+  background-attachment: fixed;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -382,15 +388,34 @@ label {
   width: 64px; height: 3px;
   background: var(--color-navy);
 }
+.landing-header .kicker {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-amber);
+  margin: 0 0 var(--sp-4);
+}
 .landing-header h1 {
   font-family: var(--font-display);
-  font-size: var(--fs-4xl);
+  font-size: clamp(3rem, 9vw, 6.5rem);
   margin: 0;
   font-weight: 300;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.035em;
   color: var(--color-navy);
-  line-height: 1.0;
+  line-height: 0.92;
   font-variation-settings: "opsz" 144;
+}
+.landing-header h1 em {
+  font-style: normal;
+  font-weight: 900;
+  font-variation-settings: "opsz" 144, "wght" 900;
+  /* leve realce oxblood no wordmark */
+  color: var(--color-navy);
+  background: linear-gradient(105deg, var(--color-navy) 60%, var(--color-accent) 130%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 .landing-header .tagline {
   font-family: var(--font-text);
@@ -428,15 +453,27 @@ label {
   padding: var(--sp-5);
   background: var(--color-bg);
   cursor: pointer;
-  transition: background var(--dur) var(--ease);
+  transition: background var(--dur) var(--ease), transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
   text-align: left;
   font-family: var(--font-ui);
   position: relative;
   width: 100%;
 }
-.type-card:hover {
-  background: var(--color-bg-soft);
+.type-card::before {
+  content: "";
+  position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--color-navy);
+  transform: scaleY(0); transform-origin: top;
+  transition: transform var(--dur) var(--ease);
 }
+.type-card:hover {
+  background: var(--color-bg-emph);
+  transform: translateY(-3px);
+  box-shadow: 0 14px 30px -14px color-mix(in oklab, var(--color-navy) 50%, transparent);
+  z-index: 1;
+}
+.type-card:hover::before { transform: scaleY(1); }
+.type-card:hover .card-title { color: var(--color-navy-hover); }
 .type-card:focus-visible {
   outline: none;
   background: var(--color-bg-soft);
@@ -3221,4 +3258,56 @@ textarea.point-content:focus {
   color: var(--color-navy);
 }
 .snap-phase-count { font-style: italic; }
+
+/* ===================================================================== */
+/* === v3.1 — Elevação visual (atmosfera, movimento, masthead mobile) === */
+/* ===================================================================== */
+
+/* Grelha ténue fixa atrás de tudo, desvanecida no topo — "mesa de trabalho". */
+body::before {
+  content: "";
+  position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--color-navy) 4.5%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--color-navy) 4.5%, transparent) 1px, transparent 1px);
+  background-size: 56px 56px;
+  -webkit-mask-image: radial-gradient(135% 80% at 50% -10%, #000 0%, transparent 72%);
+          mask-image: radial-gradient(135% 80% at 50% -10%, #000 0%, transparent 72%);
+}
+
+/* Revelação orquestrada no carregamento da landing (stagger CSS-only). */
+@keyframes akn-reveal { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: no-preference) {
+  #landing .landing-header > *,
+  #landing .type-card,
+  #landing .landing-footer { animation: akn-reveal 0.6s var(--ease) both; }
+  #landing .landing-header .kicker     { animation-delay: 0.02s; }
+  #landing .landing-header h1          { animation-delay: 0.08s; }
+  #landing .landing-header .tagline    { animation-delay: 0.16s; }
+  #landing .landing-header .subtagline { animation-delay: 0.24s; }
+  #landing .type-card:nth-child(1) { animation-delay: 0.30s; }
+  #landing .type-card:nth-child(2) { animation-delay: 0.35s; }
+  #landing .type-card:nth-child(3) { animation-delay: 0.40s; }
+  #landing .type-card:nth-child(4) { animation-delay: 0.45s; }
+  #landing .type-card:nth-child(5) { animation-delay: 0.50s; }
+  #landing .type-card:nth-child(6) { animation-delay: 0.55s; }
+  #landing .type-card:nth-child(7) { animation-delay: 0.60s; }
+  #landing .type-card:nth-child(8) { animation-delay: 0.65s; }
+  #landing .type-card:nth-child(9) { animation-delay: 0.70s; }
+  #landing .landing-footer { animation-delay: 0.78s; }
+}
+
+/* Masthead responsivo — sem sobreposição em ecrãs estreitos (≤560px). */
+@media (max-width: 560px) {
+  .topbar {
+    height: auto;
+    flex-wrap: wrap;
+    row-gap: 8px;
+    padding: 10px 12px;
+  }
+  .topbar-left { flex: 1 1 100%; min-width: 0; }
+  .doc-info span { display: none; }   /* esconde "sem número" no estreito */
+  .topbar-actions { flex: 1 1 100%; justify-content: flex-end; }
+  .topbar .cmdk-trigger kbd { display: none; }
+}
 
