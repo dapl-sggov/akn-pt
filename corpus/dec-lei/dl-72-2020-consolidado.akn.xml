@@ -25,7 +25,8 @@
         <FRBRExpression>
           <FRBRthis value="https://eli.gov.pt/eli/pt/dec-lei/2020/72/pt/2022-01-01/!main"/>
           <FRBRuri value="https://eli.gov.pt/eli/pt/dec-lei/2020/72/pt/2022-01-01"/>
-          <FRBRdate date="2022-01-01" name="publication"/>
+          <FRBRdate date="2020-09-15" name="publication"/>
+          <FRBRdate date="2022-01-01" name="consolidation"/>
           <FRBRauthor href="#dre"/>
           <FRBRlanguage language="por"/>
           <FRBRversionNumber value="2"/>

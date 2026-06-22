@@ -1,4 +1,4 @@
-# Corpus AKN-PT v0.1.0 — 10 diplomas reais marcados
+# Corpus AKN-PT — 15 diplomas reais marcados (10 v0.1.0 + 1 v0.1.1 + 4 v0.1.2)
 
 Corpus de referência para o AKN-PT v0.1.0. Cada ficheiro é um diploma
 **realmente publicado** no Diário da República, marcado segundo a spec
@@ -18,6 +18,11 @@ AKN-PT v0.1.0 e validado contra XSD + Schematron (phase publication).
 | 8 | [`despacho/despacho-normativo-1-2022.akn.xml`](despacho/despacho-normativo-1-2022.akn.xml) | Despacho normativo n.º 1/2022, de 7 de janeiro | `despacho-normativo` | Estrutura típica; lei habilitante |
 | 9 | [`dlr/dlr-19-2020-A.akn.xml`](dlr/dlr-19-2020-A.akn.xml) | DLR n.º 19/2020/A, de 30 de junho | `dlr-ordinario` | Jurisdição `pt-20`; promulgação pelo Representante da República |
 | 10 | [`dec-lei/dl-72-2020-consolidado.akn.xml`](dec-lei/dl-72-2020-consolidado.akn.xml) | DL n.º 72/2020 (versão consolidada a 2022-01-01) | `dec-lei-ordinario` | Expression posterior (`{point-in-time}` no URI); `<analysis>/<passiveModifications>` com referências reversas |
+| 11 | [`dec-lei/codigo-irs-excerpt.akn.xml`](dec-lei/codigo-irs-excerpt.akn.xml) | DL n.º 442-A/88, de 30 de novembro — **excerto** (Código IRS) | `dec-lei-ordinario` | **PRESSURE TEST**: Hierarquia profunda `body → chapter → section → article`; número com sufixo (`442-A`); cross-refs internas a artigos noutra secção. |
+| 12 | [`dec-lei/dl-72-2020-consolidado-2024.akn.xml`](dec-lei/dl-72-2020-consolidado-2024.akn.xml) | DL n.º 72/2020 (segunda consolidação a 2024-03-15) | `dec-lei-ordinario` | **v0.1.2**: cascata de 2 amendments (DL 78/2021 + DL ficcional 25/2024); `<FRBRdate name="consolidation">`; `FRBRversionNumber=3`; `passiveModifications` com 3 `<textualMod>` (substitution + insertion). |
+| 13 | [`lei/lei-7-2020-rectificacao.akn.xml`](lei/lei-7-2020-rectificacao.akn.xml) | Lei n.º 7/2020 (versão rectificada por Declaração 18/2020 ficcional) | `lei-comum` | **v0.1.2**: modelo de **retificação** — `<FRBRdate name="rectification">`; `textualMod type="rectification"`; lifecycle event `#rectification`. |
+| 14 | [`lei/lei-4-2018-republicacao.akn.xml`](lei/lei-4-2018-republicacao.akn.xml) | Lei n.º 4/2018, de 9 de fevereiro | `lei-comum` | **PRESSURE TEST v0.1.2**: Republicação técnica em anexo com prefixo `rep__` nos eIds (`rep__art_1`, `rep__art_2`, ...); `<attachment>/<mainBody>/<article>`. |
+| 15 | [`portaria/portaria-conjunta-3-ministros.akn.xml`](portaria/portaria-conjunta-3-ministros.akn.xml) | Portaria conjunta (representativa) | `portaria-regulamentar` | **PRESSURE TEST v0.1.2**: 3 `<signature role="signature">` ministeriais (Finanças, Economia, Trabalho); demonstra multi-signatário num diploma único. |
 
 ## Cobertura
 

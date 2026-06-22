@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AKN-PT corpus #13 — Lei n.o 7/2020 (versao rectificada)
+
+  Origem ficticia: Declaracao de Rectificacao n.o 18/2020 (hipotetica),
+  publicada em 2020-04-25 — correccao de gralha no artigo 5.o da Lei
+  n.o 7/2020.
+
+  Demonstra:
+    - Modelo de RECTIFICACAO (vs alteracao normal): FRBRdate name="rectification"
+      em vez de "consolidation"; textualMod type="rectification".
+    - FRBRversionNumber=2 (a versao 1 e' a Expression originaria, com gralha).
+    - passiveModifications regista a correccao com URI da declaracao de
+      rectificacao como source.
+
+  Distincao doutrinaria (cap. 11 da spec):
+    - ALTERACAO: muda intencionalmente o texto vigente.
+    - RECTIFICACAO: corrige um erro de transcricao/edicao do texto autentico,
+      sem alterar a intencao normativa originaria.
+-->
+<akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17"
+            xmlns:akn-pt="http://eli.gov.pt/ns/akn-pt/1.0">
+  <act name="lei">
+    <meta>
+      <identification source="#dapl">
+        <FRBRWork>
+          <FRBRthis value="https://eli.gov.pt/eli/pt/lei/2020/7/pt/!main"/>
+          <FRBRuri value="https://eli.gov.pt/eli/pt/lei/2020/7/pt"/>
+          <FRBRdate date="2020-04-03" name="adoption"/>
+          <FRBRauthor href="#ar"/>
+          <FRBRcountry value="pt"/>
+          <FRBRsubtype value="lei-comum"/>
+          <FRBRnumber value="7"/>
+        </FRBRWork>
+        <!-- Expression rectificada: point-in-time = 2020-04-25 (data da declaracao de rectificacao) -->
+        <FRBRExpression>
+          <FRBRthis value="https://eli.gov.pt/eli/pt/lei/2020/7/pt/2020-04-25/!main"/>
+          <FRBRuri value="https://eli.gov.pt/eli/pt/lei/2020/7/pt/2020-04-25"/>
+          <FRBRdate date="2020-04-10" name="publication"/>
+          <FRBRdate date="2020-04-25" name="rectification"/>
+          <FRBRauthor href="#ar"/>
+          <FRBRlanguage language="por"/>
+          <FRBRversionNumber value="2"/>
+        </FRBRExpression>
+        <FRBRManifestation>
+          <FRBRthis value="https://eli.gov.pt/eli/pt/lei/2020/7/pt/2020-04-25.xml/!main"/>
+          <FRBRuri value="https://eli.gov.pt/eli/pt/lei/2020/7/pt/2020-04-25.xml"/>
+          <FRBRdate date="2020-04-25" name="publication"/>
+          <FRBRauthor href="#dre"/>
+          <FRBRformat value="application/akn+xml; profile=akn-pt-1.0"/>
+        </FRBRManifestation>
+      </identification>
+      <references source="#dapl">
+        <TLCOrganization eId="ar" href="/akn/ontology/organization/pt/ar" showAs="Assembleia da Republica"/>
+        <TLCOrganization eId="dre" href="/akn/ontology/organization/pt/dre" showAs="Diario da Republica"/>
+        <TLCOrganization eId="dapl" href="/akn/ontology/organization/pt/dapl" showAs="DAPL/SGGOV"/>
+        <TLCRole eId="presidente-ar" href="/akn/ontology/role/pt/presidente-ar" showAs="Presidente da AR"/>
+        <TLCRole eId="presidente-republica" href="/akn/ontology/role/pt/presidente-republica" showAs="Presidente da Republica"/>
+        <TLCRole eId="primeiro-ministro" href="/akn/ontology/role/pt/primeiro-ministro" showAs="Primeiro-Ministro"/>
+        <TLCPerson eId="pessoa-par-2020-04" href="/akn/ontology/person/pt/par-2020-04" showAs="Presidente da AR"/>
+        <TLCPerson eId="pessoa-pr-2020-04" href="/akn/ontology/person/pt/pr-2020-04" showAs="Presidente da Republica"/>
+        <TLCPerson eId="pessoa-pm-2020-04" href="/akn/ontology/person/pt/pm-2020-04" showAs="Primeiro-Ministro"/>
+      </references>
+      <lifecycle source="#dapl">
+        <eventRef eId="e1" date="2020-04-03" source="#ar" type="generation" refersTo="#approval-ar"/>
+        <eventRef eId="e2" date="2020-04-08" source="#ar" type="generation" refersTo="#promulgation"/>
+        <eventRef eId="e3" date="2020-04-10" source="#dre" type="generation" refersTo="#publication"/>
+        <eventRef eId="e4" date="2020-04-25" source="#dre" type="generation" refersTo="#rectification"/>
+      </lifecycle>
+      <analysis source="#dapl">
+        <activeModifications/>
+        <passiveModifications>
+          <!-- Rectificacao de gralha no artigo 5.o -->
+          <textualMod eId="pmod_rect_1" type="rectification">
+            <source href="https://eli.gov.pt/eli/pt/declaracao-rect/2020/18/pt"/>
+            <destination href="https://eli.gov.pt/eli/pt/lei/2020/7/pt#art_5"/>
+          </textualMod>
+        </passiveModifications>
+      </analysis>
+    </meta>
+    <preface>
+      <p class="docTitle"><docType>Lei</docType> <docNumber>n.o 7/2020</docNumber></p>
+      <p class="docDate"><date date="2020-04-10">de 10 de abril</date></p>
+      <shortTitle>Estabelece regimes excecionais e temporarios de resposta a epidemia SARS-CoV-2. (Versao com rectificacao de 2020-04-25.)</shortTitle>
+    </preface>
+    <preamble>
+      <recital eId="rec_1"><p class="formula">Considerando a situacao excecional decorrente da pandemia.</p></recital>
+      <formula type="enacting"><p>A Assembleia da Republica decreta, nos termos da alinea c) do artigo 161.o da Constituicao, o seguinte:</p></formula>
+    </preamble>
+    <body>
+      <article eId="art_1">
+        <num>Artigo 1.o</num>
+        <heading>Objeto</heading>
+        <paragraph eId="art_1__para_1"><content><p>A presente lei estabelece regimes excecionais e temporarios de resposta a epidemia SARS-CoV-2.</p></content></paragraph>
+      </article>
+      <article eId="art_2">
+        <num>Artigo 2.o</num>
+        <heading>Ambito de aplicacao</heading>
+        <paragraph eId="art_2__para_1"><content><p>A presente lei aplica-se a todo o territorio nacional.</p></content></paragraph>
+      </article>
+      <article eId="art_3">
+        <num>Artigo 3.o</num>
+        <heading>Direitos dos trabalhadores</heading>
+        <paragraph eId="art_3__para_1"><content><p>Sao garantidos os direitos dos trabalhadores em situacao de isolamento profilatico.</p></content></paragraph>
+      </article>
+      <article eId="art_4">
+        <num>Artigo 4.o</num>
+        <heading>Apoios financeiros</heading>
+        <paragraph eId="art_4__para_1"><content><p>Sao previstos apoios financeiros extraordinarios para as empresas afectadas.</p></content></paragraph>
+      </article>
+      <!-- art_5 com texto rectificado pela Declaracao 18/2020 -->
+      <article eId="art_5">
+        <num>Artigo 5.o</num>
+        <heading>Vigencia</heading>
+        <paragraph eId="art_5__para_1"><content><p>A presente lei vigora ate ao termo do estado de emergencia, sendo as suas disposicoes objeto de revisao em sede de Conselho de Ministros.</p></content></paragraph>
+      </article>
+      <article eId="art_6">
+        <num>Artigo 6.o</num>
+        <heading>Entrada em vigor</heading>
+        <paragraph eId="art_6__para_1"><content><p>A presente lei entra em vigor no dia seguinte ao da sua publicacao.</p></content></paragraph>
+      </article>
+    </body>
+    <conclusions>
+      <formula type="conclusion"><p>Aprovada em <date date="2020-04-03">3 de abril de 2020</date>.</p></formula>
+      <signature role="signature"><person refersTo="#pessoa-par-2020-04" as="#presidente-ar"/></signature>
+      <signature role="promulgation"><person refersTo="#pessoa-pr-2020-04" as="#presidente-republica"/></signature>
+      <signature role="countersignature"><person refersTo="#pessoa-pm-2020-04" as="#primeiro-ministro"/></signature>
+    </conclusions>
+  </act>
+</akomaNtoso>

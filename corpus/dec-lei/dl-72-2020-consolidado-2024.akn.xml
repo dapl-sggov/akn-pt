@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AKN-PT corpus #12 — Decreto-Lei n.o 72/2020 (segunda consolidacao a 2024-03-15)
+
+  Demonstra:
+    - SEGUNDA Expression consolidada do mesmo Work (FRBRversionNumber=3 — a
+      Expressao 1 e' a originaria; a 2 e' o consolidado a 2022-01-01 do
+      ficheiro #10; esta e' a 3 a 2024-03-15)
+    - CASCATA de modificacoes — passiveModifications regista DOIS amendments
+      (DL n.o 78/2021 + DL n.o 25/2024)
+    - FRBRdate name="consolidation" obrigatoria por TIMP-0003
+
+  Disclaimer: o "DL n.o 25/2024" e' ficticio (nao foi publicado realmente);
+  serve apenas para demonstrar cascata de >=2 amendments.
+-->
+<akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17"
+            xmlns:akn-pt="http://eli.gov.pt/ns/akn-pt/1.0">
+  <act name="dec-lei">
+    <meta>
+      <identification source="#dapl">
+        <FRBRWork>
+          <FRBRthis value="https://eli.gov.pt/eli/pt/dec-lei/2020/72/pt/!main"/>
+          <FRBRuri value="https://eli.gov.pt/eli/pt/dec-lei/2020/72/pt"/>
+          <FRBRdate date="2020-09-10" name="adoption"/>
+          <FRBRauthor href="#governo"/>
+          <FRBRcountry value="pt"/>
+          <FRBRsubtype value="dec-lei-ordinario"/>
+          <FRBRnumber value="72"/>
+        </FRBRWork>
+        <!-- Terceira Expression: point-in-time = 2024-03-15 (entrada em vigor das alteracoes do DL ficticio 25/2024) -->
+        <FRBRExpression>
+          <FRBRthis value="https://eli.gov.pt/eli/pt/dec-lei/2020/72/pt/2024-03-15/!main"/>
+          <FRBRuri value="https://eli.gov.pt/eli/pt/dec-lei/2020/72/pt/2024-03-15"/>
+          <FRBRdate date="2020-09-15" name="publication"/>
+          <FRBRdate date="2024-03-15" name="consolidation"/>
+          <FRBRauthor href="#dre"/>
+          <FRBRlanguage language="por"/>
+          <FRBRversionNumber value="3"/>
+        </FRBRExpression>
+        <FRBRManifestation>
+          <FRBRthis value="https://eli.gov.pt/eli/pt/dec-lei/2020/72/pt/2024-03-15.xml/!main"/>
+          <FRBRuri value="https://eli.gov.pt/eli/pt/dec-lei/2020/72/pt/2024-03-15.xml"/>
+          <FRBRdate date="2024-03-15" name="publication"/>
+          <FRBRauthor href="#dre"/>
+          <FRBRformat value="application/akn+xml; profile=akn-pt-1.0"/>
+        </FRBRManifestation>
+      </identification>
+      <references source="#dapl">
+        <TLCOrganization eId="governo" href="/akn/ontology/organization/pt/governo" showAs="Governo da Republica Portuguesa"/>
+        <TLCOrganization eId="cm" href="/akn/ontology/organization/pt/cm" showAs="Conselho de Ministros"/>
+        <TLCOrganization eId="dre" href="/akn/ontology/organization/pt/dre" showAs="Diario da Republica"/>
+        <TLCOrganization eId="dapl" href="/akn/ontology/organization/pt/dapl" showAs="DAPL/SGGOV"/>
+        <TLCRole eId="primeiro-ministro" href="/akn/ontology/role/pt/primeiro-ministro" showAs="Primeiro-Ministro"/>
+        <TLCRole eId="presidente-republica" href="/akn/ontology/role/pt/presidente-republica" showAs="Presidente da Republica"/>
+        <TLCRole eId="ministro-ambiente" href="/akn/ontology/role/pt/ministro-ambiente" showAs="Ministro do Ambiente"/>
+        <TLCPerson eId="pessoa-pm-2020-09" href="/akn/ontology/person/pt/pm-2020-09" showAs="Primeiro-Ministro"/>
+        <TLCPerson eId="pessoa-pr-2020-09" href="/akn/ontology/person/pt/pr-2020-09" showAs="Presidente da Republica"/>
+        <TLCPerson eId="pessoa-min-ambiente-2020-09" href="/akn/ontology/person/pt/min-ambiente-2020-09" showAs="Ministro do Ambiente"/>
+      </references>
+      <lifecycle source="#dapl">
+        <eventRef eId="e1" date="2020-09-10" source="#cm" type="generation" refersTo="#approval-cm"/>
+        <eventRef eId="e2" date="2020-09-15" source="#dre" type="generation" refersTo="#publication"/>
+        <eventRef eId="e3" date="2020-10-15" source="#governo" type="generation" refersTo="#entry-into-force"/>
+        <!-- 1.a alteracao: DL n.o 78/2021 (cf. corpus #10 consolidado-2022) -->
+        <eventRef eId="e4" date="2021-10-20" source="#governo" type="amendment"/>
+        <!-- 2.a alteracao: DL n.o 25/2024 (ficticio para demo de cascata) -->
+        <eventRef eId="e5" date="2024-03-15" source="#governo" type="amendment"/>
+      </lifecycle>
+      <analysis source="#dapl">
+        <activeModifications/>
+        <!-- Cascata: 2 amendments aplicados a esta Expression -->
+        <passiveModifications>
+          <textualMod eId="pmod_1" type="substitution">
+            <source href="https://eli.gov.pt/eli/pt/dec-lei/2021/78/pt"/>
+            <destination href="https://eli.gov.pt/eli/pt/dec-lei/2020/72/pt#art_3"/>
+          </textualMod>
+          <textualMod eId="pmod_2" type="substitution">
+            <source href="https://eli.gov.pt/eli/pt/dec-lei/2021/78/pt"/>
+            <destination href="https://eli.gov.pt/eli/pt/dec-lei/2020/72/pt#art_5"/>
+          </textualMod>
+          <textualMod eId="pmod_3" type="insertion">
+            <source href="https://eli.gov.pt/eli/pt/dec-lei/2024/25/pt"/>
+            <destination href="https://eli.gov.pt/eli/pt/dec-lei/2020/72/pt#art_4"/>
+          </textualMod>
+        </passiveModifications>
+      </analysis>
+    </meta>
+    <preface>
+      <p class="docTitle"><docType>Decreto-Lei</docType> <docNumber>n.o 72/2020</docNumber></p>
+      <p class="docDate"><date date="2020-09-15">de 15 de setembro</date></p>
+      <shortTitle>Estabelece o regime juridico relativo a gestao das aguas pluviais. (Versao consolidada a 15 de marco de 2024.)</shortTitle>
+    </preface>
+    <preamble>
+      <recital eId="rec_1"><p class="formula">Considerando que a gestao integrada do ciclo urbano da agua constitui prioridade estrategica.</p></recital>
+      <formula type="enacting"><p>Assim: Nos termos da alinea a) do n.o 1 do artigo 198.o da Constituicao, o Governo decreta o seguinte:</p></formula>
+    </preamble>
+    <body>
+      <article eId="art_1">
+        <num>Artigo 1.o</num>
+        <heading>Objeto</heading>
+        <paragraph eId="art_1__para_1"><content><p>O presente decreto-lei estabelece o regime juridico aplicavel a gestao das aguas pluviais.</p></content></paragraph>
+      </article>
+      <article eId="art_2">
+        <num>Artigo 2.o</num>
+        <heading>Definicoes</heading>
+        <paragraph eId="art_2__para_1"><content><p>Para efeitos do presente diploma, aplicam-se as definicoes constantes da legislacao geral do dominio publico hidrico.</p></content></paragraph>
+      </article>
+      <article eId="art_3">
+        <num>Artigo 3.o</num>
+        <heading>Autoridade competente</heading>
+        <!-- redacao do DL n.o 78/2021 (substituicao) -->
+        <paragraph eId="art_3__para_1"><num>1 -</num><content><p>A autoridade competente e' o municipio.</p></content></paragraph>
+        <paragraph eId="art_3__para_2"><num>2 -</num><content><p>A coordenacao tecnica nacional cabe a APA, I. P.</p></content></paragraph>
+      </article>
+      <!-- art_4 introduzido pelo (ficticio) DL n.o 25/2024 (insercao) -->
+      <article eId="art_4">
+        <num>Artigo 4.o</num>
+        <heading>Adaptacao a alteracoes climaticas</heading>
+        <paragraph eId="art_4__para_1"><content><p>A gestao das aguas pluviais integra estrategias de adaptacao a alteracoes climaticas, atualizadas em ciclos quadrienais.</p></content></paragraph>
+      </article>
+      <article eId="art_5">
+        <num>Artigo 5.o</num>
+        <heading>Plano municipal</heading>
+        <!-- redacao do DL n.o 78/2021 (substituicao) -->
+        <paragraph eId="art_5__para_1"><num>1 -</num><content><p>Cada municipio aprova um plano municipal no prazo de tres anos.</p></content></paragraph>
+        <paragraph eId="art_5__para_2"><num>2 -</num><content><p>O plano e' revisto, no minimo, de seis em seis anos.</p></content></paragraph>
+      </article>
+      <article eId="art_6">
+        <num>Artigo 6.o</num>
+        <heading>Entrada em vigor</heading>
+        <paragraph eId="art_6__para_1"><content><p>O presente decreto-lei entra em vigor no primeiro dia do mes seguinte ao da publicacao.</p></content></paragraph>
+      </article>
+    </body>
+    <conclusions>
+      <formula type="conclusion"><p>Visto e aprovado em Conselho de Ministros de <date date="2020-09-10">10 de setembro de 2020</date>.</p></formula>
+      <signature role="countersignature"><person refersTo="#pessoa-pm-2020-09" as="#primeiro-ministro"/></signature>
+      <signature role="countersignature"><person refersTo="#pessoa-min-ambiente-2020-09" as="#ministro-ambiente"/></signature>
+      <signature role="promulgation"><person refersTo="#pessoa-pr-2020-09" as="#presidente-republica"/></signature>
+    </conclusions>
+  </act>
+</akomaNtoso>
