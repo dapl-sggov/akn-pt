@@ -28,7 +28,7 @@ const AknExport = (() => {
     'despacho-normativo': 'despnorm',
     'dlr': 'declegreg',
     'drr': 'decregulreg',
-    'decreto-ar': 'dec',        // a confirmar com a INCM
+    'decreto-ar': 'dec',        // Decreto da AR → 'dec' (confirmado)
   };
   function eliSlug(actName) { return ELI_SLUG[actName] || actName; }
 
@@ -60,16 +60,15 @@ const AknExport = (() => {
       .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'unnamed';
   }
 
-  // Constrói as URIs FRBR no template ELI-PT canónico = template de produção
-  // da INCM (data.dre.pt), confirmado em 2026-06-22:
-  //   Work:          https://data.dre.pt/eli/{tipo}/{nº}/{ano}/{mês}/{dia}
-  //   Expression:    Work + /{p|data-consolidação}/dre/pt
-  //   Manifestation: Expression + /{xml|html|pdf}   (formato é SEGMENTO)
-  // A data no Work é a data de PUBLICAÇÃO (ex.: dec-lei/83/2016/12/16).
-  // Língua no URI = 'pt' (2 letras, convenção INCM); o <FRBRlanguage> mantém
-  // 'por' (ISO 639-2, convenção AKN). Sem segmento de jurisdição (decisão
-  // 2026-06-22: data.dre.pt para todos os actos, incl. regionais); a
-  // jurisdição permanece em <FRBRcountry>.
+  // Constrói as URIs FRBR no template REAL de produção da INCM (data.dre.pt),
+  // verificado em 2026-06-22 (ver eli-pt/incm-eli-reference.md):
+  //   Work publicada:    {slug}/{nº}/{ano}/{mês}/{dia}/{p|a|m}/dre
+  //   Work consolidada:  {slug}/{nº}/{ano}/{p|a|m}/cons/{AAAAMMDD}
+  //   Expression:        Work + /pt
+  //   Manifestation:     Expression + /{xml|html|pdf}  (formato é SEGMENTO)
+  // A data no Work é a de PUBLICAÇÃO. Marcador de território (slot do 'p'):
+  // p (nacional), a (Açores, FRBRcountry pt-20), m (Madeira, pt-30). Língua
+  // no URI = 'pt'; o <FRBRlanguage> mantém 'por' (ISO 639-2, convenção AKN).
   function buildFrbr(doc) {
     const actor = ACTOR_FOR_TYPE[doc.actName] || 'governo';
     const num = doc.number || 'X';
@@ -80,17 +79,23 @@ const AknExport = (() => {
     // (port, resolconsmin, …); sufixo do número em minúsculas (ex. 442-a).
     const slug = eliSlug(doc.actName);
     const numUri = String(num).toLowerCase();
-    const workUri = `https://data.dre.pt/eli/${slug}/${numUri}/${py}/${pm}/${pd}`;
-
-    // Consolidação/retificação: o segmento de versão ('p' = como publicado)
-    // passa a ser a data de consolidação; a versão FRBR incrementa.
+    // Marcador de território INCM (slot do 'p'): pt→p, pt-20 (Açores)→a,
+    // pt-30 (Madeira)→m. Agente sempre 'dre'.
+    const terr = doc.country === 'pt-20' ? 'a' : doc.country === 'pt-30' ? 'm' : 'p';
     // Sentinela '9999-12-31' do applyAll = sem consolidação.
     const isConsol = doc._consolidatedAt && doc._consolidatedAt !== '9999-12-31';
     const consolKind = doc._consolidationKind || 'consolidation';
-    const versionSeg = isConsol ? doc._consolidatedAt : 'p';
-    const exprUri = `${workUri}/${versionSeg}/dre/pt`;
-    const manifUri = `${exprUri}/xml`;
     const version = isConsol ? (doc._consolidationVersion || 2) : 1;
+
+    // Forma real INCM (ver eli-pt/incm-eli-reference.md):
+    //   Work publicada:    {slug}/{nº}/{ano}/{mês}/{dia}/{terr}/dre
+    //   Work consolidada:  {slug}/{nº}/{ano}/{terr}/cons/{AAAAMMDD}   (só ano)
+    //   Expression = Work + /pt ; Manifestation = Expression + /{fmt}.
+    const workUri = isConsol
+      ? `https://data.dre.pt/eli/${slug}/${numUri}/${py}/${terr}/cons/${doc._consolidatedAt.replace(/-/g, '')}`
+      : `https://data.dre.pt/eli/${slug}/${numUri}/${py}/${pm}/${pd}/${terr}/dre`;
+    const exprUri = `${workUri}/pt`;
+    const manifUri = `${exprUri}/xml`;
 
     return `      <identification source="#dapl">
         <FRBRWork>

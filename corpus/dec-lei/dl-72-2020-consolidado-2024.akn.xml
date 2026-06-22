@@ -19,8 +19,8 @@
     <meta>
       <identification source="#dapl">
         <FRBRWork>
-          <FRBRthis value="https://data.dre.pt/eli/dec-lei/72/2020/09/15/!main"/>
-          <FRBRuri value="https://data.dre.pt/eli/dec-lei/72/2020/09/15"/>
+          <FRBRthis value="https://data.dre.pt/eli/dec-lei/72/2020/p/cons/20240315/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/dec-lei/72/2020/p/cons/20240315"/>
           <FRBRdate date="2020-09-10" name="adoption"/>
           <FRBRauthor href="#governo"/>
           <FRBRcountry value="pt"/>
@@ -29,8 +29,8 @@
         </FRBRWork>
         <!-- Terceira Expression: point-in-time = 2024-03-15 (entrada em vigor das alteracoes do DL ficticio 25/2024) -->
         <FRBRExpression>
-          <FRBRthis value="https://data.dre.pt/eli/dec-lei/72/2020/09/15/2024-03-15/dre/pt/!main"/>
-          <FRBRuri value="https://data.dre.pt/eli/dec-lei/72/2020/09/15/2024-03-15/dre/pt"/>
+          <FRBRthis value="https://data.dre.pt/eli/dec-lei/72/2020/p/cons/20240315/pt/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/dec-lei/72/2020/p/cons/20240315/pt"/>
           <FRBRdate date="2020-09-15" name="publication"/>
           <FRBRdate date="2024-03-15" name="consolidation"/>
           <FRBRauthor href="#dre"/>
@@ -38,8 +38,8 @@
           <FRBRversionNumber value="3"/>
         </FRBRExpression>
         <FRBRManifestation>
-          <FRBRthis value="https://data.dre.pt/eli/dec-lei/72/2020/09/15/2024-03-15/dre/pt/xml/!main"/>
-          <FRBRuri value="https://data.dre.pt/eli/dec-lei/72/2020/09/15/2024-03-15/dre/pt/xml"/>
+          <FRBRthis value="https://data.dre.pt/eli/dec-lei/72/2020/p/cons/20240315/pt/xml/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/dec-lei/72/2020/p/cons/20240315/pt/xml"/>
           <FRBRdate date="2024-03-15" name="publication"/>
           <FRBRauthor href="#dre"/>
           <FRBRformat value="application/akn+xml; profile=akn-pt-1.0"/>

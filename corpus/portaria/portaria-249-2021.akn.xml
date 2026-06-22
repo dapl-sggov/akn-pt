@@ -9,8 +9,8 @@
     <meta>
       <identification source="#dapl">
         <FRBRWork>
-          <FRBRthis value="https://data.dre.pt/eli/port/249/2021/11/22/!main"/>
-          <FRBRuri value="https://data.dre.pt/eli/port/249/2021/11/22"/>
+          <FRBRthis value="https://data.dre.pt/eli/port/249/2021/11/22/p/dre/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/port/249/2021/11/22/p/dre"/>
           <FRBRdate date="2021-11-19" name="adoption"/>
           <FRBRauthor href="#ministro-economia"/>
           <FRBRcountry value="pt"/>

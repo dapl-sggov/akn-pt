@@ -9,8 +9,8 @@
     <meta>
       <identification source="#dapl">
         <FRBRWork>
-          <FRBRthis value="https://data.dre.pt/eli/despnorm/1/2022/01/07/!main"/>
-          <FRBRuri value="https://data.dre.pt/eli/despnorm/1/2022/01/07"/>
+          <FRBRthis value="https://data.dre.pt/eli/despnorm/1/2022/01/07/p/dre/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/despnorm/1/2022/01/07/p/dre"/>
           <FRBRdate date="2022-01-04" name="adoption"/>
           <FRBRauthor href="#ministra-educacao"/>
           <FRBRcountry value="pt"/>

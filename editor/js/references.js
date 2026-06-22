@@ -235,7 +235,8 @@ const References = (() => {
     const mm = _monthToMM(mesNome);
     if (dia && mm) {
       const yyyy = anoData || year;
-      return `https://data.dre.pt/eli/${incm}/${numL}/${yyyy}/${mm}/${String(dia).padStart(2, '0')}`;
+      // Work canónico INCM termina em /p/dre (nacional; território p por defeito).
+      return `https://data.dre.pt/eli/${incm}/${numL}/${yyyy}/${mm}/${String(dia).padStart(2, '0')}/p/dre`;
     }
     if (typeof DreMock !== 'undefined' && DreMock.all) {
       const needle = `/eli/${incm}/${numL}/${year}/`;

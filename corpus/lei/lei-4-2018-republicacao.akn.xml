@@ -20,8 +20,8 @@
     <meta>
       <identification source="#dapl">
         <FRBRWork>
-          <FRBRthis value="https://data.dre.pt/eli/lei/4/2018/02/09/!main"/>
-          <FRBRuri value="https://data.dre.pt/eli/lei/4/2018/02/09"/>
+          <FRBRthis value="https://data.dre.pt/eli/lei/4/2018/02/09/p/dre/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/lei/4/2018/02/09/p/dre"/>
           <FRBRdate date="2018-02-06" name="adoption"/>
           <FRBRauthor href="#ar"/>
           <FRBRcountry value="pt"/>

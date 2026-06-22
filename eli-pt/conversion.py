@@ -68,9 +68,9 @@ class EliId:
     act_type: str                          # 'dec-lei', 'lei', ...
     year: int
     number: str                            # str: aceita '205-B', '442-A'
-    jurisdiction: str = "pt"               # 'pt', 'pt-20', 'pt-30' (só na forma proposta)
+    jurisdiction: str = "pt"               # 'pt', 'pt-20' (Açores→a), 'pt-30' (Madeira→m)
     pub_date: Optional[str] = None         # ISO 'YYYY-MM-DD' — exigido para a forma canónica
-    language: str = "pt"
+    language: Optional[str] = None         # None = nível Work; 'pt' = Expression/Manifestation
     point_in_time: Optional[str] = None    # data de consolidação (ISO)
     fmt: Optional[str] = None              # 'xml', 'html', 'json', 'pdf'
     fragment: Optional[str] = None         # eId interno
@@ -85,7 +85,7 @@ class EliId:
             dom = domain or ELI_PROPOSED_DOMAIN
             uri = (
                 f"https://{dom}/eli/{self.jurisdiction}/{self.act_type}"
-                f"/{self.year}/{self.number}/{self.language}"
+                f"/{self.year}/{self.number}/{self.language or 'pt'}"
             )
             if self.point_in_time:
                 uri += f"/{self.point_in_time}"
@@ -102,15 +102,21 @@ class EliId:
                 "completa); use scheme='proposed' ou faça lookup ao DRE."
             )
         dom = domain or DRE_ELI_DOMAIN
+        terr = {"pt-20": "a", "pt-30": "m"}.get(self.jurisdiction, "p")
+        num = self.number.lower()  # sufixo em minúsculas (convenção INCM: 82-e, 43-b)
         y, m, d = self.pub_date.split("-")
-        # Sufixo do número em minúsculas (convenção INCM: 82-e, 43-b).
-        uri = f"https://{dom}/eli/{self.act_type}/{self.number.lower()}/{y}/{m}/{d}"
-        # Work = até {dia}. Expression/Manifestation só se pit/fmt pedido.
-        if self.point_in_time or self.fmt:
-            verseg = self.point_in_time or "p"
-            uri += f"/{verseg}/dre/{self.language}"
-            if self.fmt:
-                uri += f"/{self.fmt}"
+        if self.point_in_time:
+            # Consolidada: {slug}/{nº}/{ano}/{terr}/cons/{AAAAMMDD} (só ano).
+            cons = self.point_in_time.replace("-", "")
+            uri = f"https://{dom}/eli/{self.act_type}/{num}/{y}/{terr}/cons/{cons}"
+        else:
+            # Publicada: {slug}/{nº}/{ano}/{mês}/{dia}/{terr}/dre.
+            uri = f"https://{dom}/eli/{self.act_type}/{num}/{y}/{m}/{d}/{terr}/dre"
+        # Work termina aqui. Expression = + /{lang}; Manifestation = + /{lang}/{fmt}.
+        if self.fmt:
+            uri += f"/{self.language or 'pt'}/{self.fmt}"
+        elif self.language:
+            uri += f"/{self.language}"
         if self.fragment:
             uri += f"#{self.fragment}"
         return uri
@@ -126,14 +132,18 @@ _DRE_RE = re.compile(
     r"(?:-(?P<hash>\d+))?/?$"
 )
 
-# Canónico data.dre.pt: /eli/{type}/{number}/{Y}/{M}/{D}[/{p|date}/dre/{lang}[/{fmt}]][#frag]
+# Canónico data.dre.pt (forma real INCM):
+#   publicada:   /eli/{type}/{number}/{Y}/{M}/{D}/{p|a|m}/dre[/{lang}[/{fmt}]]
+#   consolidada: /eli/{type}/{number}/{Y}/{p|a|m}/cons/{AAAAMMDD}[/{lang}[/{fmt}]]
 _ELI_DRE_RE = re.compile(
     r"^https?://(?P<domain>[a-z0-9.-]+)/eli/"
     r"(?P<type>[a-z-]+)/"
     r"(?P<number>\d+(?:-[A-Za-z0-9]+)?)/"
-    r"(?P<y>\d{4})/(?P<m>\d{2})/(?P<d>\d{2})"
-    r"(?:/(?P<verseg>p|\d{4}-\d{2}-\d{2})/dre/(?P<lang>[a-z]{2,3})"
-    r"(?:/(?P<fmt>xml|html|json|pdf))?)?"
+    r"(?P<y>\d{4})"
+    r"(?:/(?P<m>\d{2})/(?P<d>\d{2})/(?P<terr1>[pam])/dre"
+    r"|/(?P<terr2>[pam])/cons/(?P<cons>\d{8}))"
+    r"(?:/(?P<lang>[a-z]{2,3})(?:/(?P<fmt>xml|html|json|pdf))?)?"
+    r"(?:/!main)?"
     r"(?:#(?P<fragment>[a-zA-Z0-9_]+))?$"
 )
 
@@ -171,14 +181,23 @@ def parse_eli(uri: str) -> EliId:
     s = uri.strip()
     m = _ELI_DRE_RE.match(s)
     if m:
+        terr = m.group("terr1") or m.group("terr2")
+        jur = {"a": "pt-20", "m": "pt-30"}.get(terr, "pt")
+        if m.group("cons"):
+            c = m.group("cons")
+            pit = f"{c[0:4]}-{c[4:6]}-{c[6:8]}"
+            pub_date = f"{m.group('y')}-01-01"  # consolidada só expõe o ano no path
+        else:
+            pit = None
+            pub_date = f"{m.group('y')}-{m.group('m')}-{m.group('d')}"
         return EliId(
             act_type=m.group("type"),
             year=int(m.group("y")),
             number=m.group("number"),
-            jurisdiction="pt",
-            pub_date=f"{m.group('y')}-{m.group('m')}-{m.group('d')}",
-            language=m.group("lang") or "pt",
-            point_in_time=(m.group("verseg") if m.group("verseg") and m.group("verseg") != "p" else None),
+            jurisdiction=jur,
+            pub_date=pub_date,
+            language=m.group("lang"),
+            point_in_time=pit,
             fmt=m.group("fmt"),
             fragment=m.group("fragment"),
         )

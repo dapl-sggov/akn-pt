@@ -54,6 +54,8 @@ const EliMetadata = (() => {
     'drr': 'decregulreg', 'decreto-ar': 'dec',
   };
   function _slug(doc) { return ELI_SLUG[doc.actName] || doc.actName; }
+  // Marcador de território INCM (slot do 'p'): pt→p, pt-20 (Açores)→a, pt-30 (Madeira)→m.
+  function _terr(doc) { return doc.country === 'pt-20' ? 'a' : doc.country === 'pt-30' ? 'm' : 'p'; }
 
   function _jur(doc) { return doc.country || 'pt'; }
   function _num(doc) { return doc.number || 'X'; }
@@ -69,10 +71,11 @@ const EliMetadata = (() => {
 
   // ----- URIs -------------------------------------------------------------
   //
-  // Esquema CANÓNICO = 'dre' (template de produção da INCM, data.dre.pt):
-  //   Work:          /eli/{tipo}/{nº}/{ano}/{mês}/{dia}
-  //   Expression:    Work + /{p|data-consolidação}/dre/pt
-  //   Manifestation: Expression + /{xml|html|pdf}   (formato é SEGMENTO)
+  // Esquema CANÓNICO = 'dre' (template REAL de produção da INCM, data.dre.pt;
+  // ver eli-pt/incm-eli-reference.md):
+  //   Work publicada:    /eli/{slug}/{nº}/{ano}/{mês}/{dia}/{p|a|m}/dre
+  //   Work consolidada:  /eli/{slug}/{nº}/{ano}/{p|a|m}/cons/{AAAAMMDD}
+  //   Expression:        Work + /pt ; Manifestation: + /{xml|html|pdf} (SEGMENTO)
   // Esquema 'proposed' = forma anterior da DAPL (eli.gov.pt, ano+número,
   // jurisdição-first), mantida só para comparação/registo (evolução a propor).
 
@@ -82,10 +85,15 @@ const EliMetadata = (() => {
       const domain = opts.domain || PLACEHOLDER_DOMAIN;
       return `${domain}/eli/${_jur(doc)}/${doc.actName}/${doc.year}/${_num(doc)}/pt`;
     }
-    // Canónico (dre): /eli/{slug-INCM}/{nº}/{ano}/{mês}/{dia} — data de publicação.
+    // Canónico (INCM): Work publicada = /eli/{slug}/{nº}/{ano}/{mês}/{dia}/{terr}/dre;
+    // Work consolidada = /eli/{slug}/{nº}/{ano}/{terr}/cons/{AAAAMMDD} (só ano).
     const domain = opts.domain || INCM_DOMAIN;
     const { y, m, d } = _ymd(doc);
-    return `${domain}/eli/${_slug(doc)}/${_numUri(doc)}/${y}/${m}/${d}`;
+    if (_isConsolidated(doc)) {
+      const compact = doc._consolidatedAt.replace(/-/g, '');
+      return `${domain}/eli/${_slug(doc)}/${_numUri(doc)}/${y}/${_terr(doc)}/cons/${compact}`;
+    }
+    return `${domain}/eli/${_slug(doc)}/${_numUri(doc)}/${y}/${m}/${d}/${_terr(doc)}/dre`;
   }
 
   function expressionUri(doc, opts = {}) {
@@ -93,9 +101,8 @@ const EliMetadata = (() => {
     if ((opts.scheme || 'dre') === 'proposed') {
       return _isConsolidated(doc) ? `${base}/${doc._consolidatedAt}` : base;
     }
-    // Canónico: Work + /{p|data}/dre/pt
-    const versionSeg = _isConsolidated(doc) ? doc._consolidatedAt : 'p';
-    return `${base}/${versionSeg}/dre/pt`;
+    // Canónico: Expression = Work + /{lang}
+    return `${base}/pt`;
   }
 
   function manifestationUri(doc, opts = {}, fmt = 'xml') {
@@ -137,7 +144,7 @@ const EliMetadata = (() => {
     const expression = {
       '@id': expr,
       '@type': 'eli:LegalExpression',
-      'eli:language': { '@id': `${LANG_AUTHORITY}POR` },
+      'eli:language': { '@id': `${LANG_AUTHORITY}PRT` },
       'eli:title': { '@value': title, '@language': 'pt' },
       'eli:is_embodied_by': [
         { '@id': manifestationUri(doc, opts, 'xml'), '@type': 'eli:Format',
@@ -151,7 +158,9 @@ const EliMetadata = (() => {
     }
     if (_isConsolidated(doc)) {
       expression['eli:version'] = { '@value': String(doc._consolidationVersion || 2), '@type': 'xsd:positiveInteger' };
-      expression['eli:consolidates'] = { '@id': workUri(doc, opts) };
+      // consolidates → Expression ORIGINAL publicada (não a consolidada).
+      const pubDoc = Object.assign({}, doc, { _consolidatedAt: null });
+      expression['eli:consolidates'] = { '@id': expressionUri(pubDoc, opts) };
     }
 
     const obj = {
@@ -180,9 +189,9 @@ const EliMetadata = (() => {
     if (doc.entryIntoForceDate) {
       obj['eli:first_date_entry_in_force'] = { '@value': doc.entryIntoForceDate, '@type': 'xsd:date' };
     }
-    // Relação habilitante → cites; transposição de directiva → transposes.
+    // Relação habilitante → based_on (INCM); transposição de directiva → transposes.
     if (doc.habilitante) {
-      obj['eli:cites'] = { '@id': doc.habilitante };
+      obj['eli:based_on'] = { '@id': doc.habilitante };
     }
     if (doc.subtype === 'dec-lei-transposicao' && doc.transposesUri) {
       obj['eli:transposes'] = { '@id': doc.transposesUri };

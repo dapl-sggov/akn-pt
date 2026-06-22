@@ -48,21 +48,24 @@
 
         Aceita DUAS formas (v0.2 — alinhamento com a INCM, 2026-06-22):
 
-        (1) CANÓNICA — template de produção da INCM (data.dre.pt):
-            https://data.dre.pt/eli/{tipo}/{nº}/{ano}/{mês}/{dia}[/{p|YYYY-MM-DD}/dre/{lang}[/{fmt}]][/!main][#{frag}]
-            Work = até {dia}; Expression acrescenta /{p|data}/dre/{lang};
-            Manifestation acrescenta /{fmt} (formato é SEGMENTO, não extensão).
+        (1) CANÓNICA — template REAL de produção da INCM (data.dre.pt),
+            verificado contra a página oficial (ver eli-pt/incm-eli-reference.md):
+            publicada:   /eli/{tipo}/{nº}/{ano}/{mês}/{dia}/{p|a|m}/dre[/{lang}[/{fmt}]]
+            consolidada: /eli/{tipo}/{nº}/{ano}/{p|a|m}/cons/{AAAAMMDD}[/{lang}[/{fmt}]]
+            Work termina em /dre (ou /cons/{data}); Expression acrescenta /{lang};
+            Manifestation acrescenta /{fmt} (SEGMENTO). Marcador de território:
+            p (nacional), a (Açores), m (Madeira).
 
         (2) LEGADA / proposta DAPL anterior (eli.gov.pt, ano+número,
             jurisdição-first) — mantida por tolerância (evolução a propor):
             https://{domain}/eli/{jur}/{tipo}/{ano}/{nº}/{lang}[/{pit}][.{fmt}][/!main][#{frag}]
 
-        Número aceita sufixo `-X` (ex.: 442-A/88, 205-B/2025) — convenção
-        legística PT para diplomas extra-numerários.
+        Número aceita sufixo `-X` (ex.: 442-a/88, 82-e/2014) — sufixo em
+        minúsculas no URI canónico (convenção INCM).
       </xs:documentation>
     </xs:annotation>
     <xs:restriction base="xs:anyURI">
-      <xs:pattern value="https?://[a-z0-9.\-]+/eli/((pt(-\d{2})?/[a-z\-]+/\d{4}/\d+(-[A-Za-z0-9]+)?/[a-z]{2,3}(/\d{4}-\d{2}-\d{2})?(\.[a-z]{3,4})?(/!main)?)|([a-z\-]+/\d+(-[A-Za-z0-9]+)?/\d{4}/\d{2}/\d{2}(/(p|\d{4}-\d{2}-\d{2})/dre/[a-z]{2,3}(/[a-z]{3,4})?)?(/!main)?))(#[A-Za-z0-9_]+)?"/>
+      <xs:pattern value="https?://[a-z0-9.\-]+/eli/((pt(-\d{2})?/[a-z\-]+/\d{4}/\d+(-[A-Za-z0-9]+)?/[a-z]{2,3}(/\d{4}-\d{2}-\d{2})?(\.[a-z]{3,4})?(/!main)?)|([a-z\-]+/\d+(-[A-Za-z0-9]+)?/\d{4}(/\d{2}/\d{2}/[pam]/dre|/[pam]/cons/\d{8})(/[a-z]{2,3}(/[a-z]{3,4})?)?(/!main)?))(#[A-Za-z0-9_]+)?"/>
     </xs:restriction>
   </xs:simpleType>
 

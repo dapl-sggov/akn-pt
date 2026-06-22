@@ -13,8 +13,8 @@
     <meta>
       <identification source="#dapl">
         <FRBRWork>
-          <FRBRthis value="https://data.dre.pt/eli/dec-lei/21/2023/03/27/!main"/>
-          <FRBRuri value="https://data.dre.pt/eli/dec-lei/21/2023/03/27"/>
+          <FRBRthis value="https://data.dre.pt/eli/dec-lei/21/2023/03/27/p/dre/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/dec-lei/21/2023/03/27/p/dre"/>
           <FRBRdate date="2023-03-23" name="adoption"/>
           <FRBRauthor href="#governo"/>
           <FRBRcountry value="pt"/>

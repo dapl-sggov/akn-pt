@@ -29,8 +29,8 @@
     <meta>
       <identification source="#dapl">
         <FRBRWork>
-          <FRBRthis value="https://data.dre.pt/eli/dec-lei/442-a/1988/11/30/!main"/>
-          <FRBRuri value="https://data.dre.pt/eli/dec-lei/442-a/1988/11/30"/>
+          <FRBRthis value="https://data.dre.pt/eli/dec-lei/442-a/1988/11/30/p/dre/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/dec-lei/442-a/1988/11/30/p/dre"/>
           <FRBRdate date="1988-11-23" name="adoption"/>
           <FRBRauthor href="#governo"/>
           <FRBRcountry value="pt"/>
