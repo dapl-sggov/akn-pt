@@ -25,9 +25,9 @@ Decisão registada: [ADR-0012](docs/adr/0012-eli-pt-incm-real-template.md).
 ## Próximos passos
 
 ### A. Antes da reunião INCM (2026-07-01)
-- [ ] **Editor — deploy** `akn-pt.pages.dev`: reconectar a integração Git no
-      Cloudflare (ação no dashboard, lado SGGOV) e confirmar que serve a versão
-      atual. *(bloqueado: requer acesso ao dashboard)*
+- [x] **Editor — deploy** `akn-pt.pages.dev` reconectado e a servir a versão atual (verificado).
+- [x] **Vocabulário nacional de assunto** integrado no editor (`eli:is_about`,
+      ~35k descritores da INCM; índice lazy + módulo SubjectVocab).
 - [ ] Rever a leitura do template linha-a-linha vs página oficial (validar na reunião).
 
 ### B. Reunião INCM — decidir/abrir
@@ -48,9 +48,12 @@ Decisão registada: [ADR-0012](docs/adr/0012-eli-pt-incm-real-template.md).
 - [ ] Integrar o `is_about` (vocabulário nacional) no perfil e no editor.
 
 ### D. Editor — pós-reunião / contínuo
-- [ ] Substituir `DreMock` por **harvester** sobre o Atom feed/sitemap da INCM
-      (não há API; é o caminho sancionado).
-- [ ] **Validação in-browser** (XSD/Schematron via WASM ou subset JS).
+- [ ] **Picker de assuntos** na UI (autocomplete sobre SubjectVocab → `doc.subjects`).
+- [ ] **Mapeamento descritores INCM → EuroVoc** (o RDF não tem; oportunidade de contributo à INCM).
+- [ ] **Static act-index** a partir do Atom feed da INCM (harvest offline → JSON;
+      o runtime é CORS-blocked). Cobre citações abreviadas (sem data). *(valor marginal: o citação→ELI já funciona com a data da citação completa)*
+- [ ] Validação in-browser: `validation.js` já cobre as regras-chave live; em
+      falta apenas coerência FRBR e eId↔num (baratas de acrescentar). WASM XSD/Schematron = peso elevado, ganho marginal (CI já valida).
 - [ ] UI de regionais (Açores/Madeira → `a`/`m`) e de consolidadas.
 - [ ] Estética anti-"slop" + verificação visual (Playwright desktop/mobile);
       acessibilidade e mobile.
