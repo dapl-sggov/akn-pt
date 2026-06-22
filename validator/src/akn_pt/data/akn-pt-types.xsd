@@ -45,15 +45,24 @@
     <xs:annotation>
       <xs:documentation>
         URI ELI-PT. Aceita Work, Expression e Manifestation, com fragmento opcional.
-        Padrão: https://{domain}/eli/{jurisdiction}/{type}/{year}/{number}/{lang}[/{pit}][.{fmt}][#{frag}][/!main]
 
-        Número aceita sufixo `-LETRA` (ex.: 442-A/88, 5-A/2026) — convenção
-        legística PT para diplomas extra-numerários (corrigido em v0.1.1
-        após pressure test com CIRS / DL 442-A/88).
+        Aceita DUAS formas (v0.2 — alinhamento com a INCM, 2026-06-22):
+
+        (1) CANÓNICA — template de produção da INCM (data.dre.pt):
+            https://data.dre.pt/eli/{tipo}/{nº}/{ano}/{mês}/{dia}[/{p|YYYY-MM-DD}/dre/{lang}[/{fmt}]][/!main][#{frag}]
+            Work = até {dia}; Expression acrescenta /{p|data}/dre/{lang};
+            Manifestation acrescenta /{fmt} (formato é SEGMENTO, não extensão).
+
+        (2) LEGADA / proposta DAPL anterior (eli.gov.pt, ano+número,
+            jurisdição-first) — mantida por tolerância (evolução a propor):
+            https://{domain}/eli/{jur}/{tipo}/{ano}/{nº}/{lang}[/{pit}][.{fmt}][/!main][#{frag}]
+
+        Número aceita sufixo `-X` (ex.: 442-A/88, 205-B/2025) — convenção
+        legística PT para diplomas extra-numerários.
       </xs:documentation>
     </xs:annotation>
     <xs:restriction base="xs:anyURI">
-      <xs:pattern value="https?://[a-z0-9.\-]+/eli/pt(-\d{2})?/[a-z\-]+/\d{4}/\d+(-[A-Z])?/[a-z]{2,3}(/\d{4}-\d{2}-\d{2})?(\.[a-z]{3,4})?(/!main)?(#[A-Za-z0-9_]+)?"/>
+      <xs:pattern value="https?://[a-z0-9.\-]+/eli/((pt(-\d{2})?/[a-z\-]+/\d{4}/\d+(-[A-Za-z0-9]+)?/[a-z]{2,3}(/\d{4}-\d{2}-\d{2})?(\.[a-z]{3,4})?(/!main)?)|([a-z\-]+/\d+(-[A-Za-z0-9]+)?/\d{4}/\d{2}/\d{2}(/(p|\d{4}-\d{2}-\d{2})/dre/[a-z]{2,3}(/[a-z]{3,4})?)?(/!main)?))(#[A-Za-z0-9_]+)?"/>
     </xs:restriction>
   </xs:simpleType>
 
