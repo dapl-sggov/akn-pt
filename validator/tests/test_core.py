@@ -17,17 +17,17 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 # ---------------------------------------------------------------------------
 @pytest.fixture
 def corpus_dl_simple() -> Path:
-    return REPO_ROOT / "corpus" / "dec-lei" / "dl-72-2020.akn.xml"
+    return REPO_ROOT / "corpus" / "dec-lei" / "dec-lei-18-2008-ccp-excerto.akn.xml"
 
 
 @pytest.fixture
 def corpus_rcm() -> Path:
-    return REPO_ROOT / "corpus" / "res-cm" / "rcm-53-2020.akn.xml"
+    return REPO_ROOT / "corpus" / "res-cm" / "rcm-67-2022.akn.xml"
 
 
 @pytest.fixture
 def corpus_dlr() -> Path:
-    return REPO_ROOT / "corpus" / "dlr" / "dlr-19-2020-A.akn.xml"
+    return REPO_ROOT / "corpus" / "dlr" / "dlr-12-2022-acores.akn.xml"
 
 
 @pytest.fixture
@@ -66,7 +66,7 @@ def test_validate_valid_dl(corpus_dl_simple):
     assert report.schematron_ok is True
     assert report.act_type == "dec-lei"
     assert report.act_subtype == "dec-lei-ordinario"
-    assert report.doc_number == "72"
+    assert report.doc_number == "18"
     assert len(report.errors) == 0
 
 

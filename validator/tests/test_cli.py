@@ -10,7 +10,7 @@ from click.testing import CliRunner
 from akn_pt.cli import main
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DL_SIMPLE = REPO_ROOT / "corpus" / "dec-lei" / "dl-72-2020.akn.xml"
+DL_SIMPLE = REPO_ROOT / "corpus" / "dec-lei" / "dec-lei-18-2008-ccp-excerto.akn.xml"
 DL_WITH_FOOTPRINT = REPO_ROOT / "schema" / "tests" / "positive" / "dec-lei-with-footprint.akn.xml"
 XSD_NEGATIVE = REPO_ROOT / "schema" / "tests" / "negative" / "n01-unknown-act-name.akn.xml"
 CORPUS_DIR = REPO_ROOT / "corpus"
