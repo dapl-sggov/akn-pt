@@ -70,14 +70,14 @@ Cada camada FRBR tem dois sub-URIs:
 ### Work
 
 ```
-https://data.dre.pt/eli/dec-lei/83/2016/12/16
+https://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre
                                               ← FRBRWork/FRBRuri
-https://data.dre.pt/eli/dec-lei/83/2016/12/16/!main
+https://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre/!main
                                               ← FRBRWork/FRBRthis
 ```
 
-A data `2016/12/16` é a **data de publicação** no DR — faz parte da identidade
-do Work no template INCM.
+A data `2016/12/16` é a **data de publicação**; o Work termina no marcador de
+território + agente `/p/dre` (`p` nacional, `a` Açores, `m` Madeira).
 
 ### Expression (versão textual)
 
@@ -88,9 +88,9 @@ https://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre/pt/!main
                                               ← FRBRExpression/FRBRthis
 ```
 
-O segmento `p` marca a versão "como publicada" (originária). Numa versão
-**consolidada**, o `p` é substituído pela data de consolidação:
-`…/16/2024-01-01/dre/pt`. Segue-se `/dre/` (agente) e `/pt` (língua).
+A Expression acrescenta `/pt` (língua) ao Work. Numa versão **consolidada** o
+Work tem outra forma — `/{tipo}/{nº}/{ano}/{p|a|m}/cons/{AAAAMMDD}` (só ano,
+data compacta) — ex.: `…/dec-lei/18/2008/p/cons/20210721/pt`.
 
 ### Manifestation (ficheiro)
 
@@ -111,14 +111,15 @@ da INCM (capítulo 3 da especificação ELI-PT). Todos os FRBR URIs em AKN-PT
 **DEVEM** ser URIs ELI-PT bem formados, ou seja, satisfazer:
 
 ```
-https://data.dre.pt/eli/{type}/{number}/{year}/{month}/{day}[/{p|point-in-time}/dre/{language}[/{format}]][/!main]
+publicado:   https://data.dre.pt/eli/{type}/{number}/{year}/{month}/{day}/{p|a|m}/dre[/{language}[/{format}]][/!main]
+consolidado: https://data.dre.pt/eli/{type}/{number}/{year}/{p|a|m}/cons/{AAAAMMDD}[/{language}[/{format}]][/!main]
 ```
 
 Onde:
 
 - `data.dre.pt` — domínio autoritativo (INCM/DRE, em produção).
 - `eli` — marcador literal (obrigatório por compatibilidade com ELI europeu).
-- `{type}` — slug do tipo (`dec-lei`, `lei`, …), **antes do número**.
+- `{type}` — slug ELI real da INCM (`dec-lei`, `lei`, `port`, …), **antes do número** (ver [`incm-eli-reference.md`](../../../eli-pt/incm-eli-reference.md)).
 - `{number}` — número do ato (aceita sufixo, ex. `442-A`).
 - `{year}/{month}/{day}` — **data de publicação** no DR.
 - `p` — versão "como publicada"; data ISO nas consolidadas.
@@ -195,13 +196,15 @@ O `EliPtUriType` (em `schema/xsd/akn-pt-types.xsd`) aceita **ambas** as formas
 
 ```
 https?://[a-z0-9.\-]+/eli/(
-   pt(-\d{2})?/[a-z\-]+/\d{4}/\d+(-[A-Za-z0-9]+)?/[a-z]{2,3}(/\d{4}-\d{2}-\d{2})?(\.[a-z]{3,4})?(/!main)?      # proposta
- | [a-z\-]+/\d+(-[A-Za-z0-9]+)?/\d{4}/\d{2}/\d{2}(/(p|\d{4}-\d{2}-\d{2})/dre/[a-z]{2,3}(/[a-z]{3,4})?)?(/!main)?  # canónica data.dre.pt
+   pt(-\d{2})?/[a-z\-]+/\d{4}/\d+(-[A-Za-z0-9]+)?/[a-z]{2,3}(/\d{4}-\d{2}-\d{2})?(\.[a-z]{3,4})?(/!main)?           # proposta
+ | [a-z\-]+/\d+(-[A-Za-z0-9]+)?/\d{4}(/\d{2}/\d{2}/[pam]/dre|/[pam]/cons/\d{8})(/[a-z]{2,3}(/[a-z]{3,4})?)?(/!main)?  # canónica INCM
 )(#[A-Za-z0-9_]+)?
 ```
 
-O Schematron acrescenta verificações de coerência semântica (válidas para a
-forma canónica, em que o `/{type}/` precede o número):
+O ramo canónico cobre o publicado (`…/{dia}/{p|a|m}/dre`) e o consolidado
+(`…/{ano}/{p|a|m}/cons/{AAAAMMDD}`). O Schematron acrescenta coerência semântica
+(o `/{type}/` precede o número; o segmento de tipo deve ser o slug ELI real da
+INCM ou o `act/@name` — regra `FRBR-0001` tolerante):
 
 - O segmento `/{type}/` na FRBRuri Work **deve** coincidir com o `<act @name>`.
 - O FRBRuri Expression **deve** começar com o FRBRuri Work.

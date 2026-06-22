@@ -95,9 +95,9 @@ Ex.: `https://data.dre.pt/eli/diario/1/6/2018/0/pt/html`
 | Resolução da Assembleia Legislativa Regional dos Açores | `resolalra` | (forma histórica) |
 | Resolução do Conselho de Ministros | `resolconsmin` | **escopo AKN-PT** |
 
-> **Sem slug INCM exato:** o nosso tipo de escopo "Decreto da Assembleia da
-> República" (`decreto-ar`) não tem entrada distinta na tabela; o mais próximo
-> é `dec` (Decreto). **A confirmar com a INCM.**
+> **Nota:** o nosso tipo de escopo "Decreto da Assembleia da República"
+> (`decreto-ar`) não tem entrada distinta na tabela INCM; mapeia para `dec`
+> (Decreto) — **confirmado (2026-06-22)**.
 
 ## 3. Mapa de adoção (AKN-PT `<act name>` → slug ELI da INCM)
 
@@ -114,7 +114,7 @@ ao construir URIs ELI.
 | `despacho-normativo` | `despnorm` |
 | `dlr` | `declegreg` |
 | `drr` | `decregulreg` |
-| `decreto-ar` | `dec` *(a confirmar)* |
+| `decreto-ar` | `dec` |
 
 ## 4. Relações ELI (propriedades) relevantes
 

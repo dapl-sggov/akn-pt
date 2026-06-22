@@ -4,22 +4,32 @@
 > (`data.dre.pt`), confirmado contra a fonte oficial. A forma anterior da DAPL
 > (`eli.gov.pt`, ano+número) é mantida só como **evolução a propor** (ver fim).
 
-Template canónico de um acto legal:
+> **Forma verificada (ver [`incm-eli-reference.md`](incm-eli-reference.md)).**
+> O Work termina em `/{p|a|m}/dre`; a Expression acrescenta `/pt`. Sufixo do
+> número em **minúsculas**. Território: `p` (nacional), `a` (Açores), `m` (Madeira).
+
+Template canónico de um acto legal (publicado):
 
 ```
-https://data.dre.pt/eli/{tipo}/{nº}/{ano}/{mês}/{dia}[/{p|data}/dre/{lang}[/{fmt}]][#{frag}]
+https://data.dre.pt/eli/{tipo}/{nº}/{ano}/{mês}/{dia}/{p|a|m}/dre[/{lang}[/{fmt}]][#{frag}]
+```
+
+Consolidado:
+
+```
+https://data.dre.pt/eli/{tipo}/{nº}/{ano}/{p|a|m}/cons/{AAAAMMDD}[/{lang}[/{fmt}]]
 ```
 
 | Segmento | Significado |
 |---|---|
 | `data.dre.pt` | Domínio autoritativo (INCM/DRE, em produção desde 2016). |
 | `eli` | Marcador literal do esquema ELI. |
-| `{tipo}` | Slug do tipo de acto (`dec-lei`, `lei`, …). |
-| `{nº}` | Número do acto (aceita sufixo, ex. `205-B`, `442-A`). |
-| `{ano}/{mês}/{dia}` | **Data de publicação** completa no DR. |
-| `p` | Marcador de versão "como publicada" (ponto-no-tempo); substituído pela data de consolidação nas versões consolidadas. |
-| `dre` | Agente (Diário da República). |
-| `{lang}` | Língua, `pt` (2 letras — convenção INCM; o `<FRBRlanguage>` AKN usa `por`). |
+| `{tipo}` | Slug ELI real da INCM (`dec-lei`, `lei`, `port`, `resolconsmin`, …). |
+| `{nº}` | Número do acto (sufixo em minúsculas, ex. `82-e`, `442-a`). |
+| `{ano}/{mês}/{dia}` | **Data de publicação** completa no DR (publicado). |
+| `{p\|a\|m}` | Território: `p` nacional, `a` Açores, `m` Madeira. |
+| `dre` / `cons/{AAAAMMDD}` | Agente DRE (publicado) / consolidação na data (compacta). |
+| `{lang}` | Língua, `pt` (2 letras — INCM; o `<FRBRlanguage>` AKN usa `por`). |
 | `{fmt}` | Formato como **segmento** (`xml`, `html`, `pdf`) — não extensão. |
 | `{frag}` | Fragmento interno = eId AKN-PT (`#art_5__para_1`). |
 
@@ -27,11 +37,12 @@ https://data.dre.pt/eli/{tipo}/{nº}/{ano}/{mês}/{dia}[/{p|data}/dre/{lang}[/{f
 
 | Camada | Forma | Exemplo |
 |---|---|---|
-| Work | `…/{tipo}/{nº}/{ano}/{mês}/{dia}` | `https://data.dre.pt/eli/dec-lei/83/2016/12/16` |
-| Expression (como publicada) | Work + `/p/dre/pt` | `…/dec-lei/83/2016/12/16/p/dre/pt` |
-| Expression (consolidada) | Work + `/{data}/dre/pt` | `…/dec-lei/83/2016/12/16/2024-01-01/dre/pt` |
+| Work (publicado) | `…/{ano}/{mês}/{dia}/{p\|a\|m}/dre` | `https://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre` |
+| Work (consolidado) | `…/{ano}/{p\|a\|m}/cons/{AAAAMMDD}` | `…/dec-lei/18/2008/p/cons/20210721` |
+| Expression | Work + `/{lang}` | `…/dec-lei/83/2016/12/16/p/dre/pt` |
 | Manifestation | Expression + `/{fmt}` | `…/dec-lei/83/2016/12/16/p/dre/pt/xml` |
 | Fragmento | qualquer + `#{eId}` | `…/p/dre/pt#art_5__para_1__lit_a` |
+| Regional (ex. DLR Açores) | `a` no slot do `p` | `…/declegreg/12/2022/05/25/a/dre/pt` |
 
 ## Diário (jornal)
 
