@@ -1,0 +1,212 @@
+// AKN-PT Editor — emissão de metadados ELI (JSON-LD + RDFa)
+// EUPL-1.2
+//
+// Gera os metadados machine-readable ELI (European Legislation Identifier)
+// a partir do doc state, na ontologia ELI v1.5 (http://data.europa.eu/eli/ontology).
+//
+// Porquê: a pesquisa de 2026-06-22 confirmou que Portugal É implementador ELI
+// registado (operado pela INCM em data.dre.pt) mas o portal OutSystems deixou
+// de servir RDFa/JSON-LD. Este módulo produz exactamente a marcação que falta,
+// como activo de demonstração para a reunião INCM e como base de alinhamento.
+//
+// Duas formas de URI são suportadas, para tornar visível a divergência a
+// decidir com a INCM (ver eli-pt/research/eli-pt-gap-analysis.md):
+//   - scheme 'akn-pt' (nossa proposta v0.1.0): /eli/{jur}/{type}/{year}/{number}/pt
+//   - scheme 'incm'   (produção real INCM):     /eli/{type}/{number}/{year}/{mm}/{dd}/p/dre/pt
+//
+// Sem dependências de DOM no núcleo — corre em Node (smoke test) e no browser.
+
+const EliMetadata = (() => {
+  const PLACEHOLDER_DOMAIN = 'https://eli.gov.pt';   // ADR-0009 placeholder
+  const INCM_DOMAIN = 'https://data.dre.pt';          // domínio de produção INCM
+  const ELI_ONTOLOGY = 'http://data.europa.eu/eli/ontology#';
+  const LANG_AUTHORITY = 'http://publications.europa.eu/resource/authority/language/';
+  const FILETYPE_AUTHORITY = 'http://publications.europa.eu/resource/authority/file-type/';
+
+  const TYPE_LABEL = {
+    'dec-lei': 'Decreto-Lei',
+    'lei': 'Lei',
+    'decreto-ar': 'Decreto da Assembleia da República',
+    'res-ar': 'Resolução da Assembleia da República',
+    'portaria': 'Portaria',
+    'res-cm': 'Resolução do Conselho de Ministros',
+    'despacho-normativo': 'Despacho normativo',
+    'dlr': 'Decreto Legislativo Regional',
+    'drr': 'Decreto Regulamentar Regional',
+  };
+
+  // FRBRauthor (passed_by) por tipo de acto.
+  const AUTHOR = {
+    'dec-lei': { slug: 'governo', label: 'Governo da República Portuguesa' },
+    'lei': { slug: 'assembleia-republica', label: 'Assembleia da República' },
+    'decreto-ar': { slug: 'assembleia-republica', label: 'Assembleia da República' },
+    'res-ar': { slug: 'assembleia-republica', label: 'Assembleia da República' },
+    'portaria': { slug: 'governo', label: 'Governo da República Portuguesa' },
+    'res-cm': { slug: 'conselho-ministros', label: 'Conselho de Ministros' },
+    'despacho-normativo': { slug: 'governo', label: 'Governo da República Portuguesa' },
+    'dlr': { slug: 'alr-acores', label: 'Assembleia Legislativa da Região Autónoma' },
+    'drr': { slug: 'governo-regional', label: 'Governo Regional' },
+  };
+
+  function _jur(doc) { return doc.country || 'pt'; }
+  function _num(doc) { return doc.number || 'X'; }
+  function _isConsolidated(doc) {
+    return !!(doc._consolidatedAt && doc._consolidatedAt !== '9999-12-31');
+  }
+  function _ymd(doc) {
+    const iso = doc.publicationDate || doc.adoptionDate || `${doc.year}-01-01`;
+    const [y, m, d] = iso.split('-');
+    return { y: y || String(doc.year), m: m || '01', d: d || '01' };
+  }
+
+  // ----- URIs -------------------------------------------------------------
+
+  function workUri(doc, opts = {}) {
+    const scheme = opts.scheme || 'akn-pt';
+    if (scheme === 'incm') {
+      const domain = opts.domain || INCM_DOMAIN;
+      const { y, m, d } = _ymd(doc);
+      // Forma de produção INCM: /eli/{type}/{number}/{year}/{mm}/{dd}/p/dre/pt
+      return `${domain}/eli/${doc.actName}/${_num(doc)}/${y}/${m}/${d}/p/dre/pt`;
+    }
+    // Nossa proposta: /eli/{jur}/{type}/{year}/{number}/pt
+    const domain = opts.domain || PLACEHOLDER_DOMAIN;
+    return `${domain}/eli/${_jur(doc)}/${doc.actName}/${doc.year}/${_num(doc)}/pt`;
+  }
+
+  function expressionUri(doc, opts = {}) {
+    const base = workUri(doc, opts);
+    // INCM já inclui ponto-no-tempo no path do Work (não acrescentamos).
+    if ((opts.scheme || 'akn-pt') === 'incm') return base;
+    // Nossa forma: originária = Work URI; consolidada acrescenta /{pit}.
+    return _isConsolidated(doc) ? `${base}/${doc._consolidatedAt}` : base;
+  }
+
+  function manifestationUri(doc, opts = {}, fmt = 'xml') {
+    return `${expressionUri(doc, opts)}.${fmt}`;
+  }
+
+  // Comparação das duas formas — para a UI e a reunião INCM.
+  function uriComparison(doc) {
+    return {
+      aknPt: {
+        scheme: 'akn-pt (proposta v0.1.0)',
+        work: workUri(doc, { scheme: 'akn-pt' }),
+        expression: expressionUri(doc, { scheme: 'akn-pt' }),
+        manifestation: manifestationUri(doc, { scheme: 'akn-pt' }, 'xml'),
+      },
+      incm: {
+        scheme: 'incm (data.dre.pt em produção)',
+        work: workUri(doc, { scheme: 'incm' }),
+      },
+    };
+  }
+
+  // ----- JSON-LD ----------------------------------------------------------
+
+  function buildJsonLd(doc, opts = {}) {
+    const work = workUri(doc, opts);
+    const expr = expressionUri(doc, opts);
+    const domain = opts.domain || (((opts.scheme || 'akn-pt') === 'incm') ? INCM_DOMAIN : PLACEHOLDER_DOMAIN);
+    const author = AUTHOR[doc.actName] || AUTHOR['dec-lei'];
+    const title = doc.shortTitle
+      || `${TYPE_LABEL[doc.actName] || doc.actName} n.º ${_num(doc)}/${doc.year}`;
+    const suffix = doc.country === 'pt-20' ? '/A' : doc.country === 'pt-30' ? '/M' : '';
+
+    const expression = {
+      '@id': expr,
+      '@type': 'eli:LegalExpression',
+      'eli:language': { '@id': `${LANG_AUTHORITY}POR` },
+      'eli:title': { '@value': title, '@language': 'pt' },
+      'eli:is_embodied_by': [
+        { '@id': manifestationUri(doc, opts, 'xml'), '@type': 'eli:Format',
+          'eli:format': { '@id': `${FILETYPE_AUTHORITY}XML` } },
+        { '@id': manifestationUri(doc, opts, 'html'), '@type': 'eli:Format',
+          'eli:format': { '@id': `${FILETYPE_AUTHORITY}HTML` } },
+      ],
+    };
+    if (doc.publicationDate) {
+      expression['eli:date_publication'] = { '@value': doc.publicationDate, '@type': 'xsd:date' };
+    }
+    if (_isConsolidated(doc)) {
+      expression['eli:version'] = { '@value': String(doc._consolidationVersion || 2), '@type': 'xsd:positiveInteger' };
+      expression['eli:consolidates'] = { '@id': workUri(doc, opts) };
+    }
+
+    const obj = {
+      '@context': {
+        eli: ELI_ONTOLOGY,
+        skos: 'http://www.w3.org/2004/02/skos/core#',
+        xsd: 'http://www.w3.org/2001/XMLSchema#',
+      },
+      '@id': work,
+      '@type': 'eli:LegalResource',
+      'eli:id_local': `${_num(doc)}/${doc.year}${suffix}`,
+      'eli:type_document': {
+        '@id': `${domain}/authority/resource-type/${doc.actName}`,
+        'skos:prefLabel': { '@value': TYPE_LABEL[doc.actName] || doc.actName, '@language': 'pt' },
+      },
+      'eli:passed_by': {
+        '@id': `${domain}/authority/corporate-body/${author.slug}`,
+        'skos:prefLabel': { '@value': author.label, '@language': 'pt' },
+      },
+      'eli:title': { '@value': title, '@language': 'pt' },
+      'eli:is_realized_by': expression,
+    };
+    if (doc.adoptionDate) {
+      obj['eli:date_document'] = { '@value': doc.adoptionDate, '@type': 'xsd:date' };
+    }
+    if (doc.entryIntoForceDate) {
+      obj['eli:first_date_entry_in_force'] = { '@value': doc.entryIntoForceDate, '@type': 'xsd:date' };
+    }
+    // Relação habilitante → cites; transposição de directiva → transposes.
+    if (doc.habilitante) {
+      obj['eli:cites'] = { '@id': doc.habilitante };
+    }
+    if (doc.subtype === 'dec-lei-transposicao' && doc.transposesUri) {
+      obj['eli:transposes'] = { '@id': doc.transposesUri };
+    }
+    return obj;
+  }
+
+  function toJsonLdString(doc, opts = {}) {
+    return JSON.stringify(buildJsonLd(doc, opts), null, 2);
+  }
+
+  function toScriptTag(doc, opts = {}) {
+    return `<script type="application/ld+json">\n${toJsonLdString(doc, opts)}\n</script>`;
+  }
+
+  // ----- RDFa (forma alternativa, dominante na maioria dos países) --------
+  // Devolve um bloco HTML com atributos RDFa ELI — para comparação visual.
+  function toRdfa(doc, opts = {}) {
+    const work = workUri(doc, opts);
+    const expr = expressionUri(doc, opts);
+    const author = AUTHOR[doc.actName] || AUTHOR['dec-lei'];
+    const title = doc.shortTitle
+      || `${TYPE_LABEL[doc.actName] || doc.actName} n.º ${_num(doc)}/${doc.year}`;
+    const esc = (s) => String(s == null ? '' : s)
+      .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
+    const rows = [];
+    rows.push(`<div prefix="eli: ${ELI_ONTOLOGY}" about="${esc(work)}" typeof="eli:LegalResource">`);
+    rows.push(`  <span property="eli:id_local" content="${esc(_num(doc))}/${doc.year}"></span>`);
+    rows.push(`  <span property="eli:title" lang="pt">${esc(title)}</span>`);
+    if (doc.adoptionDate) rows.push(`  <span property="eli:date_document" content="${esc(doc.adoptionDate)}" datatype="xsd:date"></span>`);
+    rows.push(`  <span property="eli:passed_by" resource="/authority/corporate-body/${esc(author.slug)}">${esc(author.label)}</span>`);
+    rows.push(`  <div property="eli:is_realized_by" resource="${esc(expr)}" typeof="eli:LegalExpression">`);
+    rows.push(`    <span property="eli:language" resource="${LANG_AUTHORITY}POR"></span>`);
+    if (doc.publicationDate) rows.push(`    <span property="eli:date_publication" content="${esc(doc.publicationDate)}" datatype="xsd:date"></span>`);
+    rows.push(`  </div>`);
+    rows.push(`</div>`);
+    return rows.join('\n');
+  }
+
+  return {
+    workUri, expressionUri, manifestationUri, uriComparison,
+    buildJsonLd, toJsonLdString, toScriptTag, toRdfa,
+    PLACEHOLDER_DOMAIN, INCM_DOMAIN,
+  };
+})();
+
+if (typeof window !== 'undefined') window.EliMetadata = EliMetadata;
+if (typeof globalThis !== 'undefined') globalThis.EliMetadata = EliMetadata;

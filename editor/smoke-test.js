@@ -30,6 +30,7 @@ function loadFile(rel) {
     if (typeof DreMock !== 'undefined') { global.DreMock = DreMock; globalThis.DreMock = DreMock; }
     if (typeof Renumber !== 'undefined') { global.Renumber = Renumber; globalThis.Renumber = Renumber; }
     if (typeof Suggestions !== 'undefined') { global.Suggestions = Suggestions; globalThis.Suggestions = Suggestions; }
+    if (typeof EliMetadata !== 'undefined') { global.EliMetadata = EliMetadata; globalThis.EliMetadata = EliMetadata; }
     // expor para todos os módulos (akn-export precisa de ler References no fecho global)
     if (typeof AknExport !== 'undefined') globalThis.AknExport = AknExport;
   })();`);
@@ -45,6 +46,7 @@ loadFile('js/amendment.js');
 loadFile('js/loda-inline.js');
 loadFile('js/suggestions.js');
 loadFile('js/bluebell-pt.js');
+loadFile('js/eli-metadata.js');
 loadFile('js/import-parser.js');
 
 // State precisa de localStorage (shim) e ignora Editor.refresh (guard typeof).
@@ -1518,7 +1520,49 @@ try {
   n_fail++;
 }
 
-const total = cases.length + 21;
+// 12. Test EliMetadata — JSON-LD + URI schemes (akn-pt vs incm)
+try {
+  const doc = global.newDocument('dec-lei');
+  doc.number = '83'; doc.year = 2016;
+  doc.subtype = 'dec-lei-ordinario';
+  doc.shortTitle = 'Estabelece o serviço público de acesso ao Diário da República.';
+  doc.adoptionDate = '2016-12-15'; doc.publicationDate = '2016-12-16';
+  doc.country = 'pt';
+
+  const ld = global.EliMetadata.buildJsonLd(doc);
+  const cmp = global.EliMetadata.uriComparison(doc);
+  const rdfa = global.EliMetadata.toRdfa(doc);
+
+  const checks = [
+    ['@type LegalResource', ld['@type'] === 'eli:LegalResource'],
+    ['context eli ontology', ld['@context'].eli === 'http://data.europa.eu/eli/ontology#'],
+    ['id_local 83/2016', ld['eli:id_local'] === '83/2016'],
+    ['title presente', ld['eli:title']['@value'].includes('Diário da República')],
+    ['date_document', ld['eli:date_document']['@value'] === '2016-12-15'],
+    ['is_realized_by Expression', ld['eli:is_realized_by']['@type'] === 'eli:LegalExpression'],
+    ['language POR', ld['eli:is_realized_by']['eli:language']['@id'].endsWith('/POR')],
+    ['date_publication', ld['eli:is_realized_by']['eli:date_publication']['@value'] === '2016-12-16'],
+    ['2 manifestações (xml+html)', ld['eli:is_realized_by']['eli:is_embodied_by'].length === 2],
+    ['passed_by Governo', ld['eli:passed_by']['skos:prefLabel']['@value'].includes('Governo')],
+    // URI scheme akn-pt (nossa proposta): ano+número
+    ['URI akn-pt ano+número', cmp.aknPt.work === 'https://eli.gov.pt/eli/pt/dec-lei/2016/83/pt'],
+    // URI scheme incm (produção): data completa
+    ['URI incm data completa', cmp.incm.work === 'https://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre/pt'],
+    // JSON-LD válido (parseável)
+    ['JSON-LD parseável', (() => { try { JSON.parse(global.EliMetadata.toJsonLdString(doc)); return true; } catch { return false; } })()],
+    ['RDFa tem typeof LegalResource', rdfa.includes('typeof="eli:LegalResource"')],
+    ['toScriptTag application/ld+json', global.EliMetadata.toScriptTag(doc).includes('application/ld+json')],
+  ];
+  const fails = checks.filter(([, ok]) => !ok);
+  if (fails.length) throw new Error('Falhas: ' + fails.map(f => f[0]).join(', '));
+  console.log(`  OK   EliMetadata JSON-LD + URIs (${checks.length}/${checks.length}; akn-pt vs incm)`);
+  n_ok++;
+} catch (e) {
+  console.log(`  FAIL EliMetadata: ${e.message}`);
+  n_fail++;
+}
+
+const total = cases.length + 22;
 console.log(`\n${n_ok}/${total} files generated.`);
 console.log(`Next: validate with akn-pt:`);
 console.log(`  python -m akn_pt batch editor/.smoke-output`);

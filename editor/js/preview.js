@@ -93,6 +93,14 @@ const Preview = (() => {
     }
 
     out.push(`</div>`);
+
+    // Metadados ELI machine-readable (JSON-LD) — invisível, mas carregado no
+    // artefacto HTML/PDF exportado. É exactamente a marcação que o portal da
+    // INCM deixou de servir após a migração para OutSystems.
+    if (typeof EliMetadata !== 'undefined') {
+      try { out.push(EliMetadata.toScriptTag(doc)); } catch (e) { /* não bloquear preview */ }
+    }
+
     return out.join('\n');
   }
 

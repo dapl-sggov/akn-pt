@@ -92,6 +92,10 @@
               <span class="menu-icon">✑</span>
               <span class="menu-label">Word (.doc)</span>
             </button>
+            <button class="menu-item" data-export="eli-jsonld">
+              <span class="menu-icon">🔗</span>
+              <span class="menu-label">Metadados ELI <span class="menu-shortcut">JSON-LD</span></span>
+            </button>
             <button class="menu-item lab-only hidden" data-export="bluebell">
               <span class="menu-icon">≣</span>
               <span class="menu-label">Texto Bluebell-PT</span>
@@ -403,6 +407,17 @@
     </div>
   </div>
 
+  <!-- Metadados ELI (invocado via Cmd-K "Ver metadados ELI") -->
+  <div id="eli-modal" class="modal hidden" data-modal>
+    <div class="modal-content modal-wide">
+      <header class="modal-header">
+        <h2>Metadados ELI <span class="muted small">(machine-readable)</span></h2>
+        <button class="btn-close" data-close="eli-modal">×</button>
+      </header>
+      <div class="modal-body" id="eli-modal-body"></div>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div id="toast" class="toast hidden"></div>
 
@@ -416,6 +431,7 @@
   <script src="js/renumber.js?v=v012"></script>
   <script src="js/dre-mock.js"></script>
   <script src="js/akn-export.js"></script>
+  <script src="js/eli-metadata.js"></script>
   <script src="js/validation.js?v=v012"></script>
   <script src="js/preview.js"></script>
   <script src="js/exporters.js"></script>

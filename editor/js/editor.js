@@ -1105,6 +1105,56 @@ const Editor = (() => {
     $('#ai-settings-modal').classList.remove('hidden');
   }
 
+  // Metadados ELI — viewer (Cmd-K "Ver metadados ELI"). Mostra as duas formas
+  // de URI (a nossa proposta e a forma de produção da INCM, para tornar a
+  // divergência visível na reunião), o JSON-LD e o RDFa equivalente.
+  function openEliModal() {
+    const doc = State.get();
+    const body = $('#eli-modal-body');
+    body.innerHTML = '';
+    if (typeof EliMetadata === 'undefined') {
+      body.appendChild(el('p', { class: 'hint' }, 'Módulo EliMetadata não carregado.'));
+      openModal('eli-modal');
+      return;
+    }
+    const cmp = EliMetadata.uriComparison(doc);
+    const jsonld = EliMetadata.toJsonLdString(doc);
+    const rdfa = EliMetadata.toRdfa(doc);
+
+    body.appendChild(el('p', { class: 'hint' },
+      'Metadados ELI machine-readable derivados do documento (ontologia ELI v1.5). ',
+      'Esta é a marcação que o portal da INCM deixou de servir após a migração para OutSystems.'));
+
+    // Comparação de URIs
+    body.appendChild(el('h3', { class: 'block-label', style: 'margin-top:8px' }, 'URI — duas formas a reconciliar com a INCM'));
+    const mk = (label, uri) => el('div', { style: 'margin:4px 0' },
+      el('span', { class: 'muted small', style: 'display:inline-block;min-width:170px' }, label),
+      el('code', { style: 'font-size:0.8em;word-break:break-all' }, uri));
+    body.appendChild(el('div', { style: 'background:var(--color-bg-soft,#f5f3ee);padding:8px 10px;border-radius:6px' },
+      el('div', { style: 'font-weight:600;font-size:0.85em;margin-bottom:2px' }, cmp.aknPt.scheme),
+      mk('Work', cmp.aknPt.work),
+      mk('Expression', cmp.aknPt.expression),
+      mk('Manifestation', cmp.aknPt.manifestation),
+      el('div', { style: 'font-weight:600;font-size:0.85em;margin:8px 0 2px' }, cmp.incm.scheme),
+      mk('Work', cmp.incm.work),
+    ));
+
+    // JSON-LD
+    const jsonHead = el('div', { style: 'display:flex;align-items:center;justify-content:space-between;margin-top:16px' },
+      el('h3', { class: 'block-label', style: 'margin:0' }, 'JSON-LD'),
+      el('button', { class: 'btn-small', on: { click: () => {
+        navigator.clipboard.writeText(jsonld); toast('JSON-LD copiado.', 'success');
+      }}}, 'Copiar'));
+    body.appendChild(jsonHead);
+    body.appendChild(el('pre', { class: 'xml-preview-pre', style: 'max-height:40vh;overflow:auto' }, jsonld));
+
+    // RDFa
+    body.appendChild(el('h3', { class: 'block-label', style: 'margin-top:16px' }, 'RDFa equivalente (forma dominante na UE)'));
+    body.appendChild(el('pre', { class: 'xml-preview-pre', style: 'max-height:25vh;overflow:auto' }, rdfa));
+
+    openModal('eli-modal');
+  }
+
   // Wrapper que actualiza o badge "live" e propaga alterações.
   function _setupCollab() {
     if (typeof Collab === 'undefined') return;
@@ -2315,6 +2365,8 @@ const Editor = (() => {
           $('#xml-modal-body').textContent = xml;
           openModal('xml-modal');
         } },
+      { id: 'view-eli', label: 'Ver metadados ELI', group: 'Revisão', hint: 'JSON-LD + URIs',
+        fn: () => openEliModal() },
       // ---- IA ----
       { id: 'ai-settings', label: 'Definições do assistente IA', group: 'IA',
         fn: () => openAiSettingsModal() },
@@ -2447,6 +2499,10 @@ const Editor = (() => {
       } else if (kind === 'docx') {
         Exporters.exportDocx(doc);
         toast('Word exportado.', 'success');
+      } else if (kind === 'eli-jsonld') {
+        const jsonld = EliMetadata.toJsonLdString(doc);
+        _download(jsonld, `${doc.actName}-${doc.number || 'X'}-${doc.year}.eli.jsonld`, 'application/ld+json;charset=utf-8');
+        toast('Metadados ELI (JSON-LD) exportados.', 'success');
       } else if (kind === 'bluebell') {
         const text = BluebellPt.serialize(doc);
         _download(text, `${doc.actName}-${doc.number || 'X'}-${doc.year}.bb.txt`, 'text/plain;charset=utf-8');
