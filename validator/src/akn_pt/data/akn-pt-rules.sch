@@ -400,8 +400,13 @@
 
     <sch:rule context="akn:FRBRWork/akn:FRBRuri">
       <sch:let name="actname" value="//akn:act/@name"/>
-      <sch:assert test="contains(@value, concat('/', $actname, '/'))">
-        [FRBR-0001] FRBRuri Work (<sch:value-of select="@value"/>) deve conter o segmento /<sch:value-of select="$actname"/>/ para coerencia com act/@name.
+      <!-- Mapa <act name> AKN-PT -> slug ELI REAL da INCM (eli-pt/incm-eli-reference.md).
+           A coerencia aceita o segmento do act/@name (forma proposta eli.gov.pt)
+           OU o slug ELI da INCM (forma canonica data.dre.pt). -->
+      <sch:let name="slugmap" value="'|dec-lei=dec-lei|lei=lei|portaria=port|res-cm=resolconsmin|res-ar=resolassrep|despacho-normativo=despnorm|dlr=declegreg|drr=decregulreg|decreto-ar=dec|'"/>
+      <sch:let name="slug" value="substring-before(substring-after($slugmap, concat('|', $actname, '=')), '|')"/>
+      <sch:assert test="contains(@value, concat('/', $actname, '/')) or ($slug != '' and contains(@value, concat('/', $slug, '/')))">
+        [FRBR-0001] FRBRuri Work (<sch:value-of select="@value"/>) deve conter o segmento /<sch:value-of select="$actname"/>/ (forma proposta) ou /<sch:value-of select="$slug"/>/ (slug ELI da INCM), para coerencia com act/@name.
       </sch:assert>
     </sch:rule>
 

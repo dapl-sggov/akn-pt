@@ -45,16 +45,17 @@ DRE_ELI_DOMAIN = "data.dre.pt"          # domínio canónico (produção INCM)
 ELI_PROPOSED_DOMAIN = "eli.gov.pt"      # forma proposta DAPL (ano+número)
 DRE_DOMAIN = "dre.pt"                   # portal de detalhe (legacy)
 
+# Valores = slug ELI REAL da INCM (ver eli-pt/incm-eli-reference.md).
 DRE_TO_ELI_TYPE = {
     "decreto-lei": "dec-lei",
     "lei": "lei",
-    "decreto-da-assembleia-da-republica": "decreto-ar",
-    "resolucao-da-assembleia-da-republica": "res-ar",
-    "portaria": "portaria",
-    "resolucao-do-conselho-de-ministros": "res-cm",
-    "despacho-normativo": "despacho-normativo",
-    "decreto-legislativo-regional": "dlr",
-    "decreto-regulamentar-regional": "drr",
+    "decreto-da-assembleia-da-republica": "dec",
+    "resolucao-da-assembleia-da-republica": "resolassrep",
+    "portaria": "port",
+    "resolucao-do-conselho-de-ministros": "resolconsmin",
+    "despacho-normativo": "despnorm",
+    "decreto-legislativo-regional": "declegreg",
+    "decreto-regulamentar-regional": "decregulreg",
 }
 ELI_TO_DRE_TYPE = {v: k for k, v in DRE_TO_ELI_TYPE.items()}
 REGIONAL_TYPES = {"dlr", "drr"}
@@ -102,7 +103,8 @@ class EliId:
             )
         dom = domain or DRE_ELI_DOMAIN
         y, m, d = self.pub_date.split("-")
-        uri = f"https://{dom}/eli/{self.act_type}/{self.number}/{y}/{m}/{d}"
+        # Sufixo do número em minúsculas (convenção INCM: 82-e, 43-b).
+        uri = f"https://{dom}/eli/{self.act_type}/{self.number.lower()}/{y}/{m}/{d}"
         # Work = até {dia}. Expression/Manifestation só se pit/fmt pedido.
         if self.point_in_time or self.fmt:
             verseg = self.point_in_time or "p"
@@ -235,15 +237,15 @@ _CITATION_RE = re.compile(
 
 _CITATION_TYPE = {
     "decreto-lei": "dec-lei",
-    "lei organica": "lei",
+    "lei organica": "leiorg",
     "lei": "lei",
-    "portaria": "portaria",
-    "resolucao do conselho de ministros": "res-cm",
-    "resolucao da assembleia da republica": "res-ar",
-    "decreto da assembleia da republica": "decreto-ar",
-    "despacho normativo": "despacho-normativo",
-    "decreto legislativo regional": "dlr",
-    "decreto regulamentar regional": "drr",
+    "portaria": "port",
+    "resolucao do conselho de ministros": "resolconsmin",
+    "resolucao da assembleia da republica": "resolassrep",
+    "decreto da assembleia da republica": "dec",
+    "despacho normativo": "despnorm",
+    "decreto legislativo regional": "declegreg",
+    "decreto regulamentar regional": "decregulreg",
 }
 
 

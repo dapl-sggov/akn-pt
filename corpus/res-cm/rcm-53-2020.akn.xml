@@ -10,8 +10,8 @@
     <meta>
       <identification source="#dapl">
         <FRBRWork>
-          <FRBRthis value="https://data.dre.pt/eli/res-cm/53/2020/07/10/!main"/>
-          <FRBRuri value="https://data.dre.pt/eli/res-cm/53/2020/07/10"/>
+          <FRBRthis value="https://data.dre.pt/eli/resolconsmin/53/2020/07/10/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/resolconsmin/53/2020/07/10"/>
           <FRBRdate date="2020-07-02" name="adoption"/>
           <FRBRauthor href="#cm"/>
           <FRBRcountry value="pt"/>
@@ -19,16 +19,16 @@
           <FRBRnumber value="53"/>
         </FRBRWork>
         <FRBRExpression>
-          <FRBRthis value="https://data.dre.pt/eli/res-cm/53/2020/07/10/p/dre/pt/!main"/>
-          <FRBRuri value="https://data.dre.pt/eli/res-cm/53/2020/07/10/p/dre/pt"/>
+          <FRBRthis value="https://data.dre.pt/eli/resolconsmin/53/2020/07/10/p/dre/pt/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/resolconsmin/53/2020/07/10/p/dre/pt"/>
           <FRBRdate date="2020-07-10" name="publication"/>
           <FRBRauthor href="#cm"/>
           <FRBRlanguage language="por"/>
           <FRBRversionNumber value="1"/>
         </FRBRExpression>
         <FRBRManifestation>
-          <FRBRthis value="https://data.dre.pt/eli/res-cm/53/2020/07/10/p/dre/pt/xml/!main"/>
-          <FRBRuri value="https://data.dre.pt/eli/res-cm/53/2020/07/10/p/dre/pt/xml"/>
+          <FRBRthis value="https://data.dre.pt/eli/resolconsmin/53/2020/07/10/p/dre/pt/xml/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/resolconsmin/53/2020/07/10/p/dre/pt/xml"/>
           <FRBRdate date="2020-07-10" name="publication"/>
           <FRBRauthor href="#dre"/>
           <FRBRformat value="application/akn+xml; profile=akn-pt-1.0"/>
