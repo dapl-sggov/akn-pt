@@ -133,24 +133,27 @@ after the adoption date.
 
 ## 5. ELI-PT identifier scheme
 
-ELI-PT follows the European Legislation Identifier (ELI) template, adapted to
-Portugal:
+ELI-PT uses INCM's production ELI template (`data.dre.pt`), in which the act is
+identified by type, number and **publication date**:
 
 ```
-{domain}/eli/{jurisdiction}/{type}/{year}/{number}/{language}[/{point-in-time}][.{format}][#{fragment}]
+https://data.dre.pt/eli/{type}/{number}/{year}/{month}/{day}[/{p|point-in-time}/dre/{language}[/{format}]][#{fragment}]
 ```
 
-- `{domain}` — `eli.gov.pt` (placeholder); recommended final form to be
-  negotiated with INCM: `data.dre.pt`.
-- `{jurisdiction}` — `pt` for the national level; `pt-20` for the Azores;
-  `pt-30` for Madeira.
-- `{type}` — act type slug (`dec-lei`, `lei`, `portaria`, etc.).
-- `{year}` — four-digit adoption year.
-- `{number}` — act number within year+type.
-- `{language}` — always `pt` for Portugal.
-- `{point-in-time}` — ISO date of consolidated version; absent for original.
-- `{format}` — `xml`, `html`, `json`, `pdf`.
+- `data.dre.pt` — canonical authoritative domain (INCM/DRE, in production); this
+  form is fully constructible from a complete Portuguese citation (which supplies
+  day and month). `eli.gov.pt` (year+number, jurisdiction-in-URI) is retained
+  only as a proposed evolution pending coordination with INCM.
+- `{type}` — act type slug (`dec-lei`, `lei`, `portaria`, etc.), **before the number**.
+- `{number}` — act number (suffix allowed, e.g. `43-B`).
+- `{year}/{month}/{day}` — **publication date** in the DR.
+- `p` — "as published" version marker; replaced by `{point-in-time}` (ISO date)
+  for consolidations.
+- `dre` — agent (Diário da República); `{language}` — `pt` in the URI.
+- `{format}` — `xml`, `html`, `pdf` (segment, not extension).
 - `{fragment}` — internal `eId` (e.g. `#art_5__para_2__lit_a`).
+
+> Jurisdiction (`pt-20`/`pt-30`) is carried in `<FRBRcountry>`, not in the URI.
 
 Granularity down to the `point` (alínea) is **mandatory** in fragment URIs.
 
@@ -173,14 +176,22 @@ mapping between current `dre.pt` URLs and ELI-PT canonical URIs:
 ```
 https://dre.pt/dre/detalhe/decreto-lei/22-2026-XXXXXXXX
    ↔
-https://data.dre.pt/eli/dec-lei/22/2026/03/15   (canonical; requires publication date)
+https://data.dre.pt/eli/dec-lei/22/2026/03/15   (canonical; date taken from the full citation or INCM table)
 ```
 
 Neither the legacy `{hash}` segment nor the **publication date** (month/day) is
-present in the detail URL — both require the INCM mapping table. Without the
-date, the converter emits the self-sufficient proposed form
-(`https://eli.gov.pt/eli/pt/dec-lei/2026/22/pt`); with it, the canonical
-`data.dre.pt` form. A constraint to be addressed in coordination with INCM.
+present in the dre.pt *detail URL* — recovering them from that URL requires the
+INCM mapping table. A full Portuguese legistic citation, however, always
+includes the date — e.g. "Decreto-Lei n.º 43-B/2024, de 2 de julho" —
+supplying type, number, year, day and month; from such a citation the canonical
+`data.dre.pt` template (`/eli/{type}/{number}/{year}/{month}/{day}/p/dre/pt`)
+**is constructible** by parsing the "..., de {day} de {month} [de {year}]"
+component. Accordingly, the converter emits the proposed `eli.gov.pt` form only
+when it starts from a detail URL with no date; given the date — from the
+citation or the INCM table — it emits the canonical `data.dre.pt` form. Caveat:
+an ABBREVIATED citation ("DL 43-B/2024", without "de {day} de {month}") is
+insufficient, but that is an incomplete citation by legistic convention, not a
+shortcoming of the INCM scheme.
 
 ## 6.5 Legislative footprint (Law 5-A/2026)
 

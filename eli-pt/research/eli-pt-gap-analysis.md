@@ -28,7 +28,7 @@ posição mais forte, mas também mais sensível politicamente.
 
 | Dimensão | Nossa proposta (v0.1.0) | Prática internacional dominante | Veredicto | Ação |
 |---|---|---|---|---|
-| **Estrutura do URI** | `…/eli/{jur}/{type}/{year}/{number}/{lang}[…]` — ano+número, **sem data completa** | Minimalista ano+número (UE) vs. parlante por data (FR/LU/IT/ES). **O ELI-PT EM PRODUÇÃO usa data completa**: `dec-lei/83/2016/12/16/…` | **Divergente (interno) — crítico** | Divergimos do **próprio template da INCM**. Levar 2 opções à mesa: (a) ano+número (limpo, alinhado UE) ou (b) data completa (continuidade legado + FR/LU/IT + lei 74/98). Não impor (a). |
+| **Estrutura do URI** | `…/eli/{jur}/{type}/{year}/{number}/{lang}[…]` — ano+número, **sem data completa** | Minimalista ano+número (UE) vs. parlante por data (FR/LU/IT/ES). **O ELI-PT EM PRODUÇÃO usa data completa**: `dec-lei/83/2016/12/16/…` | **Divergente (interno) — crítico** | Divergimos do **próprio template da INCM**. Esclarecimento decisivo: a citação legística completa em PT inclui sempre a data (ex. 'Decreto-Lei n.º 43-B/2024, de 2 de julho'), pelo que o template data.dre.pt (data completa) É construível a partir de uma citação completa — basta o parser extrair '..., de {dia} de {mês} [de {ano}]'. A construtibilidade NÃO é, portanto, argumento a favor de ano+número. À forma ano+número restam pontos menores: jurisdição explícita no URI e alinhamento estético com o padrão ano+número da UE. Análise franca: a forma da INCM não é errada — é a tradição legística PT. Recomenda-se adotar o template data.dre.pt (b) por continuidade do legado e alinhamento FR/LU/IT + lei 74/98. |
 | **Domínio** | Placeholder `eli.gov.pt`; recomendação `data.dre.pt` (ADR-0009) | UE separa domínio persistente (307→portal). ES/FR/IE/LU usam domínio do boletim. **PT já tem `data.dre.pt` registado** | **Lacuna de decisão, direção boa** | `data.dre.pt` já existe e está registado — adotá-lo evita 2.º namespace. `eli.gov.pt` só se houver vontade de desacoplar do operador (cf. Polónia `eli.gov.pl`). **Decisão é da INCM.** |
 | **Point-in-time** | ISO 8601 `YYYY-MM-DD`; omitido p/ originária | LU `/consolide/{AAAAMMDD}`, IT `/CONSOLIDATED/{data}`, UE substitui `/oj`. Sem versão → consolidação mais recente | **Alinhado — validar** | Boa escolha. **Acrescentar regra de redireccionamento URI-sem-PIT → consolidação corrente** (padrão LU/IT), que a proposta não explicita. |
 | **Fragmentos** | `#{fragment}` = eId AKN-PT; granularidade até alínea **obrigatória** | AKN4EU/LEOS: eId hierárquico anexado via `#`. FR desce a `/article_N` no path; IE `/section/N` | **Alinhado — o nosso ponto mais forte** | Composição eId→fragmento é exactamente o AKN4EU. **Decidir** se queremos fragmentos dereferenciáveis server-side (FR/IE: nível no path) ou só identificadores (`#`). |
@@ -50,8 +50,12 @@ posição mais forte, mas também mais sensível politicamente.
 
 **Onde DIVERGIMOS da norma (justificar ou corrigir):**
 - **URI ano+número vs. data completa** — divergimos do template INCM em
-  produção e da escola parlante. Escolher conscientemente, provavelmente a
-  favor da data completa (continuidade + lei formulário).
+  produção e da escola parlante. Escolher conscientemente **a favor da data
+  completa** (continuidade + lei formulário). Nota decisiva: a citação
+  legística completa ('..., de {dia} de {mês} de {ano}') fornece dia e mês,
+  pelo que o template data.dre.pt É construível a partir dela — a
+  construtibilidade deixa de ser argumento pró-ano+número. A forma da INCM não
+  é errada: é a tradição legística PT.
 - **Fragmento só em `#` vs. nível no path** — divergimos de FR/IE.
 - **Código de língua `pt` vs. `por`** — divergência menor face à UE.
 

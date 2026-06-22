@@ -24,8 +24,12 @@ European Legislation Identifier — Portuguese profile.
 decisão da DAPL, o ELI-PT canónico passou a ser o `data.dre.pt` que Portugal já
 tem implementado (ADR-0009, revisão 2026-06-22). A forma anterior da DAPL
 (`eli.gov.pt`, ano+número) mantém-se documentada como **evolução a propor**
-(ver §16 da especificação) — é **auto-suficiente** (construível a partir de uma
-citação), ao contrário do template `data.dre.pt`, que exige a data de publicação.
+(ver §16 da especificação) — é **auto-suficiente mesmo perante citações
+abreviadas**, enquanto o template `data.dre.pt` exige a data completa. Note-se
+que a **citação legística completa** (ex. "Decreto-Lei n.º 43-B/2024, de 2 de
+julho") já inclui a data, pelo que o template `data.dre.pt` é igualmente
+construível a partir dela; os méritos remanescentes da forma `eli.gov.pt` são
+jurisdição explícita no URI e alinhamento estético com a UE.
 
 > ⚠ **Achado da pesquisa de 2026-06-22:** Portugal **já é implementador ELI
 > registado** desde 2016/2017 (operado pela INCM em `data.dre.pt`), mas terá
