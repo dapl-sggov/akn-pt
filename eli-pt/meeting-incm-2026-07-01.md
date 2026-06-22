@@ -1,190 +1,83 @@
 # Kit de reunião INCM — 2026-07-01
 
-**Participantes (DAPL/SGGOV):** [a confirmar]
-**Objeto:** Alinhamento do ELI-PT no contexto do projeto AKN-PT; reativação e
-evolução do compromisso ELI de Portugal.
-**Postura geral:** colaborativa mas firme. A INCM é parceiro indispensável e
-detentor do mandato legal — não há AKN-PT viável sem ela. Mas chegamos com um
-diagnóstico concreto (o ELI-PT regrediu) e uma proposta construída, não com uma
-folha em branco.
+**Participantes (DAPL/SGGOV):** [a confirmar] · **INCM (DTI):** Diogo Proença, Bruno Pereira, Vítor Hugo Faria, Ricardo Matias, Inês Costa Marques.
+**Objeto:** Alinhamento do AKN-PT com o ELI-PT em produção da INCM; oportunidades de colaboração (estrutura na origem, interoperabilidade aberta).
+**Postura geral:** **colaborativa**. A INCM é parceiro indispensável, detentor do mandato legal **e** um implementador ELI maduro — pioneiro europeu do Pilar IV. Chegamos **já alinhados** com o vosso esquema real (não a diagnosticar problemas), com uma proposta construída e verificada.
 
-> Material de apoio: [dossier de conhecimento ELI](research/eli-international-dossier.md)
-> · [análise de lacunas](research/eli-pt-gap-analysis.md) · [especificação
-> ELI-PT v0.1.0](specification-pt.md).
+> **Correção de pressuposto (importante):** a versão anterior deste kit assumia que "o ELI-PT regrediu" (URIs `/eli/` a cair em `/dr/home`, sem RDFa, sem feeds). A resposta da INCM de 2026-06-22 **e a nossa verificação empírica** desmentiram-no: os `/eli/` resolvem (301→200), o RDFa está no HTML servido a crawlers, a ontologia está atualizada, e o DR foi o **1.º jornal oficial europeu no Pilar IV**. Esta nova versão reflete isso.
 
-## 1. Objetivos da reunião (concretos)
+> Material de apoio: [referência oficial INCM (tipos+gramática)](incm-eli-reference.md) · [dossier ELI](research/eli-international-dossier.md) · [análise de lacunas](research/eli-pt-gap-analysis.md) · [especificação ELI-PT](specification-pt.md).
 
-1. **Estabelecer factualmente o estado real do ELI-PT na INCM** — confirmar se
-   os Pilares I/II declarados em 2016/2017 continuam ativos após a migração
-   para OutSystems, dado que a verificação externa indica que os URIs `/eli/`
-   redirecionam para `/dr/home` e que não há RDFa/JSON-LD no HTML servido.
-2. **Obter a especificação oficial e atual** dos três templates de URI ELI da
-   INCM (jornal, ato, consolidada) e a tabela controlada de tipos de ato —
-   para reconciliar com a nossa proposta de 9 tipos.
-3. **Decidir o domínio e a autoridade de resolução** do ELI-PT (`data.dre.pt`
-   vs. `eli.gov.pt`) e quem se compromete a garantir a persistência de longo
-   prazo.
-4. **Clarificar o modelo de governação** — quem detém autoridade normativa
-   sobre a especificação ELI-PT e quem opera, à luz do modelo híbrido
-   (ADR-001) e do precedente espanhol.
-5. **Acordar próximos passos e calendário** — incluindo a possibilidade de a
-   INCM injetar captura estrutural (AKN-PT) no novo Sistema de Submissão de
-   Atos (SSA, em produção desde 05-01-2026).
+## 1. O que já está estabelecido (resposta INCM 2026-06-22 + verificação)
 
-## 2. Pontos de decisão que SÓ a INCM pode resolver
+Confirmado por email e testado por nós (resolução + RDFa em 14 tipos, 1991→2022):
 
-A DAPL pode propor, mas estas decisões são prerrogativa da INCM (titular do
-mandato legal — DL 235/2015 / DL 83/2016):
+- **Pilares I–IV ativos e em produção.** `/eli/` resolve; RDFa ELI no HTML (pré-renderizado para crawlers; o EUR-Lex faz scraping diário); ontologia na última versão; sitemap + **Atom update feed** (Pilar IV) públicos; piloto de pesquisa federada com ES + LU.
+- **Template real** (ato): `data.dre.pt/eli/{tipo}/{nº}/{ano}/{mês}/{dia}/{p|a|m}/dre/{lang}/{fmt}`; consolidada `.../{ano}/{p|a|m}/cons/{AAAAMMDD}/...`; jornal `.../diario/{série}/{nº}/{ano}/{supl}/...`. Data de **publicação**, zero-padding. Território `p`/`a`/`m`.
+- **2.ª série incluída desde 1991** (desde que o ato tenha número).
+- **Sem API pública**; harvesting via scraping/feed (não usar endpoints OutSystems internos — instáveis).
+- **Vocabulário de assunto nacional** (não EuroVoc) em RDF/SKOS (~70k conceitos): `is_about`.
+- **SSA (jan/2026) capta apenas ficheiros**; a **estrutura semântica** é capturada **a jusante**, no sistema de edição da INCM, num **XML proprietário interno** (usado para índice + articulado no site).
 
-- **Domínio final e autoridade de resolução.** O `data.dre.pt` é da INCM;
-  qualquer namespace ELI-PT persistente vive sob a sua infraestrutura. Só a
-  INCM pode comprometer-se com a meta de 100 anos.
-- **Quem opera a resolução de URIs.** A camada de resolução (content
-  negotiation, redirects 301/303, time-travel de consolidadas) corre na
-  infraestrutura da INCM.
-- **Registo no EUR-Lex.** Só o coordenador nacional ELI (de facto, a INCM)
-  pode declarar/atualizar o template no registo do Publications Office.
-- **Calendário de (re)implementação.** Pilares III (RDFa/JSON-LD) e IV
-  (feeds), e eventual exportação AKN, dependem do roadmap técnico da INCM.
-- **Base legal / caderno de encargos.** Se a (re)implementação carecer de
-  instrumento jurídico (alteração regulamentar, protocolo SGGOV-INCM, caderno
-  de encargos), é a INCM a responsável pela edição autêntica — sob
-  superintendência do Primeiro-Ministro.
+**O que já fizemos com base nisto:** alinhámos o AKN-PT/ELI-PT ao template real — slugs reais (`port`, `resolconsmin`, `declegreg`…), forma do URI (Work `/{p|a|m}/dre`, consolidadas `/cons`), relação habilitante `based_on`, língua `pt`/`PRT`; corpus de 8 diplomas reais com ELI verificado; editor que emite a forma canónica.
 
-## 3. Banco de perguntas (agrupadas e priorizadas)
+## 2. Objetivos da reunião
 
-### A. Técnicas — **prioridade máxima**
+1. **Validar os detalhes finos do template** contra a página oficial: tabela controlada de tipos (mapeámos os nossos 9 → slugs reais; falta confirmar `decreto-ar`→`dec`), forma das consolidadas, e o **código de língua** (`pt` no path vs `por`/`PRT` nos metadados).
+2. **Apresentar o alinhamento** que já fizemos (corpus real, editor, conversor citação→ELI) e validá-lo com a INCM.
+3. **A oportunidade central — estrutura na origem.** O SSA capta só ficheiros; a estrutura entra a jusante, em XML proprietário. Propor: (a) **edição estruturada em standard aberto a montante** (na redação, lado SGGOV/DAPL); (b) **AKN-PT como forma aberta e interoperável** do XML interno da INCM — definir o mapeamento.
+4. **Governação** — quem detém autoridade normativa sobre o perfil AKN-PT/ELI-PT e quem opera (modelo híbrido ADR-001; precedente espanhol Grupo de Trabajo ≠ AEBOE).
+5. **Próximos passos e calendário** — 2.ª série, mapeamento do vocabulário nacional (e eventual ponte para EuroVoc), e o caso de uso de um serviço de resolução citação→ELI.
 
-1. **[P1]** Os Pilares I e II declarados ao EUR-Lex (2016/2017) ainda estão
-   **ativos** após a migração para OutSystems? Porque é que
-   `https://dre.pt/eli/lei/.../p/dre` redireciona para `/dr/home` em vez de
-   resolver o ato?
-2. **[P1]** Qual é a **especificação completa e atual** dos três templates de
-   URI (jornal, ato, consolidada), incluindo a gramática de componentes?
-3. **[P1]** O template ELI-PT do ato usa a **data que consta da citação** (a
-   data do diploma — "..., de {dia} de {mês}") ou a **data de publicação no
-   DR**? (Determina se o URI canónico data.dre.pt é construível diretamente a
-   partir da citação completa, ou se há desfasamento citação↔publicação.)
-   Zero-padding ou sem zeros à esquerda (convenção UE/FR)?
-4. **[P1]** O ELI-PT desce a **nível de artigo/subdivisão** (como FR
-   `/article_N`, IE `/section/N`) ou para no nível do ato? Determina como
-   mapeamos os eIds AKN-PT.
-5. **[P2]** O DRE serve HTML server-side (onde se pode embeber **RDFa**) ou
-   exige JSON-LD por renderização JS? Qual o plano para re-emitir metadados?
-6. **[P2]** Que **versão da ontologia** está em produção (declararam v1.1 em
-   2017)? Há plano para v1.5 (2024)?
-7. **[P2]** Existe **API pública documentada** (REST/SPARQL) ou o único acesso
-   programático continua a ser via endpoints JSON OutSystems internos?
-8. **[P3]** Há **content negotiation** (Accept + extensões + 303), ou só URLs
-   com extensão explícita?
-9. **[P3]** Publica-se ou planeia-se **feed Atom/sitemap (Pilar IV)** para
-   harvesting EUR-Lex/DCAT-AP?
+## 3. A oportunidade AKN-PT (o "pitch" — 3 minutos)
 
-### B. Governação — **prioridade alta (é aqui que a reunião se ganha ou perde)**
+O ELI da INCM está sólido; **o AKN-PT não vem corrigir o ELI — vem acrescentar a camada que falta: estrutura semântica aberta, e a montante.**
 
-10. **[P1]** Quem é, **formalmente, o coordenador nacional ELI** de Portugal
-    junto do Publications Office? A declaração no registo está atualizada?
-11. **[P1]** Quem detém a **autoridade normativa** sobre a especificação
-    técnica ELI-PT — a INCM como operador, ou deveria existir um órgão de
-    coordenação (tipo Grupo de Trabajo ELI espanhol)? Como se articula com o
-    modelo híbrido do ADR-001?
-12. **[P2]** Quem é o **owner técnico** do mapping ELI na INCM, disponível para
-    alinhar o padrão de URI com o AKN-PT?
-13. **[P2]** A INCM participa ativamente na **ELI Task Force / eLaw Working
-    Party**, ou apenas consome o standard?
-14. **[P3]** Qual o enquadramento jurídico para o **AKN-PT coexistir** com a
-    edição autêntica (Lei 74/98, art. 1.º n.º 5) — representação derivada,
-    formato de intercâmbio, ou candidato a futura fonte autêntica?
+- Hoje: SSA recebe **ficheiros**; a estrutura (articulado, índice) é reconstruída **depois**, na INCM, num XML **proprietário** e **interno**.
+- Proposta: **AKN-PT** (OASIS LegalDocML, standard aberto) como (1) formato de **captura na origem** — o legislador/redator produz estrutura desde o início (o nosso editor demonstra-o); e (2) **forma interoperável** do XML interno da INCM, com mapeamento bidirecional. Resultado: o articulado estruturado deixa de ser um ativo fechado e passa a reutilizável (UE, tribunais, académicos, IA).
+- **Não pisa o terreno da INCM:** a INCM continua a editar e a publicar (mandato legal); a captura estrutural a montante é domínio da DAPL/SGGOV. É soma, não sobreposição.
 
-### C. Calendário
+## 4. Pontos de decisão (com a INCM)
 
-15. **[P1]** O novo **SSA (jan/2026)** captura estrutura semântica na origem
-    (drafting estruturado) ou apenas ficheiros? Há aqui oportunidade de injetar
-    AKN-PT no ponto de submissão?
-16. **[P2]** Qual o **horizonte realista** da INCM para re-emitir ELI (Pilar
-    III) e adotar feeds (Pilar IV)?
-17. **[P3]** Que **dependências** (orçamento, contratação, prioridades
-    internas) condicionam o calendário?
+- ☐ **Domínio**: confirmar `data.dre.pt` como canónico do ELI-PT (já adotado por nós).
+- ☐ **Tabela de tipos**: confirmar o mapa AKN-PT→slug, em especial `decreto-ar`→`dec`.
+- ☐ **Consolidadas / língua**: confirmar `/{ano}/{p|a|m}/cons/{AAAAMMDD}` e `pt`(path) vs `PRT`(metadados).
+- ☐ **Governação**: quem normaliza (perfil) vs quem opera (resolução/publicação).
+- ☐ **SSA / estrutura na origem**: abertura para captura AKN-PT a montante e/ou mapeamento do XML interno ↔ AKN-PT.
+- ☐ **Instrumento**: protocolo SGGOV–INCM? caderno de encargos? alteração regulamentar?
 
-### D. Recursos
+## 5. Banco de perguntas
 
-18. **[P2]** Que **recursos técnicos** a INCM pode alocar a um trabalho
-    conjunto AKN-PT / ELI-PT?
-19. **[P3]** Existem **datasets oficiais** em dados.gov.pt / data.europa.eu,
-    ou a federação cobre só metadados de catálogo?
-20. **[P3]** Há disponibilidade para **indexação EuroVoc** (`is_about`),
-    nativa ou via vocabulário nacional mapeado?
+### A. Já respondidas por email (2026-06-22) — confirmar/aprofundar
+1. ✅ Pilares I/II ativos? **Sim.** → *Confirmar planos de evolução.*
+2. ✅ Spec dos 3 templates? **Página oficial DRE/ELI.** → *Validar a nossa leitura (incm-eli-reference.md).*
+3. ✅ 2.ª série? **Sim, desde 1991.** → *Quais tipos da 2.ª série interessam ao escopo conjunto?*
+4. ✅ Data assinatura vs publicação? **Publicação, zero-padding.** → *Confirmar que a data da citação ("de {dia} de {mês}") = data do path (sem desfasamento).* **[P1 — afeta a construtibilidade citação→ELI]**
+5. ✅ Nível de artigo/subdivisão? **Não, está nos planos.** → *Quando? O nosso `#eId` está pronto a alimentar isso.*
+6. ✅ RDFa no HTML? **Sim (para crawlers).** → *Servem RDFa só a user-agents de bot? Há plano de SSR/JSON-LD para todos?*
+7. ✅ Versão da ontologia? **A última.** → *Confirmar (v1.5?) e se publicam o changelog.*
+8. ✅ API pública? **Não; scraping/feed.** → *Aceitam um cliente de harvesting nosso sobre o feed/sitemap?*
+9. ✅ Content negotiation? **Não.** → *Planeiam? (afeta dereferenciação programática)*
+10. ✅ Pilar IV (feed/sitemap)? **Pioneiros; em produção.** → *Cadência de atualização do feed? formato DCAT-AP?*
 
-## 4. O que a DAPL leva para a mesa
+### B. Novas — forward-looking
+11. **[P1]** O **XML interno** da INCM (estrutura do articulado) — qual o esquema? Há abertura para um **mapeamento AKN-PT ↔ esse XML**?
+12. **[P1]** O **SSA** poderia aceitar (ou evoluir para) **captura estrutural a montante** (AKN-PT) na submissão, em vez de só ficheiros?
+13. **[P2]** **Vocabulário nacional de assunto** (`dre-incm-pt-legal-subject.rdf`) — está mapeado a **EuroVoc**? Aceitariam contribuição de mapeamento?
+14. **[P2]** **Atos regionais** (DLR/DRR) — resolução ELI passa pelos jornais regionais (JORAA/JORAM) ou tudo por `data.dre.pt`? Como tratam território (`a`/`m`) + jurisdição?
+15. **[P2]** **Cobertura pré-1991** (1.ª série) — está fora do ELI? (o Cód. IRS, DL 442-A/88, não resolve). Há plano de retrodigitalização ELI?
+16. **[P3]** **Governação ELI-PT** — a INCM vê com bons olhos um perfil AKN-PT/ELI-PT co-normalizado (DAPL norma o perfil, INCM opera/publica), à imagem ES?
 
-- **A proposta ELI-PT v0.1.0 como contributo técnico** (não imposição):
-  template, 9 tipos, FRBR, metadados, point-in-time, fragmentos via eId,
-  permanência. Apresentar como rascunho aberto à reconciliação com o template
-  real da INCM.
-- **O diagnóstico do gap** (factual, verificável): URIs `/eli/` partidos,
-  ausência de RDFa/JSON-LD — enquadrado como dívida técnica a saldar **em
-  conjunto**, não como crítica.
-- **O ativo AKN-PT**: a estrutura semântica que a INCM não tem hoje (portal só
-  serve HTML renderizado + PDF) e que dá granularidade ao artigo e
-  interoperabilidade aberta.
-- **Os precedentes europeus** como argumentos: consolidação LU/IT,
-  granularidade FR/IE, governação ES, par ELI+AKN4EU do Publications Office,
-  LEOS como prova de implementação conjunta.
-- **O argumento institucional**: Interoperable Europe Act (2024/903) reforça a
-  pressão por identificadores comuns (sem tornar o ELI obrigatório).
+## 6. Riscos / sensibilidades
 
-## 5. Riscos e pontos de tensão antecipados
+- **Não chegar como quem "corrige" a INCM.** O ELI deles está bom; a nossa mais-valia é a montante (estrutura aberta), não a jusante.
+- **Conflito de interesses (ver project_governance):** manter a fronteira clara — DAPL não opera publicação autêntica.
+- **Dependência:** sem a INCM não há ELI persistente; toda a proposta assume a INCM como operador.
 
-- **A INCM pode querer domínio próprio e controlo total.** É legítimo — tem o
-  mandato exclusivo. Risco: a DAPL ficar reduzida a "fornecedor de XML".
-  *Mitigação:* invocar o modelo ES (norma separada da operação) e o ADR-001;
-  posicionar a DAPL como autoridade normativa/legística, a INCM como operador.
-- **Divergência de modelo de dados.** A INCM tem backend próprio (sem AKN);
-  pode resistir. *Mitigação:* enquadrar AKN como formato de intercâmbio/
-  representação derivada, não substituição da edição autêntica; oferecer o
-  conversor bidirecional.
-- **Propriedade / conflito de interesses (ADR-001).** A INCM controla
-  publicação e porta de entrada (SSA). Pode ver o AKN-PT como intrusão.
-  *Mitigação:* posicionar como benefício mútuo (cumprimento do compromisso ELI
-  + valor acrescentado).
-- **A INCM pode estar defensiva quanto ao gap.** Apontar regressão pode soar a
-  acusação. *Mitigação:* facto técnico neutro, focar na solução, dar à INCM o
-  crédito da implementação original de 1991/2016.
-- **Desalinhamento de calendário.** A INCM acabou de lançar o SSA.
-  *Mitigação:* ligar o AKN-PT ao SSA como oportunidade de captura na origem.
-- **Quem assina o quê.** Pode faltar instrumento jurídico habilitante.
-  *Mitigação:* levar a hipótese de protocolo SGGOV-INCM para discussão, sem
-  fechar.
+## Anexo — Checklist de 1 página
 
-## 6. Próximos passos pós-reunião (proposta)
+**Confirmar (factos):** ☐ data citação = data path? ☐ tabela de tipos (decreto-ar→dec) ☐ consolidadas/língua ☐ versão ontologia ☐ esquema do XML interno ☐ cobertura pré-1991.
 
-1. **Ata técnica conjunta** com decisões e questões em aberto, validada por
-   ambas as partes (prazo: 1 semana).
-2. **Obtenção da especificação oficial dos templates ELI-PT** da INCM, para
-   reconciliar com a v0.1.0 e produzir uma **v0.2.0 alinhada**.
-3. **Decisão formalizada (ADR-0009)** sobre domínio e autoridade de resolução,
-   com a posição da INCM registada.
-4. **Definição do modelo de governação** (quem normaliza, quem opera, quem
-   regista no EUR-Lex) — eventual minuta de protocolo SGGOV-INCM.
-5. **Prova de conceito conjunta**: mapear 3–5 diplomas reais AKN-PT → ELI-PT,
-   validando a composição eId→fragmento e a resolução de consolidadas.
-6. **Roadmap de (re)implementação** dos Pilares III e IV pela INCM, com
-   avaliação da integração no SSA.
-7. **Agendar reunião de seguimento** (M+1) para validar a v0.2.0 e o protocolo.
+**Decidir (com a INCM):** ☐ `data.dre.pt` canónico ✓ ☐ SSA / captura estrutural a montante ☐ mapeamento AKN-PT↔XML interno ☐ quem normaliza / quem opera ☐ vocabulário→EuroVoc ☐ instrumento jurídico (protocolo?).
 
----
-
-## Anexo — Checklist de 1 página para levar à mesa
-
-**Confirmar (factos):** ☐ Pilares I/II ainda ativos? ☐ template oficial dos 3
-URIs ☐ data assinatura vs publicação ☐ desce a artigo? ☐ versão ontologia em
-produção ☐ coordenador nacional ELI formal ☐ SSA capta estrutura?
-
-**Decidir (com a INCM):** ☐ domínio (`data.dre.pt`?) ☐ **adotar data completa**
-(template INCM em produção; construível a partir da citação legística completa
-— ano+número fica só como alinhamento estético UE/jurisdição explícita) ☐ quem
-normaliza / quem opera ☐ calendário Pilares III/IV ☐
-instrumento jurídico (protocolo?)
-
-**Levar:** ☐ ELI-PT v0.1.0 impressa ☐ gap-analysis ☐ 3 diplomas AKN-PT de
-exemplo ☐ argumento Interoperable Europe Act ☐ proposta de PoC conjunta
+**Levar na pasta:** [`incm-eli-reference.md`](incm-eli-reference.md) (a nossa leitura do template, para validar linha a linha) · corpus de 8 diplomas reais · demo do editor (emite ELI canónico + RDFa/JSON-LD).
