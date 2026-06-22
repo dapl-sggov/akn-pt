@@ -13,13 +13,15 @@
 //        - "subalínea i) da alínea b) do n.º 2 do artigo 5.º"
 //                                                    → #art_5__para_2__lit_b__sublit_i
 //
-//   2. EXTERNAS — diplomas portugueses referidos por número/ano
-//      Padrões:
-//        - "Decreto-Lei n.º 21/2023"                 → https://eli.gov.pt/eli/pt/dec-lei/2023/21/pt
-//        - "Lei n.º 5/2026"                          → https://eli.gov.pt/eli/pt/lei/2026/5/pt
-//        - "Portaria n.º 249/2021"                   → https://eli.gov.pt/eli/pt/portaria/2021/249/pt
-//        - "Resolução do Conselho de Ministros n.º 53/2020"
-//                                                    → https://eli.gov.pt/eli/pt/res-cm/2020/53/pt
+//   2. EXTERNAS — diplomas portugueses referidos por tipo/número/ano [+data]
+//      A citação completa inclui a data, permitindo o URI canónico data.dre.pt:
+//        - "Decreto-Lei n.º 43-B/2024, de 2 de julho"
+//              → https://data.dre.pt/eli/dec-lei/43-B/2024/07/02
+//        - "Lei n.º 7/2009, de 12 de fevereiro"
+//              → https://data.dre.pt/eli/lei/7/2009/02/12
+//      Citação ABREVIADA (sem data) → DreMock se conhecido, senão fallback
+//      eli.gov.pt (ano+número):
+//        - "Decreto-Lei n.º 21/2023"  → https://eli.gov.pt/eli/pt/dec-lei/2023/21/pt
 //        - Diretivas UE (mantém URI ELI europeu se fornecida no texto)
 //
 // API:
@@ -90,11 +92,23 @@ const References = (() => {
     'decreto regulamentar regional': 'drr',
   };
 
-  // Externas — captura tipo (frase longa), número e ano
+  // Externas — captura tipo (frase longa), número, ano e (opcional) a data
+  // legística ", de {dia} de {mês} [de {ano}]". Grupos:
+  //   m[1]=tipo  m[2]=número  m[3]=ano  m[4]=dia  m[5]=mês-extenso  m[6]=ano-na-data
   const RE_EXT_PT = new RegExp(
-    `\\b(Decreto-Lei|Decreto\\u00a0Lei|Lei\\s+Org[\\u00e2a]nica|Lei|Portaria|Resolu[\\u00e7c][\\u00e3a]o\\s+do\\s+Conselho\\s+de\\s+Ministros|RCM|Resolu[\\u00e7c][\\u00e3a]o\\s+da\\s+Assembleia\\s+da\\s+Rep[\\u00fau]blica|Despacho\\s+normativo|Decreto\\s+da\\s+Assembleia\\s+da\\s+Rep[\\u00fau]blica|Decreto\\s+Legislativo\\s+Regional|Decreto\\s+Regulamentar\\s+Regional)\\s+n\\.?[\\u00ba\\u00b0o]?\\s*(\\d+(?:\\s*-\\s*[A-Z])?)\\/(\\d{4})`,
+    `\\b(Decreto-Lei|Decreto\\u00a0Lei|Lei\\s+Org[\\u00e2a]nica|Lei|Portaria|Resolu[\\u00e7c][\\u00e3a]o\\s+do\\s+Conselho\\s+de\\s+Ministros|RCM|Resolu[\\u00e7c][\\u00e3a]o\\s+da\\s+Assembleia\\s+da\\s+Rep[\\u00fau]blica|Despacho\\s+normativo|Decreto\\s+da\\s+Assembleia\\s+da\\s+Rep[\\u00fau]blica|Decreto\\s+Legislativo\\s+Regional|Decreto\\s+Regulamentar\\s+Regional)\\s+n\\.?[\\u00ba\\u00b0o]?\\s*(\\d+(?:\\s*-\\s*[A-Za-z0-9]+)?)\\/(\\d{4})(?:,?\\s+de\\s+(\\d{1,2})\\s+de\\s+([A-Za-z\\u00e7\\u00c7]+)(?:\\s+de\\s+(\\d{4}))?)?`,
     'gi'
   );
+
+  // Meses PT → número (para construir a data no URI canónico data.dre.pt).
+  const MONTHS = {
+    janeiro: 1, fevereiro: 2, 'março': 3, marco: 3, abril: 4, maio: 5, junho: 6,
+    julho: 7, agosto: 8, setembro: 9, outubro: 10, novembro: 11, dezembro: 12,
+  };
+  function _monthToMM(name) {
+    const m = MONTHS[String(name || '').toLowerCase().replace('ç', 'c')];
+    return m ? String(m).padStart(2, '0') : '';
+  }
 
   // Directivas UE — mantém URI ELI europeu se referida
   const RE_EXT_UE = /\bDiretiva\s+\(UE\)\s+(\d{4})\/(\d+)/gi;
@@ -144,7 +158,7 @@ const References = (() => {
       const slug = _slugForType(m[1]);
       const num = m[2].replace(/\s/g, '');
       const year = m[3];
-      const href = _eliForExternal(slug, num, year);
+      const href = _eliForExternal(slug, num, year, m[4], m[5], m[6]);
       matches.push({
         kind: 'external-pt', raw: m[0], start: m.index, end: m.index + m[0].length,
         href, label: m[0],
@@ -194,14 +208,25 @@ const References = (() => {
     return set;
   }
 
-  // URI ELI para uma citação externa (tipo+número+ano).
-  // CANÓNICO = data.dre.pt, mas esse template exige a data de publicação
-  // (mês/dia) — que uma citação NÃO fornece. Por isso:
-  //   - se o diploma for conhecido (DreMock tem a data) → forma canónica data.dre.pt;
-  //   - senão → forma construível eli.gov.pt (ano+número), assinalando que a
-  //     resolução para o URI canónico exige um lookup ao DRE.
-  // Esta limitação do template INCM é um ponto a levar à reunião.
-  function _eliForExternal(slug, num, year) {
+  // URI ELI para uma citação externa (tipo+número+ano [+dia+mês]).
+  // A citação legística COMPLETA em português inclui SEMPRE a data — ex.
+  // "Decreto-Lei n.º 43-B/2024, de 2 de julho" — fornecendo tipo, número,
+  // ano, DIA e MÊS. Logo o template canónico data.dre.pt
+  // (/eli/{tipo}/{nº}/{ano}/{mês}/{dia}) É construível a partir da citação:
+  //   (a) citação completa (com ", de {dia} de {mês}") → forma canónica data.dre.pt;
+  //   (b) citação ABREVIADA (só tipo+nº/ano) → falta mês/dia: tenta-se o DreMock;
+  //   (c) último recurso → forma eli.gov.pt (ano+número).
+  // A constructibilidade NÃO distingue as formas: ambas se constroem da citação
+  // completa. O que resta para a forma eli.gov.pt são pontos menores — jurisdição
+  // explícita no URI e alinhamento estético com o padrão ano+número da UE. A forma
+  // da INCM (data.dre.pt) não é errada: é a tradição legística PT. O caveat é só a
+  // citação abreviada (incompleta por padrão legístico), não uma falha do esquema.
+  function _eliForExternal(slug, num, year, dia, mesNome, anoData) {
+    const mm = _monthToMM(mesNome);
+    if (dia && mm) {
+      const yyyy = anoData || year;
+      return `https://data.dre.pt/eli/${slug}/${num}/${yyyy}/${mm}/${String(dia).padStart(2, '0')}`;
+    }
     if (typeof DreMock !== 'undefined' && DreMock.all) {
       const needle = `/eli/${slug}/${num}/${year}/`;
       const hit = DreMock.all().find(e => e.eli && e.eli.includes(needle));
