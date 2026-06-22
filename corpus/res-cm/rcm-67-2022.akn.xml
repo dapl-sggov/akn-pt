@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AKN-PT corpus — Resolucao do CM n.o 67/2022, de 25 de julho (EXCERTO)
+  Diploma real publicado no DR (DR n.o 142/2022, Serie I). Subtipo: res-cm-normativa.
+  Autoriza o IGCP, E. P. E., a emitir divida publica de acordo com os limites do OE 2022.
+  Coverage: preamble com formula habilitante; body com <paragraph> numerados (SEM article);
+  paragraph com <list>/<point>; signature unica (PM); sem promulgacao; sem anexo.
+  NOTA: diploma extenso (12 numeros) -> marcado como EXCERTO; incluidos apenas os
+  3 primeiros numeros (cf. codigo-irs-excerpt do corpus).
+-->
+<akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17">
+  <act name="res-cm">
+    <meta>
+      <identification source="#dapl">
+        <FRBRWork>
+          <FRBRthis value="https://data.dre.pt/eli/resolconsmin/67/2022/07/25/p/dre/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/resolconsmin/67/2022/07/25/p/dre"/>
+          <FRBRdate date="2022-07-14" name="adoption"/>
+          <FRBRauthor href="#cm"/>
+          <FRBRcountry value="pt"/>
+          <FRBRsubtype value="res-cm-normativa"/>
+          <FRBRnumber value="67"/>
+        </FRBRWork>
+        <FRBRExpression>
+          <FRBRthis value="https://data.dre.pt/eli/resolconsmin/67/2022/07/25/p/dre/pt/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/resolconsmin/67/2022/07/25/p/dre/pt"/>
+          <FRBRdate date="2022-07-25" name="publication"/>
+          <FRBRauthor href="#cm"/>
+          <FRBRlanguage language="por"/>
+          <FRBRversionNumber value="1"/>
+        </FRBRExpression>
+        <FRBRManifestation>
+          <FRBRthis value="https://data.dre.pt/eli/resolconsmin/67/2022/07/25/p/dre/pt/xml/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/resolconsmin/67/2022/07/25/p/dre/pt/xml"/>
+          <FRBRdate date="2022-07-25" name="publication"/>
+          <FRBRauthor href="#dre"/>
+          <FRBRformat value="application/akn+xml; profile=akn-pt-1.0"/>
+        </FRBRManifestation>
+      </identification>
+      <references source="#dapl">
+        <TLCOrganization eId="cm" href="/akn/ontology/organization/pt/cm" showAs="Conselho de Ministros"/>
+        <TLCOrganization eId="dre" href="/akn/ontology/organization/pt/dre" showAs="Diario da Republica"/>
+        <TLCOrganization eId="dapl" href="/akn/ontology/organization/pt/dapl" showAs="DAPL/SGGOV"/>
+        <TLCOrganization eId="igcp" href="/akn/ontology/organization/pt/igcp" showAs="Agencia de Gestao da Tesouraria e da Divida Publica - IGCP, E. P. E."/>
+        <TLCRole eId="primeiro-ministro" href="/akn/ontology/role/pt/primeiro-ministro" showAs="Primeiro-Ministro"/>
+        <TLCPerson eId="pessoa-pm-2022-07" href="/akn/ontology/person/pt/pm-2022-07" showAs="Antonio Luis Santos da Costa"/>
+      </references>
+      <lifecycle source="#dapl">
+        <eventRef eId="e1" date="2022-07-14" source="#cm" type="generation" refersTo="#approval-cm"/>
+        <eventRef eId="e2" date="2022-07-25" source="#dre" type="generation" refersTo="#publication"/>
+      </lifecycle>
+      <analysis source="#dapl"><activeModifications/><passiveModifications/></analysis>
+    </meta>
+    <preface>
+      <p class="docTitle"><docType>Resolucao do Conselho de Ministros</docType> <docNumber>n.o 67/2022</docNumber></p>
+      <shortTitle>Autoriza o IGCP, E. P. E., a emitir divida publica de acordo com os limites do Orcamento do Estado para 2022. (excerto)</shortTitle>
+    </preface>
+    <preamble>
+      <recital eId="rec_1">
+        <p class="formula">Ao abrigo da alinea h) do artigo 161.o da Constituicao da Republica Portuguesa, o Governo encontra-se autorizado pelo artigo 141.o e pelos artigos 143.o a 147.o do Orcamento do Estado para 2022, aprovado pela Lei n.o 12/2022, de 27 de junho, a contrair emprestimos amortizaveis e a realizar outras operacoes de endividamento.</p>
+      </recital>
+      <recital eId="rec_2">
+        <p>Tendo em vista a satisfacao das necessidades de financiamento do Estado, a presente resolucao autoriza a Agencia de Gestao da Tesouraria e da Divida Publica - IGCP, E. P. E., a emitir divida publica de acordo com os limites estabelecidos no Orcamento do Estado para 2022, sob as formas de representacao previstas na lei.</p>
+      </recital>
+    </preamble>
+    <body>
+      <paragraph eId="para_1">
+        <num>1 -</num>
+        <content><p>Autorizar a Agencia de Gestao da Tesouraria e da Divida Publica - IGCP, E. P. E. (IGCP, E. P. E.), a contrair emprestimos, em nome e representacao do Estado, sob as formas de representacao indicadas nos numeros seguintes, e a realizar operacoes de reporte com valores mobiliarios representativos de divida publica direta do Estado, nos termos e com as finalidades referidas no artigo 141.o e nos artigos 143.o a 147.o do Orcamento do Estado para 2022, aprovado pela Lei n.o 12/2022, de 27 de junho (LOE 2022).</p></content>
+      </paragraph>
+      <paragraph eId="para_2">
+        <num>2 -</num>
+        <intro><p>Autorizar a emissao de obrigacoes do tesouro ate ao montante maximo de (euro) 16 000 000 000,00, nos termos do disposto no Decreto-Lei n.o 280/98, de 17 de setembro, e no respeito pelas seguintes condicoes complementares:</p></intro>
+        <list>
+          <point eId="para_2__lit_a">
+            <num>a)</num>
+            <content><p>O valor nominal minimo de cada obrigacao do tesouro e de um centimo de euro, podendo a IGCP, E. P. E., estabelecer outro valor nominal;</p></content>
+          </point>
+          <point eId="para_2__lit_b">
+            <num>b)</num>
+            <content><p>O reembolso das obrigacoes do tesouro e efetuado ao par;</p></content>
+          </point>
+          <point eId="para_2__lit_c">
+            <num>c)</num>
+            <content><p>Se as obrigacoes do tesouro forem emitidas por series, estas sao identificadas pelos respetivos cupao e data de vencimento, nao podendo o seu prazo de vencimento exceder 50 anos;</p></content>
+          </point>
+          <point eId="para_2__lit_d">
+            <num>d)</num>
+            <content><p>As condicoes especificas de cada serie de obrigacoes do tesouro sao estabelecidas e divulgadas pela IGCP, E. P. E., em funcao das condicoes vigentes nos mercados financeiros no momento da primeira emissao e da estrategia de financiamento considerada mais adequada.</p></content>
+          </point>
+        </list>
+      </paragraph>
+      <paragraph eId="para_3">
+        <num>3 -</num>
+        <content><p>Autorizar a emissao de divida publica fundada sob a forma de bilhetes do tesouro, ate aos montantes maximos e nos termos previstos na LOE 2022. (Os numeros 4 a 12 do dispositivo foram omitidos por se tratar de excerto.)</p></content>
+      </paragraph>
+    </body>
+    <conclusions>
+      <formula type="conclusion"><p>Presidencia do Conselho de Ministros, <date date="2022-07-14">14 de julho de 2022</date>.</p></formula>
+      <signature role="signature"><person refersTo="#pessoa-pm-2022-07" as="#primeiro-ministro"/></signature>
+    </conclusions>
+  </act>
+</akomaNtoso>

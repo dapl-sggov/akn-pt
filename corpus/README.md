@@ -1,130 +1,45 @@
-# Corpus AKN-PT — 15 diplomas reais marcados (10 v0.1.0 + 1 v0.1.1 + 4 v0.1.2)
+# Corpus AKN-PT — 8 diplomas reais verificados
 
-Corpus de referência para o AKN-PT v0.1.0. Cada ficheiro é um diploma
-**realmente publicado** no Diário da República, marcado segundo a spec
-AKN-PT v0.1.0 e validado contra XSD + Schematron (phase publication).
+Corpus de referência do AKN-PT. Cada ficheiro é um diploma **realmente
+publicado** no Diário da República, com **identidade ELI verificada** (o URI
+`data.dre.pt/eli/...` resolve 301→200 no DR), marcado segundo a spec AKN-PT e
+validado contra XSD + Schematron (phase `publication`). Diplomas extensos
+(códigos) são marcados como **excerto** (primeiros artigos), à semelhança da
+prática internacional para corpora de demonstração.
+
+> **Nota de revisão (2026-06-22):** o conjunto anterior (15 ficheiros) foi
+> **substituído**. Ao testar a resolução ELI contra o DR descobrimos que a
+> maioria desses diplomas era **sintética** (identidades inventadas que não
+> resolviam) e que continham slugs/forma de URI não-canónicos. Este corpus
+> contém apenas diplomas **reais e verificáveis**, na forma ELI real da INCM
+> (ver [`../eli-pt/incm-eli-reference.md`](../eli-pt/incm-eli-reference.md)).
+> Formas ainda sem exemplo real (consolidada, retificação, republicação) ficam
+> para adição futura com diplomas reais (ex.: o CCP tem consolidação real em
+> `dec-lei/18/2008/p/cons/{data}`).
 
 ## Inventário
 
-| # | Ficheiro | Diploma real | Subtipo | Exercita |
+| # | Ficheiro | Diploma real | `<act name>` / slug ELI | Exercita |
 |---|---|---|---|---|
-| 1 | [`dec-lei/dl-72-2020.akn.xml`](dec-lei/dl-72-2020.akn.xml) | Decreto-Lei n.º 72/2020, de 15 de setembro | `dec-lei-ordinario` | Estrutura base DL; subtipo ordinário |
-| 2 | [`dec-lei/dl-21-2023.akn.xml`](dec-lei/dl-21-2023.akn.xml) | Decreto-Lei n.º 21/2023, de 27 de março | `dec-lei-transposicao` | Subtipo transposição; ref a directiva UE (`data.europa.eu/eli/dir/...`); **subalíneas `i)`, `ii)`, `iii)` aninhadas dentro de alínea `b)` no Artigo 5.º** (point com `<list>` recursiva) |
-| 3 | [`dec-lei/dl-78-2021.akn.xml`](dec-lei/dl-78-2021.akn.xml) | Decreto-Lei n.º 78/2021, de 20 de setembro | `dec-lei-alterador` | `<quotedStructure>` + republicação técnica em anexo (prefixo `rep__`) |
-| 4 | [`lei/lei-7-2020.akn.xml`](lei/lei-7-2020.akn.xml) | Lei n.º 7/2020, de 10 de abril | `lei-comum` | Assinaturas Presidente da AR + Presidente da República + PM; preâmbulo curto |
-| 5 | [`decreto-ar/decreto-ar-32-2021.akn.xml`](decreto-ar/decreto-ar-32-2021.akn.xml) | Decreto AR n.º 32/2021, de 23 de abril | `decreto-ar-tratado` | Aprovação de convenção; anexo com texto de tratado |
-| 6 | [`portaria/portaria-249-2021.akn.xml`](portaria/portaria-249-2021.akn.xml) | Portaria n.º 249/2021, de 22 de novembro | `portaria-regulamentar` | Lei habilitante obrigatória; modelo de impresso em anexo |
-| 7 | [`res-cm/rcm-53-2020.akn.xml`](res-cm/rcm-53-2020.akn.xml) | RCM n.º 53/2020, de 10 de julho | `res-cm-normativa` | Body com `<paragraph>` (sem `<article>`); anexo extenso com estratégia |
-| 8 | [`despacho/despacho-normativo-1-2022.akn.xml`](despacho/despacho-normativo-1-2022.akn.xml) | Despacho normativo n.º 1/2022, de 7 de janeiro | `despacho-normativo` | Estrutura típica; lei habilitante |
-| 9 | [`dlr/dlr-19-2020-A.akn.xml`](dlr/dlr-19-2020-A.akn.xml) | DLR n.º 19/2020/A, de 30 de junho | `dlr-ordinario` | Jurisdição `pt-20`; promulgação pelo Representante da República |
-| 10 | [`dec-lei/dl-72-2020-consolidado.akn.xml`](dec-lei/dl-72-2020-consolidado.akn.xml) | DL n.º 72/2020 (versão consolidada a 2022-01-01) | `dec-lei-ordinario` | Expression posterior (`{point-in-time}` no URI); `<analysis>/<passiveModifications>` com referências reversas |
-| 11 | [`dec-lei/codigo-irs-excerpt.akn.xml`](dec-lei/codigo-irs-excerpt.akn.xml) | DL n.º 442-A/88, de 30 de novembro — **excerto** (Código IRS) | `dec-lei-ordinario` | **PRESSURE TEST**: Hierarquia profunda `body → chapter → section → article`; número com sufixo (`442-A`); cross-refs internas a artigos noutra secção. |
-| 12 | [`dec-lei/dl-72-2020-consolidado-2024.akn.xml`](dec-lei/dl-72-2020-consolidado-2024.akn.xml) | DL n.º 72/2020 (segunda consolidação a 2024-03-15) | `dec-lei-ordinario` | **v0.1.2**: cascata de 2 amendments (DL 78/2021 + DL ficcional 25/2024); `<FRBRdate name="consolidation">`; `FRBRversionNumber=3`; `passiveModifications` com 3 `<textualMod>` (substitution + insertion). |
-| 13 | [`lei/lei-7-2020-rectificacao.akn.xml`](lei/lei-7-2020-rectificacao.akn.xml) | Lei n.º 7/2020 (versão rectificada por Declaração 18/2020 ficcional) | `lei-comum` | **v0.1.2**: modelo de **retificação** — `<FRBRdate name="rectification">`; `textualMod type="rectification"`; lifecycle event `#rectification`. |
-| 14 | [`lei/lei-4-2018-republicacao.akn.xml`](lei/lei-4-2018-republicacao.akn.xml) | Lei n.º 4/2018, de 9 de fevereiro | `lei-comum` | **PRESSURE TEST v0.1.2**: Republicação técnica em anexo com prefixo `rep__` nos eIds (`rep__art_1`, `rep__art_2`, ...); `<attachment>/<mainBody>/<article>`. |
-| 15 | [`portaria/portaria-conjunta-3-ministros.akn.xml`](portaria/portaria-conjunta-3-ministros.akn.xml) | Portaria conjunta (representativa) | `portaria-regulamentar` | **PRESSURE TEST v0.1.2**: 3 `<signature role="signature">` ministeriais (Finanças, Economia, Trabalho); demonstra multi-signatário num diploma único. |
+| 1 | [`dec-lei/dec-lei-18-2008-ccp-excerto.akn.xml`](dec-lei/dec-lei-18-2008-ccp-excerto.akn.xml) | Decreto-Lei n.º 18/2008, de 29 de janeiro (Código dos Contratos Públicos) | `dec-lei` / `dec-lei` | Estrutura base DL; promulgação PR + referenda PM; **excerto** (arts. 1.º-3.º do diploma de aprovação) |
+| 2 | [`lei/lei-7-2009-codigo-trabalho-excerto.akn.xml`](lei/lei-7-2009-codigo-trabalho-excerto.akn.xml) | Lei n.º 7/2009, de 12 de fevereiro (Código do Trabalho) | `lei` / `lei` | Lei da AR; transposição de directivas; **excerto** |
+| 3 | [`portaria/portaria-164-a-2022.akn.xml`](portaria/portaria-164-a-2022.akn.xml) | Portaria n.º 164-A/2022, de 24 de junho | `portaria` / `port` | **Sufixo no número** (`164-a`); lei habilitante (CIEC); dois Secretários de Estado |
+| 4 | [`res-cm/rcm-67-2022.akn.xml`](res-cm/rcm-67-2022.akn.xml) | Resolução do Conselho de Ministros n.º 67/2022, de 25 de julho | `res-cm` / `resolconsmin` | Body com `<paragraph>` numerados + `<list>`/`<point>`; **excerto** |
+| 5 | [`res-ar/res-ar-28-2022.akn.xml`](res-ar/res-ar-28-2022.akn.xml) | Resolução da Assembleia da República n.º 28/2022, de 24 de junho | `res-ar` / `resolassrep` | Resolução da AR; assinatura do Presidente da AR; **excerto** |
+| 6 | [`despacho/despacho-normativo-36-2006.akn.xml`](despacho/despacho-normativo-36-2006.akn.xml) | Despacho Normativo n.º 36/2006, de 26 de junho | `despacho-normativo` / `despnorm` | Habilitação em direito da UE; **excerto** |
+| 7 | [`dlr/dlr-12-2022-acores.akn.xml`](dlr/dlr-12-2022-acores.akn.xml) | Decreto Legislativo Regional n.º 12/2022/A (Açores), de 25 de maio | `dlr` / `declegreg` | **Território `a` no URI** (`…/a/dre`); `<FRBRcountry>` `pt-20` |
+| 8 | [`decreto-ar/decreto-ar-1-2018.akn.xml`](decreto-ar/decreto-ar-1-2018.akn.xml) | Decreto n.º 1/2018, de 11 de janeiro | `decreto-ar` / `dec` | Decreto (aprovação); estrutura com anexo |
 
-## Cobertura
-
-Tipos com cobertura completa (per ADR-0007):
-
-- ✓ Decreto-Lei (3 exemplos: ordinário, transposição, alterador)
-- ✓ Lei
-- ✓ Portaria
-- ✓ Resolução do CM
-
-Tipos com cobertura skeleton + 1 exemplo no corpus:
-
-- ✓ Decreto da AR
-- ✓ Despacho normativo
-- ✓ Decreto Legislativo Regional
-
-Tipos com mapping mas sem exemplo (deixados para v0.1.x):
-
-- — Resolução da AR
-- — Decreto Regulamentar Regional
-
-Aspectos especiais demonstrados pelo corpus:
-
-- ✓ FRBR triple completo, com Expression originária e consolidada
-- ✓ References TLC (Organization, Person, Role, Concept, Location, Event)
-- ✓ Lifecycle (aprovação, promulgação, publicação, entry-into-force)
-- ✓ `<analysis>/<passiveModifications>` populado em consolidado (exemplo #10)
-- ✓ Subtipos em todos os tipos
-- ✓ `<quotedStructure>` em DL alterador (exemplo #3)
-- ✓ Republicação técnica com prefixo `rep__` (exemplo #3)
-- ✓ Anexos com tabela / `<blockList>` / texto livre / tratado
-- ✓ Referências externas a ELI-PT (DLs em vigor) e ELI europeu (directivas UE)
-- ✓ Jurisdição regional `pt-20` (Açores)
-- ✓ Assinaturas múltiplas (DL com PM+ministros, Lei com PAR+PR+PM)
-- ✓ Modelo de impresso em anexo de Portaria
-
-Aspectos **não** cobertos pelo corpus (deixados para v0.1.x ou v0.2):
-
-- Pegada legislativa em diploma real — sem diplomas pós-2026-07-27 no corpus.
-  O exemplo `schema/tests/positive/dec-lei-with-footprint.akn.xml` cobre este
-  caso fora do corpus.
-- Diplomas com artigos com hierarquia profunda (book/part/title)
-- Portaria conjunta (múltiplos ministros assinam)
-- Lei orgânica
-- Resolução de cessação de vigência (art. 169.º CRP)
-- DRR (Decreto Regulamentar Regional)
-- Despacho conjunto
-
-## Convenções de marcação
-
-Cada ficheiro tem comentário inicial com:
-
-- Tipo, número, ano, data de publicação.
-- Fonte canónica (URL dre.pt).
-- Coverage demonstrada por aquele exemplo.
-- Aspectos não cobertos (deixados para outros exemplos).
-- Nota se o articulado foi resumido por extensão (ver abaixo).
-
-**Articulados longos** (com mais de 10 artigos) têm os primeiros 3-5 artigos
-marcados em detalhe completo; restantes têm apenas `<num>+<heading>` e
-marcação esquemática do conteúdo, com comentário XML a indicar "articulado
-representativo resumido — pedagógico". A estrutura sintáctica AKN é
-exaustivamente exercitada nos primeiros artigos.
-
-Esta é prática estabelecida em corpora pedagógicos (Senato italiano,
-LexML Brasil, AKN-IT exemplos OASIS). Os ficheiros são representativos para
-teste de schema e demonstração; não substituem o texto integral autoritativo
-publicado no DRE.
+Cobertura de tipos do escopo: DL, Lei, Portaria, RCM, Resolução AR, Despacho
+Normativo, DLR (regional), Decreto. O `<act name>` mantém o nome AKN-PT legível;
+o **slug ELI real da INCM** aparece só no URI (`port`, `resolconsmin`, `despnorm`,
+`declegreg`, `dec`, …).
 
 ## Validação
 
-Os 10 ficheiros são validados em CI pelo test runner:
-
-```bash
-python schema/tests/run_tests.py     # 42 tests do schema + corpus separadamente
-python corpus/validate_corpus.py     # valida só o corpus contra XSD + Schematron publication
-```
-
-Todos os 10 ficheiros **devem** passar XSD e Schematron (phase `publication`)
-sem erros. Warnings em legistica-conventions são tolerados.
-
-## Layout de pastas
+Todos os ficheiros **devem** passar XSD + Schematron (phase `publication`):
 
 ```
-corpus/
-├── README.md                                ← este ficheiro
-├── validate_corpus.py                       ← runner dedicado
-├── dec-lei/
-│   ├── dl-72-2020.akn.xml                  (#1)
-│   ├── dl-21-2023.akn.xml                  (#2)
-│   ├── dl-78-2021.akn.xml                  (#3)
-│   └── dl-72-2020-consolidado.akn.xml      (#10)
-├── lei/
-│   └── lei-7-2020.akn.xml                  (#4)
-├── decreto-ar/
-│   └── decreto-ar-32-2021.akn.xml          (#5)
-├── portaria/
-│   └── portaria-249-2021.akn.xml           (#6)
-├── res-cm/
-│   └── rcm-53-2020.akn.xml                 (#7)
-├── despacho/
-│   └── despacho-normativo-1-2022.akn.xml   (#8)
-└── dlr/
-    └── dlr-19-2020-A.akn.xml               (#9)
+python corpus/validate_corpus.py     # XSD + Schematron (lxml)
+python -m akn_pt batch corpus        # validador akn_pt (inclui verificações Python, ex. STR-0010 eId↔num)
 ```

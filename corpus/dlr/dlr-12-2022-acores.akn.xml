@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AKN-PT corpus — DLR n.o 12/2022/A, de 25 de maio
+  Diploma regional Acores real (EXCERTO). Subtipo: dlr-ordinario.
+  Solenerge: incentivos financeiros para aquisicao de sistemas solares
+  fotovoltaicos na RAA, no ambito do PRR.
+  Coverage: jurisdicao pt-20; promulgacao pelo Representante da Republica
+  para os Acores; FRBRcountry pt-20; suffix /A no docNumber.
+  Diploma extenso (14 artigos): incluidos os primeiros 3 artigos reais.
+-->
+<akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17">
+  <act name="dlr">
+    <meta>
+      <identification source="#dapl">
+        <FRBRWork>
+          <FRBRthis value="https://data.dre.pt/eli/declegreg/12/2022/05/25/a/dre/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/declegreg/12/2022/05/25/a/dre"/>
+          <FRBRdate date="2022-04-21" name="adoption"/>
+          <FRBRauthor href="#alra"/>
+          <FRBRcountry value="pt-20"/>
+          <FRBRsubtype value="dlr-ordinario"/>
+          <FRBRnumber value="12"/>
+        </FRBRWork>
+        <FRBRExpression>
+          <FRBRthis value="https://data.dre.pt/eli/declegreg/12/2022/05/25/a/dre/pt/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/declegreg/12/2022/05/25/a/dre/pt"/>
+          <FRBRdate date="2022-05-25" name="publication"/>
+          <FRBRauthor href="#alra"/>
+          <FRBRlanguage language="por"/>
+          <FRBRversionNumber value="1"/>
+        </FRBRExpression>
+        <FRBRManifestation>
+          <FRBRthis value="https://data.dre.pt/eli/declegreg/12/2022/05/25/a/dre/pt/xml/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/declegreg/12/2022/05/25/a/dre/pt/xml"/>
+          <FRBRdate date="2022-05-25" name="publication"/>
+          <FRBRauthor href="#dre"/>
+          <FRBRformat value="application/akn+xml; profile=akn-pt-1.0"/>
+        </FRBRManifestation>
+      </identification>
+      <references source="#dapl">
+        <TLCOrganization eId="alra" href="/akn/ontology/organization/pt-20/alra" showAs="Assembleia Legislativa da Regiao Autonoma dos Acores"/>
+        <TLCOrganization eId="dre" href="/akn/ontology/organization/pt/dre" showAs="Diario da Republica"/>
+        <TLCOrganization eId="dapl" href="/akn/ontology/organization/pt/dapl" showAs="DAPL/SGGOV"/>
+        <TLCRole eId="presidente-alra" href="/akn/ontology/role/pt-20/presidente-alra" showAs="Presidente da Assembleia Legislativa da RAA"/>
+        <TLCRole eId="representante-republica-acores" href="/akn/ontology/role/pt-20/representante-republica" showAs="Representante da Republica para os Acores"/>
+        <TLCPerson eId="pessoa-palra-2022-05" href="/akn/ontology/person/pt-20/palra-2022-05" showAs="Luis Carlos Correia Garcia"/>
+        <TLCPerson eId="pessoa-rr-acores-2022-05" href="/akn/ontology/person/pt-20/rr-2022-05" showAs="Pedro Manuel dos Reis Alves Catarino"/>
+      </references>
+      <lifecycle source="#dapl">
+        <eventRef eId="e1" date="2022-04-21" source="#alra" type="generation" refersTo="#approval-ar"/>
+        <eventRef eId="e2" date="2022-05-18" source="#alra" type="generation" refersTo="#signature"/>
+        <eventRef eId="e3" date="2022-05-25" source="#dre" type="generation" refersTo="#publication"/>
+      </lifecycle>
+      <analysis source="#dapl"><activeModifications/><passiveModifications/></analysis>
+    </meta>
+    <preface>
+      <p class="docTitle"><docType>Decreto Legislativo Regional</docType> <docNumber>n.o 12/2022/A</docNumber></p>
+      <p class="docDate"><date date="2022-05-25">de 25 de maio</date></p>
+      <shortTitle>Atribui incentivos financeiros para a aquisicao de sistemas solares fotovoltaicos a instalar na Regiao Autonoma dos Acores, no ambito do PRR, designado por Solenerge. (excerto)</shortTitle>
+    </preface>
+    <preamble>
+      <recital eId="rec_1">
+        <p>O Plano de Recuperacao e Resiliencia identifica a aposta na producao de energia obtida a partir de fontes de energia renovaveis nos edificios como uma das prioridades estrategicas, com vista a recuperacao economica, em linha com a promocao da transicao energetica, encarando a energia como um setor estrategico na promocao do desenvolvimento descarbonizado da Regiao Autonoma dos Acores.</p>
+      </recital>
+      <formula type="enacting">
+        <p>Assim, a Assembleia Legislativa da Regiao Autonoma dos Acores decreta, nos termos da alinea a) do n.o 1 do artigo 227.o da Constituicao da Republica Portuguesa e do n.o 1 do artigo 37.o do Estatuto Politico-Administrativo, o seguinte:</p>
+      </formula>
+    </preamble>
+    <body>
+      <article eId="art_1">
+        <num>Artigo 1.o</num>
+        <heading>Objeto</heading>
+        <paragraph eId="art_1__para_1">
+          <content><p>O presente diploma estabelece o sistema de incentivos financeiros para a aquisicao de sistemas solares fotovoltaicos, a instalar na Regiao Autonoma dos Acores (RAA), no ambito do Plano de Recuperacao e Resiliencia, doravante designado por Solenerge.</p></content>
+        </paragraph>
+      </article>
+      <article eId="art_2">
+        <num>Artigo 2.o</num>
+        <heading>Principios gerais</heading>
+        <paragraph eId="art_2__para_1">
+          <num>1</num>
+          <content><p>Sem prejuizo da aplicacao dos principios previstos no numero seguinte e das normas que o venham a regulamentar, a implementacao do Solenerge deve respeitar os objetivos do desenvolvimento sustentavel, bem como do acesso universal, em condicoes de igualdade, a todos os cidadaos, empresas e demais organizacoes, assegurando a sua concretizacao em cada uma das ilhas e em todos os concelhos do arquipelago dos Acores.</p></content>
+        </paragraph>
+        <paragraph eId="art_2__para_2">
+          <num>2</num>
+          <intro><p>Os principios gerais que regem o Solenerge sao os seguintes:</p></intro>
+          <list>
+            <point eId="art_2__para_2__lit_a">
+              <num>a)</num>
+              <content><p>Principio da orientacao para resultados, segundo o qual sao contratualizados, com os beneficiarios, objetivos que estes devem executar, nos termos dos projetos que venham a ser aprovados;</p></content>
+            </point>
+            <point eId="art_2__para_2__lit_b">
+              <num>b)</num>
+              <content><p>Principio da transparencia e prestacao de contas, consubstanciado na publicacao periodica dos apoios concedidos, bem como de relatorios com periodicidade mensal, trimestral e anual;</p></content>
+            </point>
+            <point eId="art_2__para_2__lit_c">
+              <num>c)</num>
+              <content><p>Principio da simplificacao, o qual determina uma diminuicao dos requisitos processuais exigidos aos candidatos.</p></content>
+            </point>
+          </list>
+        </paragraph>
+      </article>
+      <article eId="art_3">
+        <num>Artigo 3.o</num>
+        <heading>Entrada em vigor</heading>
+        <paragraph eId="art_3__para_1">
+          <content><p>O presente diploma entra em vigor no dia seguinte ao da sua publicacao. (Nota: o presente ficheiro e um excerto; o diploma original contem 14 artigos. Este artigo corresponde ao artigo 14.o do diploma original.)</p></content>
+        </paragraph>
+      </article>
+    </body>
+    <conclusions>
+      <formula type="conclusion"><p>Aprovado pela Assembleia Legislativa da Regiao Autonoma dos Acores, na Horta, em <date date="2022-04-21">21 de abril de 2022</date>.</p></formula>
+      <signature role="signature"><person refersTo="#pessoa-palra-2022-05" as="#presidente-alra"/></signature>
+      <formula type="promulgation"><p>Assinado em Angra do Heroismo em <date date="2022-05-18">18 de maio de 2022</date>.</p></formula>
+      <signature role="promulgation"><person refersTo="#pessoa-rr-acores-2022-05" as="#representante-republica-acores"/></signature>
+    </conclusions>
+  </act>
+</akomaNtoso>

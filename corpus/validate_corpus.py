@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: EUPL-1.2
-"""Corpus validator — valida os 10 ficheiros AKN-PT contra XSD + Schematron (publication).
+"""Corpus validator — valida todos os ficheiros AKN-PT do corpus contra XSD + Schematron (publication).
 
 Exit 0 se tudo passar, 1 caso contrario.
 """
