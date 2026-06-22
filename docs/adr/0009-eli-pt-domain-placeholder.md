@@ -92,3 +92,40 @@ Até lá, **nada muda no código**: `eli.gov.pt` continua como placeholder
 parametrizável. A migração para o domínio + estrutura finais será mecânica
 (o conversor e o XSD já tratam o domínio como variável; a estrutura
 ano+número↔data exigirá ajuste ao regex e ao `conversion.py`).
+
+---
+
+## Decisão 2026-06-22 (antecipa a reunião) — adoptar data.dre.pt como canónico
+
+Por decisão da DAPL (chefia), **não se espera pela reunião**: o projeto passa
+a tratar o **template de produção da INCM (`data.dre.pt`) como o ELI-PT
+CANÓNICO**, alinhando desde já com o que Portugal tem implementado. A forma
+anterior da DAPL (`eli.gov.pt`, ano+número, jurisdição-first) é mantida como
+**evolução a propor à INCM**, não como canónica.
+
+**Template canónico (v0.2):**
+```
+Work:          https://data.dre.pt/eli/{tipo}/{nº}/{ano}/{mês}/{dia}
+Expression:    Work + /{p|data-consolidação}/dre/pt
+Manifestation: Expression + /{xml|html|pdf}     (formato é SEGMENTO)
+Fragmento:     …#{eId}
+```
+
+**Aplicado em (2026-06-22):**
+- Editor: `akn-export.js` (buildFrbr), `eli-metadata.js` (esquema canónico
+  `dre`), `references.js`/`import-parser.js` (citação→URI), `dre-mock.js`.
+- Schema: `EliPtUriType` (XSD) passa a aceitar AMBAS as formas (tolerância);
+  Schematron de coerência FRBR mantém-se válido.
+- Corpus: 15 diplomas migrados para a forma canónica.
+- Conversor `conversion.py` + testes: suporta as duas formas.
+- Documentação: spec ELI-PT, `uri-templates.md`, cap. 08, README.
+
+**Limitação registada (a levar à reunião):** o template `data.dre.pt` **não é
+construível a partir de uma citação** (exige a data de publicação completa,
+mês/dia, que a INCM detém). A forma proposta `eli.gov.pt` (ano+número) É
+auto-suficiente — é o principal argumento técnico a favor de uma evolução ou
+de um serviço de resolução INCM. Ver
+[`eli-pt/research/eli-pt-gap-analysis.md`](../../eli-pt/research/eli-pt-gap-analysis.md).
+
+Esta decisão **mantém-se sujeita a confirmação na reunião INCM de 2026-07-01**
+(domínio definitivo, tabela de tipos, forma das consolidadas, código de língua).

@@ -70,8 +70,8 @@ Each document carries the full FRBR triple in `<meta>/<identification>`:
 ```xml
 <identification source="#dapl">
   <FRBRWork>
-    <FRBRthis    value="https://eli.gov.pt/eli/pt/dec-lei/2026/22/pt/!main"/>
-    <FRBRuri     value="https://eli.gov.pt/eli/pt/dec-lei/2026/22/pt"/>
+    <FRBRthis    value="https://data.dre.pt/eli/dec-lei/22/2026/03/15/!main"/>
+    <FRBRuri     value="https://data.dre.pt/eli/dec-lei/22/2026/03/15"/>
     <FRBRdate    date="2026-03-10" name="adoption"/>
     <FRBRauthor  href="#governo"/>
     <FRBRcountry value="pt"/>
@@ -173,11 +173,14 @@ mapping between current `dre.pt` URLs and ELI-PT canonical URIs:
 ```
 https://dre.pt/dre/detalhe/decreto-lei/22-2026-XXXXXXXX
    ↔
-https://eli.gov.pt/eli/pt/dec-lei/2026/22/pt
+https://data.dre.pt/eli/dec-lei/22/2026/03/15   (canonical; requires publication date)
 ```
 
-The legacy `{hash}` segment is not recoverable from ELI-PT without the INCM
-mapping table (a constraint to be addressed in coordination with INCM).
+Neither the legacy `{hash}` segment nor the **publication date** (month/day) is
+present in the detail URL — both require the INCM mapping table. Without the
+date, the converter emits the self-sufficient proposed form
+(`https://eli.gov.pt/eli/pt/dec-lei/2026/22/pt`); with it, the canonical
+`data.dre.pt` form. A constraint to be addressed in coordination with INCM.
 
 ## 6.5 Legislative footprint (Law 5-A/2026)
 
@@ -307,7 +310,7 @@ eId uses underscore (`art_5_a`), not hyphen. Position is immediately after
 ```xml
 <paragraph eId="art_2__para_1">
   <intro>
-    <p>São alterados os artigos 3.º e 5.º do <ref href="https://eli.gov.pt/eli/pt/dec-lei/2025/22/pt">Decreto-Lei n.º 22/2025</ref>, que passam a ter a seguinte redação:</p>
+    <p>São alterados os artigos 3.º e 5.º do <ref href="https://data.dre.pt/eli/dec-lei/22/2025/11/05">Decreto-Lei n.º 22/2025</ref>, que passam a ter a seguinte redação:</p>
   </intro>
   <quotedStructure>
     <article eId="quoted__art_3">

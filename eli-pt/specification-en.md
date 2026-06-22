@@ -31,16 +31,21 @@ alongside the Akoma Ntoso customisation and the reference validator.
 
 ### 1.3 Status
 
-ELI-PT v0.1.0 is a **technical proposal** developed by DAPL/SGGOV as part of
-the AKN-PT project. Institutional formalisation, including the final domain
-choice (ADR-0009), depends on coordination with INCM.
+ELI-PT **v0.2** (2026-06-22) is aligned with INCM's **production template**.
+Supporting research confirmed that **Portugal has been a registered ELI
+implementer since 2016/2017**, operated by INCM at **`data.dre.pt`**. The
+canonical ELI-PT template is therefore the **`data.dre.pt` template already in
+production** (see ADR-0009, 2026-06-22 revision). DAPL's earlier form
+(`eli.gov.pt`, year+number) is retained as a **proposed evolution** (§16).
+Final confirmation (domain, type table, consolidated form, language code) is
+deferred to the 2026-07-01 INCM meeting.
 
 ### 1.4 Notation
 
 The keywords **MUST**, **MUST NOT**, **SHOULD** and **MAY** are used per RFC
-2119. URI examples use the placeholder `eli.gov.pt`; final form will be set by
-INCM in coordination with SGGOV; the path structure is independent of the
-chosen domain.
+2119. URI examples use the **canonical domain `data.dre.pt`** (in production);
+where the earlier proposed form is illustrated, `eli.gov.pt` is used and
+explicitly noted.
 
 ---
 
@@ -63,31 +68,41 @@ Every ELI-PT identifier **MUST** satisfy all of:
 
 ---
 
-## 3. Canonical template
+## 3. Canonical template (data.dre.pt — INCM production)
 
 ```
-{domain}/eli/{jurisdiction}/{type}/{year}/{number}/{language}[/{point-in-time}][.{format}][#{fragment}]
+https://data.dre.pt/eli/{type}/{number}/{year}/{month}/{day}[/{p|point-in-time}/dre/{language}[/{format}]][#{fragment}]
 ```
+
+Real resolvable example: `http://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre/pt/html`
 
 | Segment | Cardinality | Description |
 |---|---|---|
-| `{domain}` | 1 | Authoritative domain. Placeholder: `eli.gov.pt`. Substantive recommendation: `data.dre.pt`. |
+| `data.dre.pt` | 1 | Authoritative domain (INCM/DRE). |
 | `eli` | 1 | Literal ELI scheme marker (EU compatibility). |
-| `{jurisdiction}` | 1 | Lowercase ISO 3166-1 alpha-2 + optional ISO 3166-2. See §4. |
-| `{type}` | 1 | Act type slug. See §5. |
-| `{year}` | 1 | Adoption year, four digits (`YYYY`). |
-| `{number}` | 1 | Act number within year+type. |
-| `{language}` | 1 | ISO 639-1 of the expression. Portugal: always `pt`. |
-| `{point-in-time}` | 0..1 | Consolidated expression date (see §6). |
-| `{format}` | 0..1 | Requested manifestation (`xml`, `html`, `pdf`). |
-| `{fragment}` | 0..1 | Internal fragment (article, paragraph, point). See §7. |
+| `{type}` | 1 | Act type slug. See §5. **Precedes the number.** |
+| `{number}` | 1 | Act number (suffix allowed, e.g. `205-B`). |
+| `{year}/{month}/{day}` | 1 | **Publication date** in the DR. |
+| `p` | 0..1 | "As published" version marker; replaced by `{point-in-time}` (ISO date) for consolidations. See §6. |
+| `dre` | 0..1 | Agent (Diário da República). |
+| `{language}` | 0..1 | `pt` (2-letter, INCM convention). `<FRBRlanguage>` uses `por`. |
+| `{format}` | 0..1 | Manifestation as **segment** (`xml`, `html`, `pdf`) — not extension. |
+| `{fragment}` | 0..1 | Internal fragment (= AKN-PT eId). See §7. |
 
-### 3.1 Short vs full form
+> **No jurisdiction segment** (unlike the earlier proposed form). Jurisdiction
+> (`pt-20`/`pt-30`) is carried in `<FRBRcountry>`. See §4.
 
-- **Work URI:** up to `{language}`. `https://eli.gov.pt/eli/pt/dec-lei/2026/22/pt`
-- **Expression URI:** adds `{point-in-time}`. `…/dec-lei/2026/22/pt/2027-01-15`
-- **Manifestation URI:** adds `.{format}`. `…/2026/22/pt/2027-01-15.xml`
-- **Fragment URI:** adds `#{fragment}`. `…/2026/22/pt#art_5__para_1__lit_a`
+### 3.1 FRBR layers
+
+- **Work:** up to `{day}`. `https://data.dre.pt/eli/dec-lei/83/2016/12/16`
+- **Expression (as published):** adds `/p/dre/pt`. `…/16/p/dre/pt`
+- **Expression (consolidated):** `p` becomes `{point-in-time}`. `…/16/2024-01-01/dre/pt`
+- **Manifestation:** adds `/{format}` (segment). `…/16/p/dre/pt/xml`
+- **Fragment URI:** adds `#{fragment}`. `…/p/dre/pt#art_5__para_1__lit_a`
+
+> **Limitation:** this template requires the full publication date, which a
+> citation does not provide — the canonical URI is **not constructible from a
+> citation** without a DRE lookup. See §16 (proposed form, self-sufficient).
 
 ---
 
@@ -157,14 +172,16 @@ optional. Below that (word, sentence) is out of scope.
 
 ## 8. FRBR ↔ ELI-PT mapping
 
-| FRBR layer | ELI-PT component |
+| FRBR layer | ELI-PT component (canonical) |
 |---|---|
-| Work | `{domain}/eli/{jurisdiction}/{type}/{year}/{number}` |
-| Expression | Work + `/{language}[/{point-in-time}]` |
-| Manifestation | Expression + `.{format}` |
+| Work | `https://data.dre.pt/eli/{type}/{number}/{year}/{month}/{day}` |
+| Expression | Work + `/{p\|point-in-time}/dre/{language}` |
+| Manifestation | Expression + `/{format}` |
 | Item | No ELI URI (item is a physical instance) |
 
-This mirrors AKN-PT `<meta>/<identification>`.
+This mirrors AKN-PT `<meta>/<identification>`. Note the **publication date** is
+part of the Work path; a new consolidation creates a new Expression (segment
+`p` → date) while keeping the Work.
 
 ---
 
@@ -245,20 +262,48 @@ An implementation is **strict conformant** if it additionally:
 
 ---
 
-## 14. Open questions
+## 14. Open questions (to confirm at the 2026-07-01 INCM meeting)
 
-1. Final domain — `data.dre.pt`, `eli.gov.pt`, `dados.gov.pt/eli`, etc.
-2. When to introduce EuroVoc indexing — proposed v0.2.
-3. Granularity below point (sentence, word) — out of scope today.
-4. Referencing transposed EU directives — using ELI EU (`data.europa.eu/eli/dir/…`) directly.
+1. Final domain — **decided (2026-06-22): `data.dre.pt`** (already in production); to be formally confirmed.
+2. Consolidated form — confirm the exact consolidated-version segment (assumed `/{YYYY-MM-DD}/dre/pt`).
+3. Language code — `pt` (in the URI) vs `por` (`<FRBRlanguage>`). Confirm.
+4. Constructibility — the `data.dre.pt` template needs the publication date; propose a resolver service (citation→ELI) or the self-sufficient form (§16).
+5. EuroVoc indexing (`eli:is_about`) — proposed v0.2+.
+6. Granularity below point (sentence, word) — out of scope today.
+7. Transposed EU directives — via the EU ELI (`data.europa.eu/eli/dir/…`) directly.
+8. Regional acts (DLR/DRR) — ELI resolution via regional journals (JORAA/JORAM) or data.dre.pt? To be coordinated.
 
 ---
 
 ## 15. References
 
-- ELI Council Conclusions 2017/C 441/05.
-- W3C ELI Implementation Methodology, PubOffice EU.
+- ELI Council Conclusions 2012/C 325/02 and 2017/C 441/05.
+- ELI ontology v1.5 (2024), Publications Office EU.
+- DRE — European Legislation Identifier (production template, data.dre.pt).
 - OASIS Akoma Ntoso 1.0 LegalDocML — §10.
-- Constitution of the Portuguese Republic.
 - AKN-PT mapping v0.1.0.
-- ADR-0009 (ELI-PT domain strategy).
+- ADR-0009 (ELI-PT domain — 2026-06-22 revision).
+
+---
+
+## 16. Earlier proposed form (DAPL) — proposed evolution to INCM
+
+Before confirming Portugal already had ELI in production, DAPL designed a
+cleaner, EU/France-aligned form:
+
+```
+https://eli.gov.pt/eli/{jurisdiction}/{type}/{year}/{number}/{language}[/{point-in-time}][.{format}][#{fragment}]
+e.g. https://eli.gov.pt/eli/pt/dec-lei/2026/22/pt
+```
+
+Advantages over the production `data.dre.pt` template:
+
+- **Self-sufficient:** constructible from any citation (`Decreto-Lei n.º 22/2026`
+  → URI) **without the publication date**. The `data.dre.pt` template requires
+  month/day, which only INCM holds — forcing a lookup. This is the main argument.
+- **Explicit jurisdiction** (`pt-20`/`pt-30`) for regional acts.
+- Closer to the EU year+number pattern (`data.europa.eu/eli/reg/2016/679/oj`).
+
+This form is **not canonical** in v0.2 — it is recorded as a technical input for
+the meeting. The AKN-PT validator accepts both (tolerance, cf. `EliPtUriType`);
+the converter (`conversion.py`) emits both.

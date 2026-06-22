@@ -50,14 +50,16 @@ referências externas normais com URI ELI-PT completo:
 
 ```xml
 <!-- Num DL nacional que referencia um DLR -->
-<p>... nos termos do <ref href="https://eli.gov.pt/eli/pt-20/dlr/2025/4/pt">Decreto Legislativo Regional n.º 4/2025/A, de 1 de março</ref> ...</p>
+<p>... nos termos do <ref href="https://data.dre.pt/eli/dlr/4/2025/03/01">Decreto Legislativo Regional n.º 4/2025/A, de 1 de março</ref> ...</p>
 
 <!-- Num DLR que referencia uma lei nacional -->
-<p>... em conformidade com a <ref href="https://eli.gov.pt/eli/pt/lei/2026/12/pt">Lei n.º 12/2026, de 20 de fevereiro</ref> ...</p>
+<p>... em conformidade com a <ref href="https://data.dre.pt/eli/lei/12/2026/02/20">Lei n.º 12/2026, de 20 de fevereiro</ref> ...</p>
 ```
 
-Nada de especial — a jurisdição é parte da URI; o validador trata
-referências cruzadas como qualquer outra referência externa.
+Nada de especial — o validador trata referências cruzadas como qualquer outra
+referência externa. Nota: no template canónico `data.dre.pt` **não há segmento
+de jurisdição** (os DLR/DRR usam a mesma forma); a região é distinguida pelo
+`<FRBRcountry>` (`pt-20`/`pt-30`), não pela URI. Ver [cap. 8](08-identificadores.md).
 
 ## 10.5 Línguas dos artefactos do projecto
 
