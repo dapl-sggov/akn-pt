@@ -1255,8 +1255,9 @@ try {
 // 10f. Test hierarquia profunda — round-trip de body com chapter/section
 try {
   Object.keys(_mem).forEach(k => delete _mem[k]);
-  // Carregar o CIRS excerpt (corpus #11) e fazer round-trip via ImportParser
-  const cirsPath = path.join(ROOT, '..', 'corpus', 'dec-lei', 'codigo-irs-excerpt.akn.xml');
+  // Fixture hierárquica (cap_1 + 2 secções + 3 artigos) — DL 442-A/88 (Cód. IRS),
+  // diploma real, mantido como fixture de teste (fora do corpus por ser pré-1991).
+  const cirsPath = path.join(ROOT, 'test-fixtures', 'hierarchic-body.akn.xml');
   if (!fs.existsSync(cirsPath)) {
     throw new Error(`(a) fixture não encontrada em ${cirsPath}`);
   }

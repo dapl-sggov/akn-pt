@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AKN-PT corpus — Despacho normativo n.o 36/2006, de 26 de junho (EXCERTO)
+  Diploma real publicado no DR, 1.a serie-B, n.o 121/2006. Subtipo: despacho-normativo.
+  Coverage: estrutura tipica de despacho normativo; habilitacao em direito da UE;
+  excerto com os 3 primeiros artigos de um total de 8.
+-->
+<akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17">
+  <act name="despacho-normativo">
+    <meta>
+      <identification source="#dapl">
+        <FRBRWork>
+          <FRBRthis value="https://data.dre.pt/eli/despnorm/36/2006/06/26/p/dre/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/despnorm/36/2006/06/26/p/dre"/>
+          <FRBRdate date="2006-05-31" name="adoption"/>
+          <FRBRauthor href="#min-agricultura"/>
+          <FRBRcountry value="pt"/>
+          <FRBRsubtype value="despacho-normativo"/>
+          <FRBRnumber value="36"/>
+        </FRBRWork>
+        <FRBRExpression>
+          <FRBRthis value="https://data.dre.pt/eli/despnorm/36/2006/06/26/p/dre/pt/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/despnorm/36/2006/06/26/p/dre/pt"/>
+          <FRBRdate date="2006-06-26" name="publication"/>
+          <FRBRauthor href="#min-agricultura"/>
+          <FRBRlanguage language="por"/>
+          <FRBRversionNumber value="1"/>
+        </FRBRExpression>
+        <FRBRManifestation>
+          <FRBRthis value="https://data.dre.pt/eli/despnorm/36/2006/06/26/p/dre/pt/xml/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/despnorm/36/2006/06/26/p/dre/pt/xml"/>
+          <FRBRdate date="2006-06-26" name="publication"/>
+          <FRBRauthor href="#dre"/>
+          <FRBRformat value="application/akn+xml; profile=akn-pt-1.0"/>
+        </FRBRManifestation>
+      </identification>
+      <references source="#dapl">
+        <TLCOrganization eId="min-agricultura" href="/akn/ontology/organization/pt/min-agricultura" showAs="Ministerio da Agricultura, do Desenvolvimento Rural e das Pescas"/>
+        <TLCOrganization eId="dre" href="/akn/ontology/organization/pt/dre" showAs="Diario da Republica"/>
+        <TLCOrganization eId="dapl" href="/akn/ontology/organization/pt/dapl" showAs="DAPL/SGGOV"/>
+        <TLCOrganization eId="inga" href="/akn/ontology/organization/pt/inga" showAs="Instituto Nacional de Intervencao e Garantia Agricola"/>
+        <TLCRole eId="ministro-agricultura-role" href="/akn/ontology/role/pt/ministro-agricultura" showAs="Ministro da Agricultura, do Desenvolvimento Rural e das Pescas"/>
+        <TLCPerson eId="pessoa-jaime-silva" href="/akn/ontology/person/pt/jaime-de-jesus-lopes-silva" showAs="Jaime de Jesus Lopes Silva"/>
+      </references>
+      <lifecycle source="#dapl">
+        <eventRef eId="e1" date="2006-05-31" source="#min-agricultura" type="generation" refersTo="#signature"/>
+        <eventRef eId="e2" date="2006-06-26" source="#dre" type="generation" refersTo="#publication"/>
+      </lifecycle>
+      <analysis source="#dapl"><activeModifications/><passiveModifications/></analysis>
+    </meta>
+    <preface>
+      <p class="docTitle"><docType>Despacho normativo</docType> <docNumber>n.o 36/2006</docNumber></p>
+      <p class="docDate"><date date="2006-06-26">de 26 de junho</date></p>
+      <shortTitle>Estabelece as regras nacionais complementares para atribuicao da ajuda directa a producao de tabaco (excerto).</shortTitle>
+    </preface>
+    <preamble>
+      <recital eId="rec_1">
+        <p>Importa estabelecer as regras gerais relativas a ajuda directa a producao de tabaco, dentro dos limites estabelecidos pelo artigo 110.o-L do Regulamento (CE) n.o 1782/2003, definindo as condicoes e procedimentos necessarios a aprovacao das empresas de primeira transformacao de tabaco, bem como ao reconhecimento de novos agrupamentos de produtores de tabaco.</p>
+      </recital>
+      <recital eId="rec_2">
+        <p>Ao abrigo do disposto no artigo 70.o do Regulamento (CE) n.o 1782/2003, do Conselho, de 29 de Setembro, Portugal optou por excluir do regime de pagamento unico a Regiao Autonoma dos Acores, aplicando-se tambem a esta o disposto no presente despacho enquanto nao for adoptada legislacao comunitaria especial.</p>
+      </recital>
+      <formula type="enacting">
+        <p>Assim, ao abrigo do disposto no capitulo 10C do titulo IV do <ref href="http://data.europa.eu/eli/reg/2003/1782/oj">Regulamento (CE) n.o 1782/2003, do Conselho, de 29 de Setembro</ref>, e no capitulo 17C do Regulamento (CE) n.o 1973/2004, da Comissao, de 29 de Outubro, determina-se o seguinte:</p>
+      </formula>
+    </preamble>
+    <body>
+      <article eId="art_1">
+        <num>Artigo 1.o</num>
+        <heading>Ambito</heading>
+        <paragraph eId="art_1__para_1">
+          <content><p>O presente diploma estabelece as regras nacionais complementares para atribuicao da ajuda directa a producao de tabaco, prevista no capitulo 10C do titulo IV do Regulamento (CE) n.o 1782/2003, do Conselho, de 29 de Setembro.</p></content>
+        </paragraph>
+      </article>
+      <article eId="art_2">
+        <num>Artigo 2.o</num>
+        <heading>Condicoes de aprovacao das empresas de primeira transformacao</heading>
+        <paragraph eId="art_2__para_1">
+          <num>1</num>
+          <content><p>Ate 31 de Outubro de cada ano, as empresas de primeira transformacao de tabaco devem entregar junto do Instituto Nacional de Intervencao e Garantia Agricola (INGA) um pedido de aprovacao para efeitos do disposto no artigo 171.o-CB do Regulamento (CE) n.o 1973/2004, da Comissao, de 29 de Outubro.</p></content>
+        </paragraph>
+        <paragraph eId="art_2__para_2">
+          <num>2</num>
+          <content><p>Ate ao dia 31 de Janeiro do ano seguinte ao do respectivo pedido, o INGA procede a aprovacao de todas as empresas de primeira transformacao de tabaco.</p></content>
+        </paragraph>
+        <paragraph eId="art_2__para_3">
+          <num>3</num>
+          <intro><p>A aprovacao mencionada no numero anterior depende da verificacao das seguintes condicoes:</p></intro>
+          <list>
+            <point eId="art_2__para_3__lit_a">
+              <num>a)</num>
+              <content><p>Tratar-se de uma empresa licenciada como unidade transformadora de tabaco;</p></content>
+            </point>
+            <point eId="art_2__para_3__lit_b">
+              <num>b)</num>
+              <content><p>Dispor de instalacoes tecnicas adequadas;</p></content>
+            </point>
+            <point eId="art_2__para_3__lit_c">
+              <num>c)</num>
+              <content><p>Manter permanentemente actualizados os registos relativos a proveniencia da materia-prima, as quantidades de tabaco processado e ao destino final do mesmo.</p></content>
+            </point>
+          </list>
+        </paragraph>
+        <paragraph eId="art_2__para_4">
+          <num>4</num>
+          <content><p>Ate ao dia 31 de Outubro do ano anterior a colheita deve ser requerida junto dos servicos do INGA a renovacao anual da aprovacao como empresa de primeira transformacao.</p></content>
+        </paragraph>
+      </article>
+      <article eId="art_3">
+        <num>Artigo 3.o</num>
+        <heading>Reconhecimento de novos agrupamentos de produtores</heading>
+        <paragraph eId="art_3__para_1">
+          <num>1</num>
+          <content><p>Para efeitos de aplicacao da alinea e) do artigo 171.o-C do Regulamento (CE) n.o 1973/2004, da Comissao, de 29 de Outubro, o pedido de reconhecimento de novos agrupamentos de produtores deve ser feito junto do Gabinete de Planeamento e Politica Agro-Alimentar (GPPAA) ate ao dia 31 de Outubro do ano anterior a colheita.</p></content>
+        </paragraph>
+        <paragraph eId="art_3__para_2">
+          <num>2</num>
+          <content><p>O numero minimo de produtores individuais para a constituicao de um agrupamento de produtores de tabaco e de 70 para o grupo I (variedade Virginia) e de 25 para o grupo II (variedade Burley).</p></content>
+        </paragraph>
+        <paragraph eId="art_3__para_3">
+          <num>3</num>
+          <content><p>Podem ser reconhecidas como agrupamentos de produtores as pessoas colectivas que cumpram o disposto no numero anterior e cujos estatutos obriguem os seus membros a colocar no mercado por intermedio do agrupamento a totalidade da respectiva producao de tabaco.</p></content>
+        </paragraph>
+      </article>
+    </body>
+    <conclusions>
+      <signature role="signature"><person refersTo="#pessoa-jaime-silva" as="#ministro-agricultura-role"/></signature>
+    </conclusions>
+  </act>
+</akomaNtoso>

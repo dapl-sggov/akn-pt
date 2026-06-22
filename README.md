@@ -21,9 +21,9 @@ do Conselho de Ministros, decretos legislativos regionais e outros.
 | **Especificação** | [`docs/spec/pt/`](docs/spec/pt/) (18 capítulos, autoritativa) + [`docs/spec/en/`](docs/spec/en/) (3 documentos sumário) | v0.1.0 |
 | **Schema XSD** (modular, 4 ficheiros) | [`schema/xsd/`](schema/xsd/) | v0.1.0 — 43 test cases |
 | **Schematron** (9 patterns, 3 fases) | [`schema/schematron/`](schema/schematron/) | v0.1.0 |
-| **ELI-PT** (perfil URI nacional) | [`eli-pt/`](eli-pt/) | v0.1.0 — `eli.gov.pt` placeholder |
+| **ELI-PT** (perfil URI nacional) | [`eli-pt/`](eli-pt/) | v0.2 — canónico `data.dre.pt` (INCM) |
 | **Mapping** (estrutura PT → AKN) | [`mapping/v0.1.0/`](mapping/v0.1.0/) | v0.1.0 — 9 tipos cobertos |
-| **Corpus** (10 diplomas reais marcados) | [`corpus/`](corpus/) | v0.1.0 |
+| **Corpus** (8 diplomas reais verificados — ELI resolve no DR) | [`corpus/`](corpus/) | v0.2 |
 | **Validador** (CLI + lib + Docker) | [`validator/`](validator/) | Python 3.12+ · 51 testes |
 | **Editor web demo** | [`editor/`](editor/) | HTML/CSS/JS · 22 features |
 

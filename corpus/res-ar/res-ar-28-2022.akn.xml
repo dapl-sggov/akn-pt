@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Resolucao da Assembleia da Republica n.o 28/2022, de 24 de junho.
+     Conteudo real (DRE). URI ELI na forma canonica INCM. -->
+<akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17">
+  <act name="res-ar">
+    <meta>
+      <identification source="#dapl">
+        <FRBRWork>
+          <FRBRthis value="https://data.dre.pt/eli/resolassrep/28/2022/06/24/p/dre/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/resolassrep/28/2022/06/24/p/dre"/>
+          <FRBRdate date="2022-06-03" name="adoption"/>
+          <FRBRauthor href="#ar"/>
+          <FRBRcountry value="pt"/>
+          <FRBRsubtype value="res-ar-recomendacao"/>
+          <FRBRnumber value="28"/>
+        </FRBRWork>
+        <FRBRExpression>
+          <FRBRthis value="https://data.dre.pt/eli/resolassrep/28/2022/06/24/p/dre/pt/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/resolassrep/28/2022/06/24/p/dre/pt"/>
+          <FRBRdate date="2022-06-24" name="publication"/>
+          <FRBRauthor href="#ar"/>
+          <FRBRlanguage language="por"/>
+        </FRBRExpression>
+        <FRBRManifestation>
+          <FRBRthis value="https://data.dre.pt/eli/resolassrep/28/2022/06/24/p/dre/pt/xml/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/resolassrep/28/2022/06/24/p/dre/pt/xml"/>
+          <FRBRdate date="2022-06-24" name="publication"/>
+          <FRBRauthor href="#dre"/>
+          <FRBRformat value="application/akn+xml; profile=akn-pt-1.0"/>
+        </FRBRManifestation>
+      </identification>
+      <references source="#dapl">
+        <TLCOrganization eId="ar" href="/akn/ontology/organization/pt/ar" showAs="Assembleia da Republica"/>
+        <TLCOrganization eId="dre" href="/akn/ontology/organization/pt/dre" showAs="Diario da Republica"/>
+        <TLCOrganization eId="dapl" href="/akn/ontology/organization/pt/dapl" showAs="DAPL/SGGOV"/>
+        <TLCRole eId="presidente-ar" href="/akn/ontology/role/pt/presidente-ar" showAs="Presidente da AR"/>
+        <TLCPerson eId="pessoa-par-2022-06" href="/akn/ontology/person/pt/par-2022-06" showAs="Augusto Santos Silva"/>
+      </references>
+      <lifecycle source="#dapl">
+        <eventRef eId="e1" date="2022-06-03" source="#ar" type="generation" refersTo="#approval-ar"/>
+        <eventRef eId="e2" date="2022-06-24" source="#dre" type="generation" refersTo="#publication"/>
+      </lifecycle>
+      <analysis source="#dapl"><activeModifications/><passiveModifications/></analysis>
+    </meta>
+    <preface>
+      <p class="docTitle"><docType>Resolucao da Assembleia da Republica</docType> <docNumber>n.o 28/2022</docNumber></p>
+      <shortTitle>Participacao das autoridades nacionais no esforco internacional de investigacao, acusacao, condenacao e punicao de todos os crimes de guerra cometidos durante a invasao da Ucrania (excerto).</shortTitle>
+    </preface>
+    <preamble>
+      <formula type="enacting">
+        <p>A Assembleia da Republica resolve, nos termos do n.o 5 do artigo 166.o da Constituicao:</p>
+      </formula>
+    </preamble>
+    <body>
+      <paragraph eId="para_1">
+        <num>1 -</num>
+        <content><p>Condenar a invasao militar da Ucrania pela Russia.</p></content>
+      </paragraph>
+      <paragraph eId="para_2">
+        <num>2 -</num>
+        <content><p>Exprimir a sua solidariedade com o povo da Ucrania.</p></content>
+      </paragraph>
+      <paragraph eId="para_3">
+        <num>3 -</num>
+        <content><p>Saudar a oposicao cidada russa que, tanto na propria Russia como no resto do mundo, se manifesta em favor da paz e, corajosamente, condena as acoes e praticas autoritarias deste regime da Federacao Russa.</p></content>
+      </paragraph>
+    </body>
+    <conclusions>
+      <p>Aprovada em 3 de junho de 2022.</p>
+      <signature role="signature"><person refersTo="#pessoa-par-2022-06" as="#presidente-ar"/></signature>
+    </conclusions>
+  </act>
+</akomaNtoso>

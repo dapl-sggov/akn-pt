@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AKN-PT corpus — Lei n.o 7/2009, de 12 de fevereiro (EXCERTO)
+  Diploma real publicado no DR, 1a serie, n.o 30/2009. Aprova a revisao do
+  Codigo do Trabalho. Subtipo: lei-comum. Coverage: lei de aprovacao de codigo
+  (estrutura tipica Lei AR: aprovacao 2008 + promulgacao/referenda 2009).
+  EXCERTO: incluem-se apenas os artigos 1.o a 3.o da lei de aprovacao (o
+  Codigo do Trabalho consta em anexo, nao reproduzido aqui).
+-->
+<akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17">
+  <act name="lei">
+    <meta>
+      <identification source="#dapl">
+        <FRBRWork>
+          <FRBRthis value="https://data.dre.pt/eli/lei/7/2009/02/12/p/dre/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/lei/7/2009/02/12/p/dre"/>
+          <FRBRdate date="2008-12-17" name="adoption"/>
+          <FRBRauthor href="#ar"/>
+          <FRBRcountry value="pt"/>
+          <FRBRsubtype value="lei-comum"/>
+          <FRBRnumber value="7"/>
+        </FRBRWork>
+        <FRBRExpression>
+          <FRBRthis value="https://data.dre.pt/eli/lei/7/2009/02/12/p/dre/pt/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/lei/7/2009/02/12/p/dre/pt"/>
+          <FRBRdate date="2009-02-12" name="publication"/>
+          <FRBRauthor href="#ar"/>
+          <FRBRlanguage language="por"/>
+          <FRBRversionNumber value="1"/>
+        </FRBRExpression>
+        <FRBRManifestation>
+          <FRBRthis value="https://data.dre.pt/eli/lei/7/2009/02/12/p/dre/pt/xml/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/lei/7/2009/02/12/p/dre/pt/xml"/>
+          <FRBRdate date="2009-02-12" name="publication"/>
+          <FRBRauthor href="#dre"/>
+          <FRBRformat value="application/akn+xml; profile=akn-pt-1.0"/>
+        </FRBRManifestation>
+      </identification>
+      <references source="#dapl">
+        <TLCOrganization eId="ar" href="/akn/ontology/organization/pt/ar" showAs="Assembleia da Republica"/>
+        <TLCOrganization eId="dre" href="/akn/ontology/organization/pt/dre" showAs="Diario da Republica"/>
+        <TLCOrganization eId="dapl" href="/akn/ontology/organization/pt/dapl" showAs="DAPL/SGGOV"/>
+        <TLCRole eId="presidente-ar" href="/akn/ontology/role/pt/presidente-ar" showAs="Presidente da Assembleia da Republica"/>
+        <TLCRole eId="presidente-republica" href="/akn/ontology/role/pt/presidente-republica" showAs="Presidente da Republica"/>
+        <TLCRole eId="primeiro-ministro" href="/akn/ontology/role/pt/primeiro-ministro" showAs="Primeiro-Ministro"/>
+        <TLCPerson eId="pessoa-par-2009-02" href="/akn/ontology/person/pt/par-2009-02" showAs="Presidente da AR"/>
+        <TLCPerson eId="pessoa-pr-2009-02" href="/akn/ontology/person/pt/pr-2009-02" showAs="Presidente da Republica"/>
+        <TLCPerson eId="pessoa-pm-2009-02" href="/akn/ontology/person/pt/pm-2009-02" showAs="Primeiro-Ministro"/>
+      </references>
+      <lifecycle source="#dapl">
+        <eventRef eId="e1" date="2008-12-17" source="#ar" type="generation" refersTo="#approval-ar"/>
+        <eventRef eId="e2" date="2009-02-06" source="#ar" type="generation" refersTo="#promulgation"/>
+        <eventRef eId="e3" date="2009-02-12" source="#dre" type="generation" refersTo="#publication"/>
+        <eventRef eId="e4" date="2009-02-17" source="#ar" type="generation" refersTo="#entry-into-force"/>
+      </lifecycle>
+      <analysis source="#dapl"><activeModifications/><passiveModifications/></analysis>
+    </meta>
+    <preface>
+      <p class="docTitle"><docType>Lei</docType> <docNumber>n.o 7/2009</docNumber></p>
+      <p class="docDate"><date date="2009-02-12">de 12 de fevereiro</date></p>
+      <shortTitle>Aprova a revisao do Codigo do Trabalho (excerto: artigos 1.o a 3.o da lei de aprovacao).</shortTitle>
+    </preface>
+    <preamble>
+      <formula type="enacting">
+        <p>A Assembleia da Republica decreta, nos termos da alinea c) do artigo 161.o da Constituicao, o seguinte:</p>
+      </formula>
+    </preamble>
+    <body>
+      <article eId="art_1">
+        <num>Artigo 1.o</num>
+        <heading>Aprovacao do Codigo do Trabalho</heading>
+        <paragraph eId="art_1__para_1">
+          <content><p>E' aprovado o Codigo do Trabalho, que se publica em anexo a presente lei e dela faz parte integrante.</p></content>
+        </paragraph>
+      </article>
+      <article eId="art_2">
+        <num>Artigo 2.o</num>
+        <heading>Transposicao de directivas comunitarias</heading>
+        <paragraph eId="art_2__para_1">
+          <content><p>O Codigo do Trabalho transpoe para a ordem juridica interna, total ou parcialmente, diversas directivas comunitarias em materia laboral, designadamente a Directiva n.o 91/533/CEE, do Conselho, de 14 de Outubro, a Directiva n.o 92/85/CEE, do Conselho, de 19 de Outubro, e a Directiva n.o 94/33/CE, do Conselho, de 22 de Junho, entre outras (lista integral abreviada neste excerto).</p></content>
+        </paragraph>
+      </article>
+      <article eId="art_3">
+        <num>Artigo 3.o</num>
+        <heading>Norma revogatoria</heading>
+        <paragraph eId="art_3__para_1">
+          <content><p>E' revogada a Lei n.o 99/2003, de 27 de Agosto, que aprovou o anterior Codigo do Trabalho, sem prejuizo do disposto no presente diploma quanto ao regime transitorio.</p></content>
+        </paragraph>
+      </article>
+    </body>
+    <conclusions>
+      <formula type="conclusion"><p>Aprovada em <date date="2008-12-17">17 de dezembro de 2008</date>.</p></formula>
+      <signature role="signature"><person refersTo="#pessoa-par-2009-02" as="#presidente-ar"/></signature>
+      <formula type="promulgation"><p>Promulgada em <date date="2009-02-06">6 de fevereiro de 2009</date>.</p></formula>
+      <signature role="promulgation"><person refersTo="#pessoa-pr-2009-02" as="#presidente-republica"/></signature>
+      <formula type="conclusion"><p>Referendada em <date date="2009-02-09">9 de fevereiro de 2009</date>.</p></formula>
+      <signature role="countersignature"><person refersTo="#pessoa-pm-2009-02" as="#primeiro-ministro"/></signature>
+    </conclusions>
+  </act>
+</akomaNtoso>
