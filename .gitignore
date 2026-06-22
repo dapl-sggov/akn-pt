@@ -73,3 +73,8 @@ TODO-*.md
 
 # ===== Releases locais (só CI publica) =====
 release/v*/
+
+# ===== Artefactos de teste visual / Playwright (não versionar) =====
+.playwright-mcp/
+# screenshots soltos na raiz gerados em sessões de teste visual
+/*.png

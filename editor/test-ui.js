@@ -33,7 +33,9 @@ if (typeof window.BroadcastChannel === 'undefined') {
   window.BroadcastChannel = class { postMessage() {} close() {} };
 }
 
-const files = html.match(/src="js\/[^"]+"/g).map(s => s.replace(/src="js\/|"/g, ''));
+const files = html.match(/src="js\/[^"]+"/g)
+  .map(s => s.replace(/src="js\/|"/g, ''))
+  .map(s => s.replace(/\?.*$/, ''));  // strip cache-busting query (?v=...)
 const combined = files.map(f => fs.readFileSync(path.join(ROOT, 'js', f), 'utf8')).join('\n\n');
 window.eval(combined);
 window.document.dispatchEvent(new window.Event('DOMContentLoaded'));
