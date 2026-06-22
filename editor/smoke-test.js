@@ -1314,8 +1314,15 @@ try {
   console.log(`  OK   Hierarchic body round-trip (4 sub-testes: a-d; ${xmlOut.length}b CIRS re-exported)`);
   n_ok++;
 } catch (e) {
-  console.log(`  FAIL Hierarchic body round-trip: ${e.message}`);
-  n_fail++;
+  // jsdom é opcional para o smoke (só este teste precisa de DOMParser).
+  // Sem ele, fazemos SKIP em vez de FAIL — o teste corre quando o ambiente
+  // tem `npm install` (CI editor-smoke + editor-ui), e é saltado caso contrário.
+  if (/jsdom/i.test(e.message)) {
+    console.log(`  SKIP Hierarchic body round-trip (jsdom não instalado — corre com 'npm install')`);
+  } else {
+    console.log(`  FAIL Hierarchic body round-trip: ${e.message}`);
+    n_fail++;
+  }
 }
 
 // 10g. Test State containers — addContainer / moveContainerUp/Down / removeContainer

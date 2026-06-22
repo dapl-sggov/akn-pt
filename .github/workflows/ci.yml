@@ -23,9 +23,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
-      - name: Install lxml
-        run: pip install lxml
-      - name: Run schema tests (42 cases)
+      - name: Install validator (akn_pt) + lxml
+        # O runner usa akn_pt.core.validate para os negativos que dependem da
+        # pipeline Python (eId↔num, STR-0010+). Sem o validador instalado o
+        # runner cai em modo só-Schematron e esses casos não disparam.
+        run: pip install -e ./validator
+      - name: Run schema tests
         run: python schema/tests/run_tests.py
 
   corpus-validation:
@@ -96,7 +99,7 @@ jobs:
         run: ruff check src tests
 
   editor-smoke:
-    name: Editor — smoke test (19 cenários) + AKN-PT batch (18 OK)
+    name: Editor — smoke test + AKN-PT batch
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -106,9 +109,11 @@ jobs:
         with: { python-version: '3.12' }
       - name: Install validator
         run: pip install -e ./validator
-      - name: "Run editor smoke (gera 19 ficheiros: 9 templates + 10 features)"
+      - name: Install node deps (jsdom — usado pelo round-trip hierárquico)
+        run: npm install
+      - name: Run editor smoke
         run: node editor/smoke-test.js
-      - name: Validar todos via akn-pt batch (18 esperado OK)
+      - name: Validar todos via akn-pt batch
         run: python -m akn_pt batch editor/.smoke-output
 
   editor-ui:
