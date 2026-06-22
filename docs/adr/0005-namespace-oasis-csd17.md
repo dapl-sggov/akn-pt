@@ -1,6 +1,6 @@
 # ADR-0005 — Namespace OASIS CSD17 + perfil em `<FRBRformat>`
 
-- **Estado:** Proposed
+- **Estado:** Accepted
 - **Data:** 2026-05-19
 
 ## Contexto

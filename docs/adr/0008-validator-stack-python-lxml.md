@@ -1,6 +1,6 @@
 # ADR-0008 — Stack do validador: Python 3.12+ + lxml
 
-- **Estado:** Proposed
+- **Estado:** Accepted
 - **Data:** 2026-05-19
 
 ## Contexto

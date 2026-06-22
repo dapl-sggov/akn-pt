@@ -1,6 +1,6 @@
 # ADR-0004 — Conformidade em 3 fases (drafting / review / publication)
 
-- **Estado:** Proposed
+- **Estado:** Accepted
 - **Data:** 2026-05-19
 
 ## Contexto

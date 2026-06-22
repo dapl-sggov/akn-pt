@@ -1,6 +1,6 @@
 # ADR-0001 — Modelo de governação híbrido
 
-- **Estado:** Proposed
+- **Estado:** Accepted
 - **Data:** 2026-05-19
 - **Decisores:** DAPL/SGGOV
 

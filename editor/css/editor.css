@@ -3311,3 +3311,23 @@ body::before {
   .topbar .cmdk-trigger kbd { display: none; }
 }
 
+/* Elevação interna: o bloco focado levanta-se ligeiramente da "mesa" (eco do
+   hover dos cards da landing) — reforça o foco de edição. */
+.doc-block.focused {
+  box-shadow: 0 10px 24px -16px color-mix(in oklab, var(--color-navy) 42%, transparent);
+}
+
+/* Tick latão nos rótulos de painel — assinatura coerente com o masthead e a
+   landing (kicker latão). */
+.panel-header h2::before,
+.toc-section-title::before {
+  content: "";
+  display: inline-block;
+  width: 14px; height: 2px;
+  margin-right: 8px;
+  vertical-align: middle;
+  transform: translateY(-1px);
+  background: var(--color-amber);
+}
+.toc-section-title::before { width: 10px; }
+

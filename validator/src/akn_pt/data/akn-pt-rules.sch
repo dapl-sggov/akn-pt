@@ -55,6 +55,7 @@
     <sch:active pattern="legistica-conventions"/>
     <sch:active pattern="lifecycle-coherence"/>
     <sch:active pattern="frbr-uri-consistency"/>
+    <sch:active pattern="territory-consistency"/>
     <sch:active pattern="legislative-footprint"/>
     <sch:active pattern="temporal-consistency"/>
   </sch:phase>
@@ -421,6 +422,26 @@
       <sch:let name="expr" value="//akn:FRBRExpression/akn:FRBRuri/@value"/>
       <sch:assert test="starts-with(@value, $expr)">
         [FRBR-0003] FRBRuri Manifestation deve estender o FRBRuri Expression.
+      </sch:assert>
+    </sch:rule>
+  </sch:pattern>
+
+  <!-- Pattern separado: a coerencia territorio<->FRBRcountry tem de viver fora
+       do pattern frbr-uri-consistency, senao a rule FRBR-0001 (mesmo contexto
+       akn:FRBRWork/akn:FRBRuri) sombra-a (em Schematron so' a 1.a rule que
+       matcha um node dispara, por pattern). -->
+  <sch:pattern id="territory-consistency">
+    <sch:title>Coerencia territorio (marcador URI) vs FRBRcountry</sch:title>
+
+    <!-- TERR-0001: coerencia entre o marcador de territorio no URI canonico da
+         INCM e o FRBRcountry. Forma canonica: data.dre.pt/eli/{slug}/{n}/{ano}/
+         {mes}/{dia}/{p|a|m}/dre  (p=nacional, a=Acores, m=Madeira). So' dispara
+         na forma canonica (URI Work que contem '/dre'); a forma proposta
+         eli.gov.pt (jurisdicao no path /pt-20/...) nao e' abrangida. -->
+    <sch:rule context="akn:FRBRWork/akn:FRBRuri[contains(@value, '/dre')]">
+      <sch:let name="country" value="//akn:FRBRWork/akn:FRBRcountry/@value"/>
+      <sch:assert test="(($country='pt-20') and contains(@value, '/a/dre')) or (($country='pt-30') and contains(@value, '/m/dre')) or ((not($country) or $country='pt') and contains(@value, '/p/dre'))">
+        [TERR-0001] Marcador de territorio no URI Work (<sch:value-of select="@value"/>) deve ser coerente com FRBRcountry (<sch:value-of select="$country"/>): pt-20 -> /a/dre, pt-30 -> /m/dre, pt -> /p/dre.
       </sch:assert>
     </sch:rule>
   </sch:pattern>
