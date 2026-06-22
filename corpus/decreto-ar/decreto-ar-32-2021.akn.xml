@@ -9,8 +9,8 @@
     <meta>
       <identification source="#dapl">
         <FRBRWork>
-          <FRBRthis value="https://data.dre.pt/eli/dec/32/2021/04/23/!main"/>
-          <FRBRuri value="https://data.dre.pt/eli/dec/32/2021/04/23"/>
+          <FRBRthis value="https://data.dre.pt/eli/dec/32/2021/04/23/p/dre/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/dec/32/2021/04/23/p/dre"/>
           <FRBRdate date="2021-04-15" name="adoption"/>
           <FRBRauthor href="#ar"/>
           <FRBRcountry value="pt"/>

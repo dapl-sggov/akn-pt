@@ -17,8 +17,8 @@
     <meta>
       <identification source="#dapl">
         <FRBRWork>
-          <FRBRthis value="https://data.dre.pt/eli/port/999/2024/11/15/!main"/>
-          <FRBRuri value="https://data.dre.pt/eli/port/999/2024/11/15"/>
+          <FRBRthis value="https://data.dre.pt/eli/port/999/2024/11/15/p/dre/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/port/999/2024/11/15/p/dre"/>
           <FRBRdate date="2024-11-10" name="adoption"/>
           <FRBRauthor href="#governo"/>
           <FRBRcountry value="pt"/>

@@ -14,8 +14,8 @@
     <meta>
       <identification source="#dapl">
         <FRBRWork>
-          <FRBRthis value="https://data.dre.pt/eli/dec-lei/78/2021/09/20/!main"/>
-          <FRBRuri value="https://data.dre.pt/eli/dec-lei/78/2021/09/20"/>
+          <FRBRthis value="https://data.dre.pt/eli/dec-lei/78/2021/09/20/p/dre/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/dec-lei/78/2021/09/20/p/dre"/>
           <FRBRdate date="2021-09-15" name="adoption"/>
           <FRBRauthor href="#governo"/>
           <FRBRcountry value="pt"/>
