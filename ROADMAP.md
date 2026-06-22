@@ -48,12 +48,10 @@ Decisão registada: [ADR-0012](docs/adr/0012-eli-pt-incm-real-template.md).
 - [ ] Integrar o `is_about` (vocabulário nacional) no perfil e no editor.
 
 ### D. Editor — pós-reunião / contínuo
-- [ ] **Picker de assuntos** na UI (autocomplete sobre SubjectVocab → `doc.subjects`).
-- [ ] **Mapeamento descritores INCM → EuroVoc** (o RDF não tem; oportunidade de contributo à INCM).
-- [ ] **Static act-index** a partir do Atom feed da INCM (harvest offline → JSON;
-      o runtime é CORS-blocked). Cobre citações abreviadas (sem data). *(valor marginal: o citação→ELI já funciona com a data da citação completa)*
-- [ ] Validação in-browser: `validation.js` já cobre as regras-chave live; em
-      falta apenas coerência FRBR e eId↔num (baratas de acrescentar). WASM XSD/Schematron = peso elevado, ganho marginal (CI já valida).
+- [x] **Picker de assuntos** na UI (autocomplete sobre SubjectVocab → `doc.subjects`, com chips + badge EuroVoc).
+- [x] **Crosswalk descritores INCM → EuroVoc** (3810 matches por rótulo; `data/subject-eurovoc-crosswalk.json`); `eli:is_about` emite descritor nacional **+** conceito EuroVoc. *(cobertura 10.85% — o resto são entidades nomeadas; melhoria futura: matching difuso + curadoria manual dos temáticos de topo)*
+- [x] **Static act-index** do Atom feed (`data/acts-index.json`, 383 atos recentes) + módulo `ActIndex` ligado à busca DRE. *(feed = janela móvel ~2 meses; cobertura histórica exigiria outra fonte)*
+- [x] **eId↔num** cross-check (STR-0010) no `validation.js`. (Coerência FRBR é garantida por construção; WASM XSD/Schematron = ganho marginal, CI já valida.)
 - [ ] UI de regionais (Açores/Madeira → `a`/`m`) e de consolidadas.
 - [ ] Estética anti-"slop" + verificação visual (Playwright desktop/mobile);
       acessibilidade e mobile.

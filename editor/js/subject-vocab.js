@@ -19,6 +19,7 @@ const SubjectVocab = (() => {
   const BASE = 'http://data.dre.pt/eli/authority/legal-subject/';
   let _items = null;            // [[code, label], ...]
   let _byCode = null;           // { code: label }
+  let _euByCode = null;         // { code: {eurovoc, euLabel} }  (crosswalk → EuroVoc)
   let _loading = null;
 
   function uri(code) { return BASE + code; }
@@ -29,21 +30,33 @@ const SubjectVocab = (() => {
     for (const [c, l] of items) _byCode[c] = l;
   }
 
-  // Permite injetar o índice (ex.: testes em Node) sem fetch.
-  function setData(items) { _index(items); return _items.length; }
+  // Permite injetar dados (ex.: testes em Node) sem fetch.
+  function setData(items, crosswalk) {
+    _index(items);
+    _euByCode = Object.create(null);
+    for (const x of (crosswalk || [])) _euByCode[x.code] = { eurovoc: x.eurovoc, euLabel: x.euLabel };
+    return _items.length;
+  }
 
   async function load() {
     if (_items) return;
+    if (typeof fetch === 'undefined') { _items = []; _euByCode = Object.create(null); return; }
     if (_loading) return _loading;
     _loading = (async () => {
-      const res = await fetch('data/legal-subjects.json');
-      if (!res.ok) throw new Error(`legal-subjects.json: HTTP ${res.status}`);
-      _index(await res.json());
+      const [si, cw] = await Promise.all([
+        fetch('data/legal-subjects.json').then(r => { if (!r.ok) throw new Error(`legal-subjects.json: HTTP ${r.status}`); return r.json(); }),
+        fetch('data/subject-eurovoc-crosswalk.json').then(r => r.ok ? r.json() : []).catch(() => []),
+      ]);
+      _index(si);
+      _euByCode = Object.create(null);
+      for (const x of cw) _euByCode[x.code] = { eurovoc: x.eurovoc, euLabel: x.euLabel };
     })();
     return _loading;
   }
 
   function label(code) { return (_byCode && _byCode[code]) || null; }
+  // Mapeamento para EuroVoc (se existir no crosswalk): { eurovoc, euLabel } | null
+  function eurovoc(code) { return (_euByCode && _euByCode[code]) || null; }
 
   function search(q, limit = 20) {
     if (!_items || !q) return [];
@@ -59,7 +72,7 @@ const SubjectVocab = (() => {
     return pref.concat(sub).slice(0, limit);
   }
 
-  return { load, setData, search, label, uri, get size() { return _items ? _items.length : 0; } };
+  return { load, setData, search, label, uri, eurovoc, get size() { return _items ? _items.length : 0; } };
 })();
 
 if (typeof window !== 'undefined') window.SubjectVocab = SubjectVocab;
