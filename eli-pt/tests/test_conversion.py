@@ -42,8 +42,9 @@ def test_canonical_requires_pub_date() -> None:
 
 
 def test_canonical_number_with_suffix() -> None:
+    # Sufixo em minúsculas no URI canónico (convenção INCM).
     eid = EliId("dec-lei", 1988, "442-A", pub_date="1988-11-30")
-    assert eid.to_uri() == "https://data.dre.pt/eli/dec-lei/442-A/1988/11/30"
+    assert eid.to_uri() == "https://data.dre.pt/eli/dec-lei/442-a/1988/11/30"
 
 
 @pytest.mark.parametrize(
@@ -51,7 +52,7 @@ def test_canonical_number_with_suffix() -> None:
     [
         ("https://data.dre.pt/eli/dec-lei/83/2016/12/16",),
         ("https://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre/pt/html",),
-        ("https://data.dre.pt/eli/portaria/249/2021/11/22/p/dre/pt/xml#art_2__para_1",),
+        ("https://data.dre.pt/eli/port/249/2021/11/22/p/dre/pt/xml#art_2__para_1",),
         ("https://data.dre.pt/eli/lei/7/2020/04/10/2024-06-01/dre/pt",),
     ],
 )
@@ -65,7 +66,7 @@ def test_parse_canonical_roundtrip(uri: str) -> None:
 def test_citation_complete_yields_canonical() -> None:
     # A citação completa traz a data (", de 2 de julho") → URI canónico directo.
     assert (citation_to_eli("Decreto-Lei n.º 43-B/2024, de 2 de julho")
-            == "https://data.dre.pt/eli/dec-lei/43-B/2024/07/02")
+            == "https://data.dre.pt/eli/dec-lei/43-b/2024/07/02")
 
 
 def test_citation_month_with_cedilla() -> None:
@@ -77,7 +78,8 @@ def test_citation_year_from_date_tail() -> None:
     # Quando a cauda de data traz o ano, é esse que entra na pub_date.
     eid = parse_citation("Portaria n.º 249/2021, de 22 de novembro de 2021")
     assert eid.pub_date == "2021-11-22"
-    assert eid.to_uri() == "https://data.dre.pt/eli/portaria/249/2021/11/22"
+    assert eid.act_type == "port"  # slug ELI real da INCM
+    assert eid.to_uri() == "https://data.dre.pt/eli/port/249/2021/11/22"
 
 
 def test_abbreviated_citation_raises() -> None:
@@ -102,7 +104,7 @@ def test_abbreviated_citation_proposed_ok() -> None:
         ("https://dre.pt/dre/detalhe/lei/12-2026-200000000",
          "https://eli.gov.pt/eli/pt/lei/2026/12/pt"),
         ("https://dre.pt/dre/detalhe/portaria/87-2026",
-         "https://eli.gov.pt/eli/pt/portaria/2026/87/pt"),
+         "https://eli.gov.pt/eli/pt/port/2026/87/pt"),
     ],
 )
 def test_dre_to_eli_without_date_yields_proposed(legacy: str, expected_proposed: str) -> None:

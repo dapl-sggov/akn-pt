@@ -47,8 +47,17 @@ const EliMetadata = (() => {
     'drr': { slug: 'governo-regional', label: 'Governo Regional' },
   };
 
+  // AKN-PT <act name> → slug ELI REAL da INCM (ver eli-pt/incm-eli-reference.md).
+  const ELI_SLUG = {
+    'dec-lei': 'dec-lei', 'lei': 'lei', 'portaria': 'port', 'res-cm': 'resolconsmin',
+    'res-ar': 'resolassrep', 'despacho-normativo': 'despnorm', 'dlr': 'declegreg',
+    'drr': 'decregulreg', 'decreto-ar': 'dec',
+  };
+  function _slug(doc) { return ELI_SLUG[doc.actName] || doc.actName; }
+
   function _jur(doc) { return doc.country || 'pt'; }
   function _num(doc) { return doc.number || 'X'; }
+  function _numUri(doc) { return String(_num(doc)).toLowerCase(); }
   function _isConsolidated(doc) {
     return !!(doc._consolidatedAt && doc._consolidatedAt !== '9999-12-31');
   }
@@ -73,10 +82,10 @@ const EliMetadata = (() => {
       const domain = opts.domain || PLACEHOLDER_DOMAIN;
       return `${domain}/eli/${_jur(doc)}/${doc.actName}/${doc.year}/${_num(doc)}/pt`;
     }
-    // Canónico (dre): /eli/{tipo}/{nº}/{ano}/{mês}/{dia} — data de publicação.
+    // Canónico (dre): /eli/{slug-INCM}/{nº}/{ano}/{mês}/{dia} — data de publicação.
     const domain = opts.domain || INCM_DOMAIN;
     const { y, m, d } = _ymd(doc);
-    return `${domain}/eli/${doc.actName}/${_num(doc)}/${y}/${m}/${d}`;
+    return `${domain}/eli/${_slug(doc)}/${_numUri(doc)}/${y}/${m}/${d}`;
   }
 
   function expressionUri(doc, opts = {}) {
@@ -155,7 +164,7 @@ const EliMetadata = (() => {
       '@type': 'eli:LegalResource',
       'eli:id_local': `${_num(doc)}/${doc.year}${suffix}`,
       'eli:type_document': {
-        '@id': `${domain}/authority/resource-type/${doc.actName}`,
+        '@id': `${domain}/authority/resource-type/${_slug(doc)}`,
         'skos:prefLabel': { '@value': TYPE_LABEL[doc.actName] || doc.actName, '@language': 'pt' },
       },
       'eli:passed_by': {

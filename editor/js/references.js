@@ -221,14 +221,24 @@ const References = (() => {
   // explícita no URI e alinhamento estético com o padrão ano+número da UE. A forma
   // da INCM (data.dre.pt) não é errada: é a tradição legística PT. O caveat é só a
   // citação abreviada (incompleta por padrão legístico), não uma falha do esquema.
+  // slug legística → slug ELI REAL da INCM (ver eli-pt/incm-eli-reference.md).
+  const ELI_SLUG = {
+    'dec-lei': 'dec-lei', 'lei': 'lei', 'portaria': 'port', 'res-cm': 'resolconsmin',
+    'res-ar': 'resolassrep', 'despacho-normativo': 'despnorm', 'dlr': 'declegreg',
+    'drr': 'decregulreg', 'decreto-ar': 'dec',
+  };
+  function _incmSlug(s) { return ELI_SLUG[s] || s; }
+
   function _eliForExternal(slug, num, year, dia, mesNome, anoData) {
+    const incm = _incmSlug(slug);
+    const numL = String(num).toLowerCase();
     const mm = _monthToMM(mesNome);
     if (dia && mm) {
       const yyyy = anoData || year;
-      return `https://data.dre.pt/eli/${slug}/${num}/${yyyy}/${mm}/${String(dia).padStart(2, '0')}`;
+      return `https://data.dre.pt/eli/${incm}/${numL}/${yyyy}/${mm}/${String(dia).padStart(2, '0')}`;
     }
     if (typeof DreMock !== 'undefined' && DreMock.all) {
-      const needle = `/eli/${slug}/${num}/${year}/`;
+      const needle = `/eli/${incm}/${numL}/${year}/`;
       const hit = DreMock.all().find(e => e.eli && e.eli.includes(needle));
       if (hit) return hit.eli;
     }

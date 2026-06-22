@@ -17,6 +17,21 @@ const AknExport = (() => {
     'drr': 'gov-regional-acores',
   };
 
+  // AKN-PT <act name> → slug ELI REAL da INCM (ver eli-pt/incm-eli-reference.md).
+  // O <act name> legível mantém-se; o slug INCM é usado SÓ no URI ELI.
+  const ELI_SLUG = {
+    'dec-lei': 'dec-lei',
+    'lei': 'lei',
+    'portaria': 'port',
+    'res-cm': 'resolconsmin',
+    'res-ar': 'resolassrep',
+    'despacho-normativo': 'despnorm',
+    'dlr': 'declegreg',
+    'drr': 'decregulreg',
+    'decreto-ar': 'dec',        // a confirmar com a INCM
+  };
+  function eliSlug(actName) { return ELI_SLUG[actName] || actName; }
+
   function escapeXml(s) {
     if (s == null) return '';
     return String(s)
@@ -61,8 +76,11 @@ const AknExport = (() => {
     const pub = doc.publicationDate || doc.adoptionDate || `${doc.year}-01-01`;
     const [py, pm, pd] = pub.split('-');
 
-    // Work: type/number/year/month/day (data de publicação original).
-    const workUri = `https://data.dre.pt/eli/${doc.actName}/${num}/${py}/${pm}/${pd}`;
+    // Work: {slug-INCM}/{nº}/{ano}/{mês}/{dia}. Slug = vocabulário real da INCM
+    // (port, resolconsmin, …); sufixo do número em minúsculas (ex. 442-a).
+    const slug = eliSlug(doc.actName);
+    const numUri = String(num).toLowerCase();
+    const workUri = `https://data.dre.pt/eli/${slug}/${numUri}/${py}/${pm}/${pd}`;
 
     // Consolidação/retificação: o segmento de versão ('p' = como publicado)
     // passa a ser a data de consolidação; a versão FRBR incrementa.

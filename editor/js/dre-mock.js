@@ -22,7 +22,7 @@ const DreMock = (() => {
     { type: 'cod', label: 'Código de Procedimento Administrativo (CPA)', number: '4', year: 2015, date: '2015-01-07', eli: 'https://data.dre.pt/eli/dec-lei/4/2015/01/07', title: 'Aprova o novo CPA' },
     { type: 'cod', label: 'Código dos Contratos Públicos (CCP)', number: '18', year: 2008, date: '2008-01-29', eli: 'https://data.dre.pt/eli/dec-lei/18/2008/01/29', title: 'Aprova o CCP' },
     // Leis recentes representativas
-    { type: 'lei', label: 'Lei n.º 5-A/2026 — pegada legislativa', number: '5-A', year: 2026, date: '2026-01-27', eli: 'https://data.dre.pt/eli/lei/5-A/2026/01/27', title: 'Procedimento legislativo aberto: pegada e workflow' },
+    { type: 'lei', label: 'Lei n.º 5-A/2026 — pegada legislativa', number: '5-A', year: 2026, date: '2026-01-27', eli: 'https://data.dre.pt/eli/lei/5-a/2026/01/27', title: 'Procedimento legislativo aberto: pegada e workflow' },
     { type: 'lei', label: 'Lei n.º 7/2009 — Código do Trabalho', number: '7', year: 2009, date: '2009-02-12', eli: 'https://data.dre.pt/eli/lei/7/2009/02/12', title: 'Revisão do Código do Trabalho' },
     { type: 'lei', label: 'Lei n.º 58/2019 — RGPD nacional', number: '58', year: 2019, date: '2019-08-08', eli: 'https://data.dre.pt/eli/lei/58/2019/08/08', title: 'Execução do RGPD na ordem jurídica interna' },
     { type: 'lei', label: 'Lei n.º 93/2021 — Denunciantes (transposição Dir. 2019/1937)', number: '93', year: 2021, date: '2021-12-20', eli: 'https://data.dre.pt/eli/lei/93/2021/12/20', title: 'Regime geral de proteção de denunciantes' },
@@ -38,10 +38,10 @@ const DreMock = (() => {
     { type: 'dec-lei', label: 'Decreto-Lei n.º 56/2021 — Apoios extraordinários PME', number: '56', year: 2021, date: '2021-06-30', eli: 'https://data.dre.pt/eli/dec-lei/56/2021/06/30', title: 'Apoios extraordinários a micro e pequenas empresas' },
     { type: 'dec-lei', label: 'Decreto-Lei n.º 22/2025 — Modernização', number: '22', year: 2025, date: '2025-11-05', eli: 'https://data.dre.pt/eli/dec-lei/22/2025/11/05', title: 'Modernização administrativa' },
     // Portarias representativas
-    { type: 'portaria', label: 'Portaria n.º 249/2021 — Apoios PME', number: '249', year: 2021, date: '2021-11-22', eli: 'https://data.dre.pt/eli/portaria/249/2021/11/22', title: 'Regulamenta o regime de apoio extraordinário' },
-    { type: 'portaria', label: 'Portaria n.º 233/2019 — Tabelas IRS', number: '233', year: 2019, date: '2019-07-26', eli: 'https://data.dre.pt/eli/portaria/233/2019/07/26', title: 'Tabelas de retenção IRS' },
+    { type: 'portaria', label: 'Portaria n.º 249/2021 — Apoios PME', number: '249', year: 2021, date: '2021-11-22', eli: 'https://data.dre.pt/eli/port/249/2021/11/22', title: 'Regulamenta o regime de apoio extraordinário' },
+    { type: 'portaria', label: 'Portaria n.º 233/2019 — Tabelas IRS', number: '233', year: 2019, date: '2019-07-26', eli: 'https://data.dre.pt/eli/port/233/2019/07/26', title: 'Tabelas de retenção IRS' },
     // RCMs
-    { type: 'res-cm', label: 'RCM n.º 53/2020 — Plano de Recuperação', number: '53', year: 2020, date: '2020-07-10', eli: 'https://data.dre.pt/eli/res-cm/53/2020/07/10', title: 'Plano de Recuperação e Resiliência' },
+    { type: 'res-cm', label: 'RCM n.º 53/2020 — Plano de Recuperação', number: '53', year: 2020, date: '2020-07-10', eli: 'https://data.dre.pt/eli/resolconsmin/53/2020/07/10', title: 'Plano de Recuperação e Resiliência' },
     // Diretivas UE relevantes
     { type: 'eu-dir', label: 'Diretiva (UE) 2019/1937 — Denunciantes', number: '1937', year: 2019, date: '2019-10-23', eli: 'http://data.europa.eu/eli/dir/2019/1937/oj', title: 'Proteção das pessoas que denunciam violações do direito da União' },
     { type: 'eu-dir', label: 'Diretiva (UE) 2016/680 — Proteção dados na justiça', number: '680', year: 2016, date: '2016-04-27', eli: 'http://data.europa.eu/eli/dir/2016/680/oj', title: 'Proteção de dados em matéria penal' },
