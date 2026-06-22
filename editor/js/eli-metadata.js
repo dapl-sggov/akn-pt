@@ -202,12 +202,21 @@ const EliMetadata = (() => {
     // Assuntos (descritores nacionais INCM) → eli:is_about, com os URIs
     // canónicos data.dre.pt/eli/authority/legal-subject/{código}.
     if (Array.isArray(doc.subjects) && doc.subjects.length) {
-      obj['eli:is_about'] = doc.subjects.map((s) => {
+      // Emite o descritor nacional (INCM) e, quando há crosswalk, também o
+      // conceito EuroVoc correspondente — ponte para a interoperabilidade UE.
+      obj['eli:is_about'] = doc.subjects.flatMap((s) => {
         const code = typeof s === 'string' ? s : s.code;
-        const o = { '@id': `http://data.dre.pt/eli/authority/legal-subject/${code}` };
         const lbl = typeof s === 'object' ? s.label : null;
-        if (lbl) o['skos:prefLabel'] = { '@value': lbl, '@language': 'pt' };
-        return o;
+        const out = [];
+        const nat = { '@id': `http://data.dre.pt/eli/authority/legal-subject/${code}` };
+        if (lbl) nat['skos:prefLabel'] = { '@value': lbl, '@language': 'pt' };
+        out.push(nat);
+        if (typeof s === 'object' && s.eurovoc) {
+          const eu = { '@id': s.eurovoc };
+          if (s.euLabel) eu['skos:prefLabel'] = { '@value': s.euLabel, '@language': 'pt' };
+          out.push(eu);
+        }
+        return out;
       });
     }
     if (doc.subtype === 'dec-lei-transposicao' && doc.transposesUri) {

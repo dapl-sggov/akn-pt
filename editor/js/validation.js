@@ -121,7 +121,37 @@ const Validation = (() => {
       issues.push({ level: 'error', msg: `eIds duplicados: ${[...new Set(dupes)].join(', ')}.` });
     }
 
+    // (STR-0010) Coerência eId ↔ número apresentado — o nº no eId (art_N, __para_M)
+    // deve corresponder ao número visível. (A coerência das URIs FRBR é garantida
+    // por construção no buildFrbr, logo não há nada a verificar do estado.)
+    const numIssues = [];
+    eachArticle(doc, (a) => {
+      const eArt = (String(a.id).match(/^art_(\d+)/) || [])[1];
+      const nArt = (String(a.num || '').match(/(\d+)/) || [])[1];
+      if (eArt && nArt && eArt !== nArt) numIssues.push(`${a.id} ↔ "${a.num}"`);
+      (a.paragraphs || []).forEach((p) => {
+        const eP = (String(p.id).match(/__para_(\d+)/) || [])[1];
+        const nP = (String(p.num || '').match(/(\d+)/) || [])[1];
+        if (eP && nP && eP !== nP) numIssues.push(`${p.id} ↔ "${p.num}"`);
+      });
+    });
+    if (numIssues.length) {
+      issues.push({ level: 'error', msg: `eId não corresponde ao número: ${numIssues.slice(0, 5).join('; ')}.` });
+    }
+
     return issues;
+  }
+
+  // Percorre os articles (body articles + hierárquico), ignorando containers e
+  // bodies de pontos resolutivos (RCM).
+  function eachArticle(doc, fn) {
+    const CONT = new Set(['book', 'part', 'title', 'chapter', 'section', 'subsection']);
+    const walk = (items) => (items || []).forEach((it) => {
+      if (it && CONT.has(it.containerType)) walk(it.items);
+      else if (it && it.paragraphs) fn(it);
+    });
+    if (doc.body.kind === 'hierarchic') walk(doc.body.items);
+    else if (doc.body.kind === 'articles') doc.body.items.forEach(fn);
   }
 
   function collectEids(doc) {

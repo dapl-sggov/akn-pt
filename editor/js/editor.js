@@ -719,6 +719,51 @@ const Editor = (() => {
         on: { input: e => State.update({ habilitanteLabel: e.target.value }) }
       })
     ));
+
+    // Assuntos (descritores nacionais da INCM → eli:is_about; ponte EuroVoc quando há).
+    const subjects = Array.isArray(doc.subjects) ? doc.subjects : [];
+    const sgroup = el('div', { class: 'field-group' },
+      el('label', null, 'Assuntos (descritores INCM → eli:is_about)'));
+    const chips = el('div', { style: 'display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px' });
+    subjects.forEach((s, i) => {
+      chips.appendChild(el('span', {
+        style: 'display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border:1px solid var(--color-border);border-radius:4px;background:var(--color-bg);font-size:0.8em' },
+        el('span', null, s.label || s.code),
+        s.eurovoc ? el('span', { title: 'EuroVoc: ' + (s.euLabel || ''), style: 'font-size:0.7em;color:var(--color-muted)' }, '· EuroVoc') : '',
+        el('button', { type: 'button', title: 'remover',
+          style: 'border:none;background:none;cursor:pointer;color:var(--color-muted);font-size:1.1em;line-height:1',
+          on: { click: () => State.update({ subjects: subjects.filter((_, j) => j !== i) }) } }, '×')
+      ));
+    });
+    sgroup.appendChild(chips);
+    const sInput = el('input', { type: 'search', placeholder: 'Pesquisar descritor (ex. "ambiente", "contratação pública")…' });
+    const sResults = el('div', { style: 'margin-top:6px;display:flex;flex-direction:column;gap:4px' });
+    sInput.addEventListener('input', async () => {
+      const q = sInput.value.trim();
+      sResults.innerHTML = '';
+      if (q.length < 2) return;
+      try { await SubjectVocab.load(); }
+      catch { sResults.appendChild(el('div', { class: 'muted small' }, 'Vocabulário indisponível.')); return; }
+      const hits = SubjectVocab.search(q, 8);
+      if (!hits.length) { sResults.appendChild(el('div', { class: 'muted small' }, 'Sem resultados.')); return; }
+      hits.forEach((h) => {
+        const eu = SubjectVocab.eurovoc(h.code);
+        sResults.appendChild(el('div', {
+          style: 'padding:5px 8px;border:1px solid var(--color-border);border-radius:4px;cursor:pointer;background:var(--color-bg);font-size:0.85em',
+          on: { click: () => {
+            if (subjects.some((x) => x.code === h.code)) { toast('Assunto já adicionado', 'info'); return; }
+            const entry = { code: h.code, label: h.label };
+            if (eu) { entry.eurovoc = eu.eurovoc; entry.euLabel = eu.euLabel; }
+            State.update({ subjects: subjects.concat([entry]) });
+          } } },
+          el('span', null, h.label),
+          eu ? el('span', { style: 'font-size:0.7em;color:var(--color-muted)' }, '  · EuroVoc: ' + eu.euLabel) : ''
+        ));
+      });
+    });
+    sgroup.appendChild(sInput);
+    sgroup.appendChild(sResults);
+    pane.appendChild(sgroup);
   }
 
   // ----- Footprint tab ------------------------------------------------------
@@ -860,24 +905,31 @@ const Editor = (() => {
     if (!pane) return;
     pane.innerHTML = '';
     pane.appendChild(el('p', { class: 'hint' },
-      'Busca local em ~30 diplomas de referência (Constituição, códigos, leis recentes, diretivas UE).'));
+      'Busca em ~30 diplomas de referência (DreMock) + atos recentes reais do DRE (Atom feed, últimos ~2 meses).'));
     const input = el('input', { type: 'search', placeholder: 'Pesquisar (ex. "dl 21 2023", "rgpd", "código civil")…' });
     const results = el('div', { class: 'dre-results', style: 'margin-top:8px;display:flex;flex-direction:column;gap:6px' });
+    const _item = (label, eli) => el('div', { class: 'dre-result-item',
+      style: 'padding:6px 8px;border:1px solid var(--color-border);border-radius:4px;cursor:pointer;background:var(--color-bg)',
+      on: { click: async () => { await navigator.clipboard.writeText(eli); toast('URI copiado: ' + eli, 'success'); } } },
+      el('div', { style: 'font-size:0.85em;font-weight:500' }, label),
+      el('div', { style: 'font-size:0.7em;color:var(--color-muted);font-family:var(--font-mono);word-break:break-all' }, eli),
+    );
     input.addEventListener('input', () => {
       const q = input.value.trim();
       results.innerHTML = '';
       if (q.length < 2) return;
-      DreMock.suggest(q, 8).forEach(r => {
-        results.appendChild(el('div', { class: 'dre-result-item',
-          style: 'padding:6px 8px;border:1px solid var(--color-border);border-radius:4px;cursor:pointer;background:var(--color-bg)',
-          on: { click: async () => {
-            await navigator.clipboard.writeText(r.eli);
-            toast('URI copiado: ' + r.eli, 'success');
-          }} },
-          el('div', { style: 'font-size:0.85em;font-weight:500' }, r.label),
-          el('div', { style: 'font-size:0.7em;color:var(--color-muted);font-family:var(--font-mono);word-break:break-all' }, r.eli),
-        ));
-      });
+      DreMock.suggest(q, 8).forEach(r => results.appendChild(_item(r.label, r.eli)));
+      // Atos recentes reais (ActIndex, lazy) — com guarda de query anti-corrida.
+      if (typeof ActIndex !== 'undefined') {
+        ActIndex.load().then(() => {
+          if (input.value.trim() !== q) return;
+          const real = ActIndex.search(q, 5);
+          if (real.length) {
+            results.appendChild(el('div', { class: 'muted small', style: 'margin-top:4px' }, 'Atos recentes (DRE):'));
+            real.forEach(a => results.appendChild(_item(a.titulo || `${a.tipo} ${a.numero}/${a.ano}`, a.eli)));
+          }
+        });
+      }
       if (!results.children.length) {
         results.appendChild(el('div', { class: 'muted small' }, 'Sem resultados.'));
       }
