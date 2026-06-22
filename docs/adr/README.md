@@ -10,21 +10,25 @@ Cada ADR contém: **Contexto** (o problema e alternativas), **Decisão**
 
 | # | Decisão | Estado |
 |---|---|---|
-| [0001](0001-project-governance.md) | Modelo de governação híbrido (DAPL → Comissão) | Proposed |
-| [0002](0002-license-eupl.md) | Licença EUPL-1.2 | Proposed |
-| [0003](0003-repository-monorepo.md) | Monorepo único no GitHub | Proposed |
-| [0004](0004-conformance-phases.md) | 3 fases de conformidade (drafting/review/publication) | Proposed |
-| [0005](0005-namespace-oasis-csd17.md) | Namespace OASIS CSD17 + perfil via `<FRBRformat>` | Proposed |
-| [0006](0006-languages-pt-body-en-summary.md) | PT corpo, EN sumário | Proposed |
-| [0007](0007-scope-9-types-v0.1.0.md) | Scope v0.1.0 — 9 tipos de actos | Proposed |
-| [0008](0008-validator-stack-python-lxml.md) | Validador em Python 3.12+ com lxml | Proposed |
-| [0009](0009-eli-pt-domain-placeholder.md) | Domínio ELI-PT placeholder até INCM | Proposed |
-| [0010](0010-external-review-milestone.md) | Revisão externa milestone-based | Proposed |
+| [0001](0001-project-governance.md) | Modelo de governação híbrido (DAPL → Comissão) | Accepted |
+| [0002](0002-license-eupl.md) | Licença EUPL-1.2 | Accepted |
+| [0003](0003-repository-monorepo.md) | Monorepo único no GitHub | Accepted |
+| [0004](0004-conformance-phases.md) | 3 fases de conformidade (drafting/review/publication) | Accepted |
+| [0005](0005-namespace-oasis-csd17.md) | Namespace OASIS CSD17 + perfil via `<FRBRformat>` | Accepted |
+| [0006](0006-languages-pt-body-en-summary.md) | PT corpo, EN sumário | Accepted |
+| [0007](0007-scope-9-types-v0.1.0.md) | Scope v0.1.0 — 9 tipos de actos | Accepted |
+| [0008](0008-validator-stack-python-lxml.md) | Validador em Python 3.12+ com lxml | Accepted |
+| [0009](0009-eli-pt-domain-placeholder.md) | Domínio ELI-PT placeholder até INCM | Accepted (superada → [0012](0012-eli-pt-incm-real-template.md)) |
+| [0010](0010-external-review-milestone.md) | Revisão externa milestone-based | Accepted |
+| [0011](0011-namespace-pt-extensions.md) | Namespace para extensões AKN-PT (`akn-pt:`) | Accepted |
+| [0012](0012-eli-pt-incm-real-template.md) | ELI-PT = template real e em produção da INCM (`data.dre.pt`) | Accepted |
 
 ## Ciclo de vida
 
 - **Proposed** — registada, sem validação institucional.
-- **Accepted** — aprovada pela Comissão Técnica AKN-PT (a constituir).
+- **Accepted** — aprovada pela DAPL/SGGOV (autoridade normativa actual do perfil,
+  [ADR-0001](0001-project-governance.md)); ratificação pela Comissão Técnica
+  AKN-PT quando constituída.
 - **Deprecated** — substituída por uma ADR posterior (com link).
 - **Rejected** — explorada, descartada.
 

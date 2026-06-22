@@ -589,7 +589,7 @@ const Editor = (() => {
         el('button', { class: 'btn-tiny', title: 'Adicionar subalínea i), ii)…',
           on: { click: () => { State.addSubSubPoint(pId, articleId, sp.id); refresh(); } }
         }, '+ subalínea'),
-        el('button', { class: 'btn-tiny',
+        el('button', { class: 'btn-tiny', 'aria-label': 'Remover subalínea', title: 'Remover',
           on: { click: () => { State.removeSubPoint(pId, articleId, sp.id); refresh(); } }
         }, '×')
       ),
@@ -601,7 +601,7 @@ const Editor = (() => {
           el('textarea', { class: 'point-content autosize', rows: 1, placeholder: 'Texto da subalínea',
             on: { input: e => { State.updateSubSubPoint(pId, articleId, sp.id, ssp.id, { content: e.target.value }); _autosize(e.target); } }
           }, ssp.content || ''),
-          el('button', { class: 'btn-tiny',
+          el('button', { class: 'btn-tiny', 'aria-label': 'Remover divisão', title: 'Remover',
             on: { click: () => { State.removeSubSubPoint(pId, articleId, sp.id, ssp.id); refresh(); } }
           }, '×')
         ))
@@ -730,7 +730,7 @@ const Editor = (() => {
         style: 'display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border:1px solid var(--color-border);border-radius:4px;background:var(--color-bg);font-size:0.8em' },
         el('span', null, s.label || s.code),
         s.eurovoc ? el('span', { title: 'EuroVoc: ' + (s.euLabel || ''), style: 'font-size:0.7em;color:var(--color-muted)' }, '· EuroVoc') : '',
-        el('button', { type: 'button', title: 'remover',
+        el('button', { type: 'button', title: 'remover', 'aria-label': 'Remover assunto',
           style: 'border:none;background:none;cursor:pointer;color:var(--color-muted);font-size:1.1em;line-height:1',
           on: { click: () => State.update({ subjects: subjects.filter((_, j) => j !== i) }) } }, '×')
       ));
@@ -795,7 +795,8 @@ const Editor = (() => {
         el('input', { type: 'date', value: step.date,
           on: { input: e => State.updateStep(step.id, { date: e.target.value }) }
         }),
-        el('button', { on: { click: () => { State.removeStep(step.id); refresh(); } } }, '×')
+        el('button', { 'aria-label': 'Remover passo', title: 'Remover',
+          on: { click: () => { State.removeStep(step.id); refresh(); } } }, '×')
       ));
       stepEl.appendChild(el('input', { type: 'text', value: step.source, placeholder: 'source (e.g. governo, cm, ar)',
         on: { input: e => State.updateStep(step.id, { source: e.target.value }) }
@@ -823,7 +824,8 @@ const Editor = (() => {
           el('input', { type: 'text', value: inp.description || '', placeholder: 'descrição',
             on: { input: e => State.updateInput(step.id, inp.id, { description: e.target.value }) }
           }),
-          el('button', { on: { click: () => { State.removeInput(step.id, inp.id); refresh(); } } }, '×')
+          el('button', { 'aria-label': 'Remover interveniente', title: 'Remover',
+            on: { click: () => { State.removeInput(step.id, inp.id); refresh(); } } }, '×')
         ));
       });
 
@@ -1554,7 +1556,7 @@ const Editor = (() => {
           }}}, 'Abrir'),
         el('button', { class: 'btn-small', title: 'Comparar este snapshot com o rascunho actual',
           on: { click: () => openDiffModal(s.id, 'current') } }, 'Comparar'),
-        el('button', { class: 'btn-small btn-danger', on: { click: () => {
+        el('button', { class: 'btn-small btn-danger', 'aria-label': 'Apagar snapshot', title: 'Apagar snapshot', on: { click: () => {
           if (!confirm('Apagar snapshot?')) return;
           Snapshots.delete(s.id);
           renderSnapshotsList();
@@ -1967,7 +1969,7 @@ const Editor = (() => {
         ),
         el('button', {
           class: 'stack-item-close',
-          title: 'Remover este rascunho',
+          title: 'Remover este rascunho', 'aria-label': 'Remover rascunho',
           on: { click: (ev) => {
             ev.stopPropagation();
             if (!confirm(`Apagar rascunho "${(e.shortTitle || e.actName).slice(0, 60)}"?`)) return;

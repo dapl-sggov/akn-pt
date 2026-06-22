@@ -1,6 +1,6 @@
 # ADR-0003 — Monorepo no GitHub
 
-- **Estado:** Proposed
+- **Estado:** Accepted
 - **Data:** 2026-05-19
 
 ## Contexto

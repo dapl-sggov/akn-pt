@@ -1,6 +1,6 @@
 # ADR-0002 — Licença EUPL-1.2
 
-- **Estado:** Proposed
+- **Estado:** Accepted
 - **Data:** 2026-05-19
 
 ## Contexto

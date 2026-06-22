@@ -1,6 +1,6 @@
 # ADR-0011 — Namespace `akn-pt:` para extensões PT (workflow, step, input)
 
-- **Estado:** Proposed
+- **Estado:** Accepted
 - **Data:** 2026-05-25
 - **Substitui parcialmente:** ADR-0005 (refina a sinalização de extensões)
 

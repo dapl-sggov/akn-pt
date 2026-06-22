@@ -1,6 +1,6 @@
 # ADR-0006 — Línguas: PT body, EN summary
 
-- **Estado:** Proposed
+- **Estado:** Accepted
 - **Data:** 2026-05-19
 
 ## Contexto

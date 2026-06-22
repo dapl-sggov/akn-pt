@@ -1,6 +1,6 @@
 # ADR-0007 — Scope v0.1.0: 9 tipos de actos
 
-- **Estado:** Proposed
+- **Estado:** Accepted
 - **Data:** 2026-05-19
 
 ## Contexto

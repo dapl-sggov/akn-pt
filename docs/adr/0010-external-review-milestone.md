@@ -1,6 +1,6 @@
 # ADR-0010 — Revisão externa milestone-based
 
-- **Estado:** Proposed
+- **Estado:** Accepted
 - **Data:** 2026-05-19
 
 ## Contexto
