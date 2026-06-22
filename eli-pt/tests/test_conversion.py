@@ -9,8 +9,10 @@ import pytest  # noqa: E402
 
 from conversion import (  # noqa: E402
     EliId,
+    citation_to_eli,
     dre_to_eli,
     eli_to_dre_legacy,
+    parse_citation,
     parse_dre,
     parse_eli,
 )
@@ -58,7 +60,39 @@ def test_parse_canonical_roundtrip(uri: str) -> None:
     assert eid.to_uri(scheme="dre") == uri
 
 
-# --- forma PROPOSTA eli.gov.pt (construível a partir de citação) -----------
+# --- citação legística COMPLETA → canónico data.dre.pt (a data vem da citação)
+
+def test_citation_complete_yields_canonical() -> None:
+    # A citação completa traz a data (", de 2 de julho") → URI canónico directo.
+    assert (citation_to_eli("Decreto-Lei n.º 43-B/2024, de 2 de julho")
+            == "https://data.dre.pt/eli/dec-lei/43-B/2024/07/02")
+
+
+def test_citation_month_with_cedilla() -> None:
+    assert (citation_to_eli("Lei n.º 7/2009, de 12 de março de 2009")
+            == "https://data.dre.pt/eli/lei/7/2009/03/12")
+
+
+def test_citation_year_from_date_tail() -> None:
+    # Quando a cauda de data traz o ano, é esse que entra na pub_date.
+    eid = parse_citation("Portaria n.º 249/2021, de 22 de novembro de 2021")
+    assert eid.pub_date == "2021-11-22"
+    assert eid.to_uri() == "https://data.dre.pt/eli/portaria/249/2021/11/22"
+
+
+def test_abbreviated_citation_raises() -> None:
+    # Citação ABREVIADA (sem ", de {dia} de {mês}") → não construtível em canónico.
+    with pytest.raises(ValueError, match="incompleta"):
+        citation_to_eli("Decreto-Lei n.º 22/2026")
+
+
+def test_abbreviated_citation_proposed_ok() -> None:
+    # ...mas a forma proposta basta-se com tipo+número+ano.
+    assert (citation_to_eli("Decreto-Lei n.º 22/2026", scheme="proposed")
+            == "https://eli.gov.pt/eli/pt/dec-lei/2026/22/pt")
+
+
+# --- forma PROPOSTA eli.gov.pt (fallback p/ citação abreviada / URL sem data)
 
 @pytest.mark.parametrize(
     ("legacy", "expected_proposed"),
@@ -72,7 +106,8 @@ def test_parse_canonical_roundtrip(uri: str) -> None:
     ],
 )
 def test_dre_to_eli_without_date_yields_proposed(legacy: str, expected_proposed: str) -> None:
-    # Sem data, o URL de detalhe só dá number/year → forma proposta construível.
+    # O URL de detalhe só dá number/year → forma proposta. A forma canónica
+    # continua construível a partir de citação COMPLETA (ver test_citation_*).
     assert dre_to_eli(legacy) == expected_proposed
 
 

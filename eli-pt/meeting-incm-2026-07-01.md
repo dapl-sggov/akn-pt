@@ -61,8 +61,11 @@ mandato legal — DL 235/2015 / DL 83/2016):
    resolver o ato?
 2. **[P1]** Qual é a **especificação completa e atual** dos três templates de
    URI (jornal, ato, consolidada), incluindo a gramática de componentes?
-3. **[P1]** O template ELI-PT do ato usa **data de assinatura ou de
-   publicação**? Zero-padding ou sem zeros à esquerda (convenção UE/FR)?
+3. **[P1]** O template ELI-PT do ato usa a **data que consta da citação** (a
+   data do diploma — "..., de {dia} de {mês}") ou a **data de publicação no
+   DR**? (Determina se o URI canónico data.dre.pt é construível diretamente a
+   partir da citação completa, ou se há desfasamento citação↔publicação.)
+   Zero-padding ou sem zeros à esquerda (convenção UE/FR)?
 4. **[P1]** O ELI-PT desce a **nível de artigo/subdivisão** (como FR
    `/article_N`, IE `/section/N`) ou para no nível do ato? Determina como
    mapeamos os eIds AKN-PT.
@@ -177,8 +180,10 @@ mandato legal — DL 235/2015 / DL 83/2016):
 URIs ☐ data assinatura vs publicação ☐ desce a artigo? ☐ versão ontologia em
 produção ☐ coordenador nacional ELI formal ☐ SSA capta estrutura?
 
-**Decidir (com a INCM):** ☐ domínio (`data.dre.pt`?) ☐ ano+número vs data
-completa ☐ quem normaliza / quem opera ☐ calendário Pilares III/IV ☐
+**Decidir (com a INCM):** ☐ domínio (`data.dre.pt`?) ☐ **adotar data completa**
+(template INCM em produção; construível a partir da citação legística completa
+— ano+número fica só como alinhamento estético UE/jurisdição explícita) ☐ quem
+normaliza / quem opera ☐ calendário Pilares III/IV ☐
 instrumento jurídico (protocolo?)
 
 **Levar:** ☐ ELI-PT v0.1.0 impressa ☐ gap-analysis ☐ 3 diplomas AKN-PT de

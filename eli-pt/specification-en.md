@@ -100,9 +100,15 @@ Real resolvable example: `http://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre/pt/
 - **Manifestation:** adds `/{format}` (segment). `…/16/p/dre/pt/xml`
 - **Fragment URI:** adds `#{fragment}`. `…/p/dre/pt#art_5__para_1__lit_a`
 
-> **Limitation:** this template requires the full publication date, which a
-> citation does not provide — the canonical URI is **not constructible from a
-> citation** without a DRE lookup. See §16 (proposed form, self-sufficient).
+> **Constructibility note:** this template requires the full publication date
+> (year/month/day). That date is present in the **complete Portuguese legistic
+> citation** — e.g. "Decreto-Lei n.º 43-B/2024, de 2 de julho" — so the
+> canonical URI **is constructible from a complete citation**: the parser
+> simply extracts the "..., de {day} de {month} [de {year}]" component and maps
+> the month name to its number. **Caveat:** an *abbreviated* citation ("DL
+> 43-B/2024", lacking "de {day} de {month}") is insufficient — but that is an
+> incomplete citation by legistic convention, not a flaw of the scheme. See §16
+> (proposed form; its merits are explicit jurisdiction + EU aesthetics).
 
 ---
 
@@ -267,7 +273,7 @@ An implementation is **strict conformant** if it additionally:
 1. Final domain — **decided (2026-06-22): `data.dre.pt`** (already in production); to be formally confirmed.
 2. Consolidated form — confirm the exact consolidated-version segment (assumed `/{YYYY-MM-DD}/dre/pt`).
 3. Language code — `pt` (in the URI) vs `por` (`<FRBRlanguage>`). Confirm.
-4. Constructibility — the `data.dre.pt` template needs the publication date; propose a resolver service (citation→ELI) or the self-sufficient form (§16).
+4. Constructibility — the `data.dre.pt` template is constructible from a **complete legistic citation** (which includes "..., de {day} de {month}"). Confirm with INCM a canonical month-name → number table and, optionally, a resolver service (citation→ELI) for the **abbreviated-citation** case — not as a remedy for a scheme flaw.
 5. EuroVoc indexing (`eli:is_about`) — proposed v0.2+.
 6. Granularity below point (sentence, word) — out of scope today.
 7. Transposed EU directives — via the EU ELI (`data.europa.eu/eli/dir/…`) directly.
@@ -298,12 +304,20 @@ e.g. https://eli.gov.pt/eli/pt/dec-lei/2026/22/pt
 
 Advantages over the production `data.dre.pt` template:
 
-- **Self-sufficient:** constructible from any citation (`Decreto-Lei n.º 22/2026`
-  → URI) **without the publication date**. The `data.dre.pt` template requires
-  month/day, which only INCM holds — forcing a lookup. This is the main argument.
+- **Self-sufficient against abbreviated citations:** constructible even from an
+  *abbreviated* citation (`Decreto-Lei n.º 22/2026`, lacking "de {day} de
+  {month}"), whereas the `data.dre.pt` template requires the full date.
+  **Frank note:** the *complete* legistic citation always carries the date
+  ("Decreto-Lei n.º 22/2026, de {day} de {month}"), so `data.dre.pt` is equally
+  constructible from it; this advantage of `eli.gov.pt` applies only to the
+  abbreviated-citation case.
 - **Explicit jurisdiction** (`pt-20`/`pt-30`) for regional acts.
-- Closer to the EU year+number pattern (`data.europa.eu/eli/reg/2016/679/oj`).
+- Aesthetic alignment with the EU **year+number** pattern
+  (`data.europa.eu/eli/reg/2016/679/oj`).
 
 This form is **not canonical** in v0.2 — it is recorded as a technical input for
-the meeting. The AKN-PT validator accepts both (tolerance, cf. `EliPtUriType`);
+the meeting. **Frank assessment:** INCM's form (type/number/date) is **not
+wrong** — it is the Portuguese legistic tradition, where an act is cited by its
+date; the `eli.gov.pt` (year+number) form is merely an EU-aligned aesthetic
+alternative. The AKN-PT validator accepts both (tolerance, cf. `EliPtUriType`);
 the converter (`conversion.py`) emits both.

@@ -101,7 +101,9 @@ Por decisão da DAPL (chefia), **não se espera pela reunião**: o projeto passa
 a tratar o **template de produção da INCM (`data.dre.pt`) como o ELI-PT
 CANÓNICO**, alinhando desde já com o que Portugal tem implementado. A forma
 anterior da DAPL (`eli.gov.pt`, ano+número, jurisdição-first) é mantida como
-**evolução a propor à INCM**, não como canónica.
+**evolução a propor à INCM** (justificada por pontos menores — jurisdição
+explícita no URI, alinhamento estético com o padrão ano+número da UE — e não
+por "construtibilidade", ver caveat infra), não como canónica.
 
 **Template canónico (v0.2):**
 ```
@@ -120,11 +122,16 @@ Fragmento:     …#{eId}
 - Conversor `conversion.py` + testes: suporta as duas formas.
 - Documentação: spec ELI-PT, `uri-templates.md`, cap. 08, README.
 
-**Limitação registada (a levar à reunião):** o template `data.dre.pt` **não é
-construível a partir de uma citação** (exige a data de publicação completa,
-mês/dia, que a INCM detém). A forma proposta `eli.gov.pt` (ano+número) É
-auto-suficiente — é o principal argumento técnico a favor de uma evolução ou
-de um serviço de resolução INCM. Ver
+**Caveat registado (a levar à reunião):** o template `data.dre.pt` É construível
+a partir de uma citação legística COMPLETA — "Decreto-Lei n.º 43-B/2024, de 2 de
+julho" fornece tipo, número, ano, dia e mês; basta um parser extrair "..., de
+{dia} de {mês} [de {ano}]". O caveat real é restrito: uma citação ABREVIADA
+("DL 43-B/2024", sem a data) é insuficiente para o canónico — mas isso é citação
+incompleta por padrão legístico, não uma falha do esquema da INCM. A forma da
+INCM (data completa) não é errada: é a tradição legística PT. O que resta a favor
+da forma proposta `eli.gov.pt` (ano+número) são pontos menores — jurisdição
+explícita no URI e alinhamento estético com o padrão ano+número da UE — e a
+utilidade de um serviço de resolução INCM para citações abreviadas. Ver
 [`eli-pt/research/eli-pt-gap-analysis.md`](../../eli-pt/research/eli-pt-gap-analysis.md).
 
 Esta decisão **mantém-se sujeita a confirmação na reunião INCM de 2026-07-01**

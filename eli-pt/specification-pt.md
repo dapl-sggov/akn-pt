@@ -108,9 +108,15 @@ Exemplo real resolvível: `http://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre/pt
 - **Fragmento:** acrescenta `#{fragment}`.
   `https://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre/pt#art_5__para_1__lit_a`
 
-> **Limitação:** este template exige a **data de publicação completa**, que
-> uma citação não fornece — o URI canónico **não é construível a partir de uma
-> citação** sem lookup ao DRE. Ver §16 (forma proposta, auto-suficiente).
+> **Nota sobre construtibilidade:** este template exige a data de publicação
+> completa (ano/mês/dia). Essa data está presente na **citação legística
+> completa** em português — ex. "Decreto-Lei n.º 43-B/2024, de 2 de julho" —
+> pelo que o URI canónico **é construível a partir de uma citação completa**:
+> basta o parser extrair a componente "..., de {dia} de {mês} [de {ano}]" e
+> mapear o nome do mês para o seu número. **Caveat:** uma citação *abreviada*
+> ("DL 43-B/2024", sem "de {dia} de {mês}") é insuficiente — mas isso é uma
+> citação incompleta por padrão legístico, não uma falha do esquema. Ver §16
+> (forma proposta, cujos méritos são jurisdição explícita + estética UE).
 
 ---
 
@@ -283,8 +289,11 @@ Uma implementação **conforma estrita** acresce:
    versão consolidada (assumimos `/{YYYY-MM-DD}/dre/pt`).
 3. **Código de língua** — `pt` (no URI, convenção INCM) vs `por` (ISO 639-2,
    `<FRBRlanguage>`). Confirmar.
-4. **Construtibilidade** — o template `data.dre.pt` exige a data de publicação;
-   propor à INCM um serviço de resolução (citação→ELI) ou a forma auto-suficiente (§16).
+4. **Construtibilidade** — o template `data.dre.pt` é construível a partir de
+   uma **citação legística completa** (que inclui "..., de {dia} de {mês}").
+   Confirmar com a INCM uma tabela canónica de nomes de mês → número e,
+   opcionalmente, um serviço de resolução para o caso de **citações
+   abreviadas** (sem a data) — não como remédio para uma falha do esquema.
 5. **EuroVoc** — indexação `eli:is_about`. Proposta: v0.2+.
 6. **Granularidade abaixo da alínea** — fora do escopo; cobrir se houver caso real.
 7. **Directivas UE transpostas** — pelo ELI europeu directo (`data.europa.eu/eli/dir/…`).
@@ -317,13 +326,20 @@ ex.: https://eli.gov.pt/eli/pt/dec-lei/2026/22/pt
 
 Vantagens face ao template `data.dre.pt` em produção:
 
-- **Auto-suficiente:** construível a partir de qualquer citação
-  (`Decreto-Lei n.º 22/2026` → URI), **sem precisar da data de publicação**.
-  O template `data.dre.pt` exige mês/dia, que só a INCM tem — obrigando a um
-  lookup. Esta é a principal mais-valia a defender.
+- **Auto-suficiente face a citações abreviadas:** construível mesmo a partir de
+  uma citação *abreviada* (`Decreto-Lei n.º 22/2026`, sem "de {dia} de {mês}"),
+  enquanto o template `data.dre.pt` exige a data completa. **Nota franca:** a
+  citação legística *completa* inclui sempre a data ("Decreto-Lei n.º 22/2026,
+  de {dia} de {mês}"), pelo que o template `data.dre.pt` também é construível a
+  partir dela; esta vantagem da forma `eli.gov.pt` aplica-se só ao caso da
+  citação abreviada.
 - **Jurisdição explícita** (`pt-20`/`pt-30`) para actos regionais.
-- Mais próxima do padrão ano+número da UE (`data.europa.eu/eli/reg/2016/679/oj`).
+- Alinhamento estético com o padrão **ano+número** da UE
+  (`data.europa.eu/eli/reg/2016/679/oj`).
 
 Esta forma **não é canónica** em v0.2 — fica registada como contributo técnico
-para a reunião. O validador AKN-PT aceita ambas (tolerância, cf. `EliPtUriType`);
-o conversor (`conversion.py`) produz as duas.
+para a reunião. **Análise franca:** a forma da INCM (tipo/número/data) **não é
+errada** — é a tradição legística portuguesa, em que o acto se cita pela data;
+a forma `eli.gov.pt` (ano+número) é apenas uma alternativa estética alinhada
+com a UE. O validador AKN-PT aceita ambas (tolerância, cf. `EliPtUriType`); o
+conversor (`conversion.py`) produz as duas.

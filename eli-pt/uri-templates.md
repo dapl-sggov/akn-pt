@@ -60,18 +60,29 @@ https://data.dre.pt/eli/diario/{série}/{número}/{ano}/{suplemento}/{lang}/{fmt
 > (JORAA/JORAM), não no DR série I — a resolução ELI regional fica a confirmar
 > com a INCM e as Regiões.
 
-## Limitação importante (a levar à reunião INCM)
+## Construtibilidade e citações (a confirmar na reunião INCM)
 
-O template `data.dre.pt` **exige a data de publicação completa** (mês/dia).
-Uma citação (`Decreto-Lei n.º 22/2026`) ou um URL de detalhe do portal
-(`.../detalhe/decreto-lei/22-2026-HASH`) **não contêm essa data** — só a INCM
-a tem. Logo, **o URI canónico não é construível a partir de uma citação** sem
-um lookup ao DRE. Esta é a principal fraqueza face à forma proposta abaixo.
+O template `data.dre.pt` exige a data de publicação completa (ano/mês/dia).
+Essa data consta da **citação legística completa** — ex. `Decreto-Lei
+n.º 43-B/2024, de 2 de julho` — pelo que **o URI canónico é construível a
+partir de uma citação completa**: o parser extrai "..., de {dia} de {mês}
+[de {ano}]" e mapeia o nome do mês para o seu número.
+
+**Casos insuficientes** (não por falha do esquema, mas por falta de dados na
+origem):
+- Citação **abreviada** (`Decreto-Lei n.º 22/2026`, sem "de {dia} de {mês}").
+- URL de detalhe do portal (`.../detalhe/decreto-lei/22-2026-HASH`), que não
+  expõe a data.
+
+Nestes casos é preciso um lookup ao DRE ou um serviço de resolução. A forma
+proposta abaixo (`eli.gov.pt`) cobre o caso da citação abreviada por desenho.
 
 ## Forma proposta anterior (DAPL) — evolução a propor
 
-Mantida no projeto como alternativa e argumento técnico (é **auto-suficiente**:
-construível a partir de qualquer citação, sem data):
+Mantida no projeto como alternativa e contributo técnico. É **auto-suficiente
+perante citações abreviadas** (construível mesmo sem a componente de data),
+ao passo que o template `data.dre.pt` exige a data completa — que, recorde-se,
+está presente em qualquer citação legística *completa*:
 
 ```
 https://eli.gov.pt/eli/{jur}/{tipo}/{ano}/{nº}/pt[/{pit}][.{fmt}][#{frag}]

@@ -114,6 +114,24 @@ const ImportParser = (() => {
   // Data inline "de DD de MMMM (de YYYY)?" — partilhada entre parse() e parseBody()
   const DATE_INLINE_RE = /de\s+(\d{1,2})\s+de\s+(\w+)(?:\s+de\s+(\d{4}))?/i;
 
+  // Meses PT → número. Usado para construir a data do URI canónico data.dre.pt
+  // a partir da data presente na citação legística completa do habilitante.
+  const MONTHS_PT = {
+    janeiro: 1, fevereiro: 2, 'março': 3, marco: 3, abril: 4, maio: 5, junho: 6,
+    julho: 7, agosto: 8, setembro: 9, outubro: 10, novembro: 11, dezembro: 12,
+  };
+  // "2 de julho de 2024" / "2 de julho" → { yyyy, mm, dd } | null
+  function _citationDate(dateText, fallbackYear) {
+    if (!dateText) return null;
+    const m = dateText.match(/(\d{1,2})\s+de\s+([A-Za-zçÇ]+)(?:\s+de\s+(\d{4}))?/i);
+    if (!m) return null;
+    const mo = MONTHS_PT[m[2].toLowerCase().replace('ç', 'c')];
+    if (!mo) return null;
+    const yyyy = m[3] || fallbackYear;
+    if (!yyyy) return null;
+    return { yyyy, mm: String(mo).padStart(2, '0'), dd: String(m[1]).padStart(2, '0') };
+  }
+
   // Annex
   const ANNEX_RE = /^Anexo(?:\s+([IVX]+|\d+))?(?:\s*\(.*\))?\s*$/i;
 
@@ -559,16 +577,24 @@ const ImportParser = (() => {
     const dls = candidates.filter(c => c.type === 'dec-lei');
     const choice = dls.length ? dls[dls.length - 1] : candidates[candidates.length - 1];
 
-    // CANÓNICO = data.dre.pt, mas exige a data de publicação (mês/dia) que a
-    // citação do habilitante não dá. Se o diploma for conhecido (DreMock tem
-    // a data) usamos a forma canónica; senão, a forma construível eli.gov.pt
-    // (a resolver para o URI canónico via lookup ao DRE).
-    let href = `https://eli.gov.pt/eli/pt/${choice.type}/${choice.year}/${choice.number}/pt`;
-    if (typeof DreMock !== 'undefined' && DreMock.all) {
+    // A citação legística completa do habilitante inclui a data — ex.
+    // "ao abrigo do Decreto-Lei n.º 43-B/2024, de 2 de julho" — que dá
+    // tipo, número, ano, DIA e MÊS. Quando a data está presente (capturada
+    // em choice.dateText), o URI canónico data.dre.pt
+    // (/eli/{tipo}/{nº}/{ano}/{mês}/{dia}) é construível directamente.
+    // Só quando o habilitante é citado de forma ABREVIADA (sem ", de {dia}
+    // de {mês}") é que falta a data — aí tenta-se o DreMock e, por fim, a
+    // forma eli.gov.pt (ano+número).
+    let href = null;
+    const cd = _citationDate(choice.dateText, choice.year);
+    if (cd) {
+      href = `https://data.dre.pt/eli/${choice.type}/${choice.number}/${cd.yyyy}/${cd.mm}/${cd.dd}`;
+    } else if (typeof DreMock !== 'undefined' && DreMock.all) {
       const needle = `/eli/${choice.type}/${choice.number}/${choice.year}/`;
       const hit = DreMock.all().find(e => e.eli && e.eli.includes(needle));
       if (hit) href = hit.eli;
     }
+    if (!href) href = `https://eli.gov.pt/eli/pt/${choice.type}/${choice.year}/${choice.number}/pt`;
     r.habilitante = href;
     r.habilitanteLabel = choice.raw;
   }

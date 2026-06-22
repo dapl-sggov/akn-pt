@@ -155,12 +155,21 @@ têm equivalente ELI-PT canónico:
 https://data.dre.pt/eli/dec-lei/22/2026/MM/DD
 ```
 
-**Atenção:** o URL de detalhe só contém número-ano (não a data completa). Para
-construir o URI canónico é preciso a **data de publicação** (mês/dia), que só a
-INCM tem — o conversor de referência (`eli-pt/conversion.py`), sem essa data,
-devolve a forma proposta `eli.gov.pt` (ano+número, construível); com a data,
-devolve a forma canónica `data.dre.pt`. A INCM **deveria** publicar
-redireccionamentos HTTP 301 dos URLs legados para os ELI-PT correspondentes.
+**Atenção:** o URL de detalhe do portal dre.pt só contém número-ano (não a
+data completa); a partir DESSE URL, construir o URI canónico exige a **data de
+publicação** (mês/dia), que aí não consta. Note-se, porém, que a **citação
+legística completa** em português inclui sempre a data — ex. "Decreto-Lei
+n.º 43-B/2024, de 2 de julho" —, fornecendo tipo, número, ano, dia e mês; a
+partir de uma citação completa o template canónico `data.dre.pt`
+(`/eli/{tipo}/{nº}/{ano}/{mês}/{dia}/p/dre/pt`) **é construível**, bastando o
+parser extrair a componente "..., de {dia} de {mês} [de {ano}]". O conversor de
+referência (`eli-pt/conversion.py`), quando parte do URL de detalhe sem data,
+devolve a forma proposta `eli.gov.pt` (ano+número); quando dispõe da data —
+seja da citação, seja da tabela INCM — devolve a forma canónica `data.dre.pt`.
+A INCM **deveria** publicar redireccionamentos HTTP 301 dos URLs legados para
+os ELI-PT correspondentes. Caveat: uma citação ABREVIADA ("DL 43-B/2024", sem
+"de {dia} de {mês}") é insuficiente para construir o URI canónico — mas isso é
+citação incompleta por padrão legístico, não uma falha do esquema da INCM.
 
 ## 8.6 Compromissos de permanência
 
@@ -203,7 +212,7 @@ forma canónica, em que o `/{type}/` precede o número):
 | Erro | Sintoma | Correcção |
 |---|---|---|
 | URI sem `/eli/` | Não casa o padrão; XSD rejeita | Acrescentar `/eli/` a seguir ao domínio |
-| Data de publicação em falta | URI canónico incompleto / não casa | O template data.dre.pt exige `/{ano}/{mês}/{dia}` — usar a data de publicação no DR |
+| Data de publicação em falta | URI canónico incompleto / não casa | O template data.dre.pt usa `/{ano}/{mês}/{dia}` — extrair a data da citação completa ("..., de {dia} de {mês} [de {ano}]") ou usar a data de publicação no DR |
 | Formato como extensão (`.xml`) na forma canónica | Schematron de coerência falha | Na forma canónica o formato é segmento (`/xml`), não extensão |
 | Maiúsculas no tipo | Não casa; XSD rejeita | Slug em minúsculas (`dec-lei`, não `Dec-Lei`) |
 | Slug PT em vez de slug ELI (e.g. `decreto-lei` em vez de `dec-lei`) | XSD passa, Schematron falha por coerência name↔URI | Usar slug ELI canónico (cap. 5 ELI-PT) |
