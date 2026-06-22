@@ -1,6 +1,6 @@
 # ADR-0009 — Domínio ELI-PT: placeholder até coordenação INCM
 
-- **Estado:** Proposed
+- **Estado:** Proposed — **revisto 2026-06-22 (ver "Revisão" no fim)**
 - **Data:** 2026-05-19
 
 ## Contexto
@@ -53,3 +53,42 @@ Alternativas consideradas e rejeitadas:
 **Mitigação:** README de `eli-pt/` em destaque visual avisa que o domínio é
 placeholder. Validador emite warning quando encontra URIs com
 `eli.gov.pt` em ficheiros submetidos para publicação (futuro: v0.2.0).
+
+---
+
+## Revisão 2026-06-22 — o pressuposto mudou
+
+A pesquisa de suporte à reunião INCM de 2026-07-01 (ver
+[`eli-pt/research/eli-international-dossier.md`](../../eli-pt/research/eli-international-dossier.md))
+revelou um facto que **invalida o enquadramento original** desta ADR:
+
+> **`data.dre.pt` não é uma alternativa "com risco de rejeição" — é o domínio
+> ELI que Portugal JÁ tem em produção desde 2016.** Portugal é implementador
+> ELI registado no EUR-Lex (Pilar I em 2016-12-19, Pilar II em 2017-07-27),
+> operado pela INCM, com URIs do tipo
+> `http://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre/pt/html`.
+
+Consequências para esta decisão:
+
+1. **A questão deixa de ser "que domínio inventar"** e passa a ser
+   **"realinhar com o `data.dre.pt` existente da INCM"**. O placeholder
+   `eli.gov.pt` mantém-se útil só enquanto a reunião não fixar a posição;
+   a recomendação substantiva reforça-se: **adoptar `data.dre.pt`**.
+
+2. **Surge uma divergência estrutural não prevista:** o template em produção
+   da INCM usa **data completa** (`/{tipo}/{nº}/{ano}/{mês}/{dia}/p/dre/{lang}/
+   {fmt}`), enquanto a nossa proposta ELI-PT v0.1.0 usa **ano+número**
+   (`/eli/pt/{tipo}/{ano}/{nº}/pt`). Esta divergência é agora parte integrante
+   da decisão de domínio e tem de ser resolvida com a INCM — ver
+   [`eli-pt/research/eli-pt-gap-analysis.md`](../../eli-pt/research/eli-pt-gap-analysis.md),
+   dimensão "Estrutura do URI".
+
+3. **A decisão final (domínio + estrutura) fica reservada para a reunião INCM
+   de 2026-07-01** e respectiva ata; esta ADR será actualizada para
+   "Accepted" (ou substituída por ADR-0012) com a posição acordada. Ver
+   [`eli-pt/meeting-incm-2026-07-01.md`](../../eli-pt/meeting-incm-2026-07-01.md).
+
+Até lá, **nada muda no código**: `eli.gov.pt` continua como placeholder
+parametrizável. A migração para o domínio + estrutura finais será mecânica
+(o conversor e o XSD já tratam o domínio como variável; a estrutura
+ano+número↔data exigirá ajuste ao regex e ao `conversion.py`).
