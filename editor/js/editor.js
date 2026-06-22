@@ -21,11 +21,94 @@ const Editor = (() => {
     return e;
   };
 
+  // ------------------------------------------------------------------------
+  // Suggestions — captura de selecção em textareas + popover para criar/rever
+  // ------------------------------------------------------------------------
+  // O estado da selecção activa é guardado num único slot global; cada
+  // textarea bind a um listener mouseup/keyup que actualiza este slot.
+  // O botão "Sugerir" lê este slot para pre-popular o modal.
+  let _activeSelection = null;  // { eId, field, start, end, text }
+
+  function _captureSelection(textarea, eId, field) {
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const value = textarea.value || '';
+    _activeSelection = (start !== end)
+      ? { eId, field, start, end, text: value.slice(start, end) }
+      : null;
+  }
+
+  // Helper para anexar selection-capture a um textarea/input. Aplicado a
+  // .article-heading, .paragraph-content, .recital-content, .point-content,
+  // .subpoint-content (cf. renderArticle / renderParagraph / renderRecitalEditor).
+  function _bindSelectionCapture(el, eId, field) {
+    if (!el) return;
+    const upd = () => _captureSelection(el, eId, field);
+    el.addEventListener('mouseup', upd);
+    el.addEventListener('keyup', upd);
+    el.addEventListener('select', upd);
+    el.addEventListener('blur', () => { /* não limpa: outras UIs podem ler */ });
+  }
+
   function toast(msg, kind = '') {
     const t = $('#toast');
     t.textContent = msg;
     t.className = `toast ${kind}`;
     setTimeout(() => t.classList.add('hidden'), 3000);
+  }
+
+  // Toast com botão de acção (ex.: "Anular"). Persiste durante `ms` (default 5s)
+  // a menos que o utilizador clique no botão. Usa o mesmo nó #toast da UI.
+  let _toastActionTimer = null;
+  function toastAction(msg, actionLabel, actionFn, ms = 5000) {
+    const t = $('#toast');
+    if (_toastActionTimer) { clearTimeout(_toastActionTimer); _toastActionTimer = null; }
+    t.innerHTML = '';
+    t.className = 'toast toast-action';
+    const span = document.createElement('span');
+    span.className = 'toast-msg';
+    span.textContent = msg;
+    const btn = document.createElement('button');
+    btn.className = 'toast-action-btn';
+    btn.type = 'button';
+    btn.textContent = actionLabel;
+    btn.addEventListener('click', () => {
+      try { actionFn(); } finally {
+        t.classList.add('hidden');
+        if (_toastActionTimer) clearTimeout(_toastActionTimer);
+      }
+    });
+    t.appendChild(span);
+    t.appendChild(btn);
+    _toastActionTimer = setTimeout(() => t.classList.add('hidden'), ms);
+  }
+
+  // Mostra o toast de "Refs reescritas — anular" depois de um renumber
+  // cascading. Lê o sumário do doc (State.renumberArticles já o preencheu)
+  // e o snapshot de undo (in-memory em State). Consume-os de forma a não
+  // disparar duas vezes para a mesma operação.
+  function _maybeShowRenumberToast(doc) {
+    if (!doc || !doc._lastRenumberSummary) return;
+    if (!State.hasRenumberUndo()) {
+      // Já foi consumido por outra UI — limpa o flag e sai.
+      delete doc._lastRenumberSummary;
+      return;
+    }
+    const s = doc._lastRenumberSummary;
+    const parts = [];
+    if (s.textRewrites)        parts.push(`${s.textRewrites} ref(s) actualizada(s)`);
+    if (s.commentsRemapped)    parts.push(`${s.commentsRemapped} coment(s) re-anchorado(s)`);
+    if (s.amendmentsRemapped)  parts.push(`${s.amendmentsRemapped} alteraç(s) re-anchorada(s)`);
+    const msg = parts.join(' · ') || 'Renumeração aplicada';
+    toastAction(msg, 'Anular', () => {
+      const undo = State.consumeRenumberUndo();
+      if (!undo) { toast('Não há rascunho para restaurar.', 'error'); return; }
+      State.init(undo); State.saveDraft();
+      refresh();
+      toast('Renumeração anulada.', 'success');
+    });
+    // Limpar o flag — uma single-shot por op.
+    delete doc._lastRenumberSummary;
   }
 
   // ----- Screen switching --------------------------------------------------
@@ -97,6 +180,10 @@ const Editor = (() => {
     _applyInlineValidation(doc);
     // Persistir no slot da pilha (não cria spam — Stack faz merge)
     if (typeof Stack !== 'undefined') Stack.persistActive();
+    // Renumber cascading: mostrar toast com "anular" depois de uma operação
+    // que produziu rewrites de refs / re-anchors. Idempotente: o sumário é
+    // limpo após o primeiro disparo.
+    _maybeShowRenumberToast(doc);
     // Mostrar/esconder opcoes de export do alterador
     const isAmender = doc.kind === 'amender';
     const a = $('#export-amender-xml'); if (a) a.hidden = !isAmender;
@@ -230,9 +317,19 @@ const Editor = (() => {
 
     // Body
     const bodyContainer = el('div', { class: 'doc-block' });
+    const bodyHeaderActions = doc.body.kind === 'articles' || doc.body.kind === 'hierarchic'
+      ? el('div', { class: 'block-actions' },
+          el('button', { class: 'btn-small',
+            title: 'Promover articulado a estrutura hierárquica + adicionar capítulo',
+            on: { click: () => { State.addContainer('chapter'); refresh(); } }
+          }, '+ capítulo'))
+      : null;
     bodyContainer.appendChild(el('div', { class: 'block-header' },
       el('span', { class: 'block-label' },
-        doc.body.kind === 'articles' ? 'Articulado' : 'Pontos resolutivos'),
+        doc.body.kind === 'articles' ? 'Articulado'
+        : doc.body.kind === 'hierarchic' ? 'Articulado (hierárquico)'
+        : 'Pontos resolutivos'),
+      bodyHeaderActions,
     ));
 
     if (doc.body.kind === 'articles') {
@@ -241,6 +338,8 @@ const Editor = (() => {
         State.insertArticleAt(null); refresh();
       }, '+ artigo no início'));
       doc.body.items.forEach(a => bodyContainer.appendChild(renderArticle(a, doc)));
+    } else if (doc.body.kind === 'hierarchic') {
+      doc.body.items.forEach(item => bodyContainer.appendChild(_renderBodyItemHierarchic(item, doc, 0)));
     } else {
       bodyContainer.appendChild(renderInsertHere(() => {
         State.insertParagraphAt(null, null); refresh();
@@ -324,8 +423,73 @@ const Editor = (() => {
     );
   }
 
+  // Conjunto de container types AKN — partilhado entre renderers para
+  // distinguir Container de Article em body.kind='hierarchic'.
+  const _CONTAINER_TYPES_UI = new Set(['book', 'part', 'title', 'chapter', 'section', 'subsection']);
+
+  // Render recursivo de um item do body hierárquico — Container ou Article.
+  // v0.1.2: containers ganham botões de edição: heading editável, botões
+  // mover ↑↓, remover, e adicionar sub-container do tipo seguinte na
+  // hierarquia. Articles folha usam renderArticle normal.
+  //
+  // Vocabulário de sub-tipos por contexto (PT): dentro de um capítulo pode
+  // adicionar-se uma secção; dentro de uma secção, subsecção. O book/part/
+  // title support fica para uso direto via API por agora.
+  const _SUBCONTAINER_FOR = {
+    book: 'part', part: 'title', title: 'chapter',
+    chapter: 'section', section: 'subsection',
+  };
+
+  function _renderBodyItemHierarchic(item, doc, depth) {
+    if (item && _CONTAINER_TYPES_UI.has(item.containerType)) {
+      const wrapper = el('div', { class: `container-block container-${item.containerType}`,
+        id: item.id,
+        style: `margin-left: ${depth * 12}px; border-left: 2px solid var(--color-navy-soft); padding-left: 12px; margin-top: 12px;`,
+      });
+      const subType = _SUBCONTAINER_FOR[item.containerType];
+      const actions = el('div', { class: 'block-actions container-actions' },
+        el('button', { class: 'btn-move btn-small', title: 'Mover para cima',
+          on: { click: () => { State.moveContainerUp(item.id); refresh(); } } }, '↑'),
+        el('button', { class: 'btn-move btn-small', title: 'Mover para baixo',
+          on: { click: () => { State.moveContainerDown(item.id); refresh(); } } }, '↓'),
+        subType ? el('button', { class: 'btn-small',
+          title: `Adicionar ${subType} dentro deste ${item.containerType}`,
+          on: { click: () => { State.addContainer(subType, { parentEId: item.id }); refresh(); } }
+        }, `+ ${subType}`) : null,
+        el('button', { class: 'btn-small btn-danger',
+          title: 'Remover container (filhos sobem para o nível superior)',
+          on: { click: () => {
+            if (!confirm(`Remover ${item.num || item.containerType}? Os artigos/sub-secções sobem para o nível superior.`)) return;
+            State.removeContainer(item.id, { keepChildren: true }); refresh();
+          }} }, '× remover'),
+      );
+      wrapper.appendChild(el('div', { class: 'container-head' },
+        el('div', { class: 'container-head-row' },
+          el('span', { class: 'container-type-label' }, item.containerType),
+          el('strong', { class: 'container-num' }, item.num || ''),
+          actions,
+        ),
+        el('input', {
+          type: 'text', class: 'container-heading', value: item.heading || '',
+          placeholder: 'Epígrafe (ex.: Disposições gerais)',
+          on: { input: e => { State.updateContainer(item.id, { heading: e.target.value }); }},
+        }),
+      ));
+      (item.items || []).forEach(child =>
+        wrapper.appendChild(_renderBodyItemHierarchic(child, doc, depth + 1)));
+      return wrapper;
+    }
+    // Article folha — usa renderer normal
+    return renderArticle(item, doc);
+  }
+
   function renderArticle(a, doc) {
     const nC = Comments.count(doc, a.id);
+    const nS = typeof Suggestions !== 'undefined' ? Suggestions.count(doc, a.id) : 0;
+    const headingTa = el('textarea', { class: 'article-heading autosize', rows: 1, placeholder: 'Epígrafe',
+      on: { input: e => { State.updateArticle(a.id, { heading: e.target.value }); _autosize(e.target); } }
+    }, a.heading || '');
+    _bindSelectionCapture(headingTa, a.id, 'heading');
     return el('div', { class: 'article-wrapper' },
       el('div', { class: 'article-block doc-block', id: a.id },
         el('div', { class: 'block-header' },
@@ -339,6 +503,10 @@ const Editor = (() => {
               title: nC ? `${nC} comentário(s)` : 'Adicionar comentário',
               on: { click: () => openCommentThread(a.id, `${a.num} — ${a.heading || ''}`) } },
               nC ? `💬 ${nC}` : '💬'),
+            el('button', { class: 'btn-suggest' + (nS ? ' has-suggestions' : ''),
+              title: nS ? `${nS} sugestão(ões) pendente(s)` : 'Sugerir alteração à epígrafe',
+              on: { click: () => openSuggestionModal(a.id, 'heading', `${a.num} — epígrafe`) } },
+              nS ? `✎ ${nS}` : '✎'),
             el('button', { on: { click: () => { State.addParagraph(a.id); refresh(); } } }, '+ número'),
             el('button', { on: { click: () => { State.removeArticle(a.id); refresh(); } } }, '× remover artigo')
           )
@@ -349,9 +517,7 @@ const Editor = (() => {
         el('input', { type: 'text', class: 'article-num', value: a.num,
           on: { input: e => State.updateArticle(a.id, { num: e.target.value }) }
         }),
-        el('textarea', { class: 'article-heading autosize', rows: 1, placeholder: 'Epígrafe',
-          on: { input: e => { State.updateArticle(a.id, { heading: e.target.value }); _autosize(e.target); } }
-        }, a.heading || ''),
+        headingTa,
         // Botão "+ parágrafo no início" do articulado interno (apenas se já houver paragrafos)
         a.paragraphs.length ? renderInsertHere(() => {
           State.insertParagraphAt(a.id, null); refresh();
@@ -372,6 +538,12 @@ const Editor = (() => {
 
   function renderParagraph(p, articleId, doc) {
     const nC = Comments.count(doc, p.id);
+    const nS = typeof Suggestions !== 'undefined' ? Suggestions.count(doc, p.id) : 0;
+    const contentTa = el('textarea', { class: 'paragraph-content', value: p.content,
+      placeholder: 'Texto do número (ou texto introdutório se houver alíneas)',
+      on: { input: e => State.updateParagraph(p.id, articleId, { content: e.target.value }) }
+    }, p.content);
+    _bindSelectionCapture(contentTa, p.id, 'content');
     return el('div', { class: 'paragraph-block', id: p.id },
       el('div', { class: 'block-header' },
         el('span', { class: 'block-label' }, p.id),
@@ -384,6 +556,10 @@ const Editor = (() => {
             title: nC ? `${nC} comentário(s)` : 'Adicionar comentário',
             on: { click: () => openCommentThread(p.id, `Parágrafo ${p.num || ''}`) } },
             nC ? `💬 ${nC}` : '💬'),
+          el('button', { class: 'btn-suggest' + (nS ? ' has-suggestions' : ''),
+            title: nS ? `${nS} sugestão(ões) pendente(s)` : 'Sugerir alteração ao texto',
+            on: { click: () => openSuggestionModal(p.id, 'content', `Parágrafo ${p.num || p.id}`) } },
+            nS ? `✎ ${nS}` : '✎'),
           el('button', { on: { click: () => { State.addSubPoint(p.id, articleId); refresh(); } } }, '+ alínea'),
           el('button', { on: { click: () => { State.removeParagraph(p.id, articleId); refresh(); } } }, '× remover')
         )
@@ -394,10 +570,7 @@ const Editor = (() => {
         title: 'Deixe vazio se o artigo tem apenas um parágrafo / intro. Use 1 -, 2 -, … para vários números.',
         on: { input: e => State.updateParagraph(p.id, articleId, { num: e.target.value }) }
       }),
-      el('textarea', { class: 'paragraph-content', value: p.content,
-        placeholder: 'Texto do número (ou texto introdutório se houver alíneas)',
-        on: { input: e => State.updateParagraph(p.id, articleId, { content: e.target.value }) }
-      }, p.content),
+      contentTa,
       (p.subPoints && p.subPoints.length) ? el('div', { class: 'list-block' },
         ...p.subPoints.map(sp => renderSubPoint(sp, p.id, articleId))
       ) : null,
@@ -1083,11 +1256,211 @@ const Editor = (() => {
     return node;
   }
 
+  // ------------------------------------------------------------------------
+  // Modal: Suggestions — criar nova + listar pending para um (eId, field)
+  // ------------------------------------------------------------------------
+  function openSuggestionModal(eId, field, title) {
+    const doc = State.get();
+    if (!doc) return;
+    const body = $('#suggestion-modal-body');
+    $('#suggestion-modal-title').textContent = `Sugestões — ${title || eId}`;
+    body.innerHTML = '';
+
+    // ----- Bloco "Criar nova sugestão" -----
+    const create = document.createElement('div');
+    create.className = 'sug-create';
+    // Determinar selection — se _activeSelection corresponde a este (eId, field),
+    // usa-a; caso contrário pede ao utilizador para seleccionar texto primeiro.
+    const sel = (_activeSelection && _activeSelection.eId === eId && _activeSelection.field === field)
+      ? _activeSelection : null;
+    if (sel) {
+      const orig = document.createElement('div');
+      orig.className = 'sug-original';
+      orig.innerHTML = '<span class="sug-label">Texto seleccionado:</span> ' +
+        `<em>${_esc(sel.text)}</em> ` +
+        `<span class="muted small">(range ${sel.start}–${sel.end})</span>`;
+      create.appendChild(orig);
+      const ta = document.createElement('textarea');
+      ta.className = 'sug-proposed';
+      ta.rows = 3;
+      ta.placeholder = 'Texto proposto (substituirá a selecção quando aceite)';
+      ta.value = sel.text;  // pre-popular para editar
+      create.appendChild(ta);
+      const noteIn = document.createElement('input');
+      noteIn.type = 'text';
+      noteIn.className = 'sug-note';
+      noteIn.placeholder = 'Justificação (opcional)';
+      create.appendChild(noteIn);
+      const submit = document.createElement('button');
+      submit.className = 'btn-primary';
+      submit.textContent = 'Submeter sugestão';
+      submit.addEventListener('click', () => {
+        const proposed = ta.value;
+        if (proposed === sel.text) { toast('Texto proposto igual ao original.', 'warn'); return; }
+        try {
+          Suggestions.add(doc, eId, field, { start: sel.start, end: sel.end }, proposed,
+            { note: noteIn.value, author: '' });
+          if (typeof Activity !== 'undefined') Activity.log('suggestion', { eId, field });
+          State.saveDraft();
+          openSuggestionModal(eId, field, title);  // re-render lista
+          refresh();
+        } catch (err) { toast('Erro: ' + err.message, 'error'); }
+      });
+      create.appendChild(submit);
+    } else {
+      create.innerHTML = '<p class="hint">Para sugerir uma alteração, primeiro <strong>seleccione o texto</strong> que pretende alterar dentro do parágrafo ou epígrafe, e clique novamente em <kbd>✎</kbd>.</p>';
+    }
+    body.appendChild(create);
+
+    // ----- Lista de sugestões existentes -----
+    const list = Suggestions.list(doc, eId).filter(s => s.field === field);
+    if (list.length) {
+      const sep = document.createElement('hr');
+      sep.className = 'sug-sep';
+      body.appendChild(sep);
+      const h = document.createElement('h4');
+      h.className = 'sug-section-title';
+      h.textContent = 'Sugestões registadas';
+      body.appendChild(h);
+      list.forEach(s => body.appendChild(_renderSuggestionItem(s, eId, field, title)));
+    }
+
+    $('#suggestion-modal').classList.remove('hidden');
+  }
+
+  function _renderSuggestionItem(s, eId, field, title) {
+    const wrap = document.createElement('div');
+    wrap.className = 'sug-item sug-status-' + s.status;
+    const meta = document.createElement('div');
+    meta.className = 'sug-meta';
+    const dt = new Date(s.date).toLocaleString('pt-PT');
+    meta.innerHTML = `<span class="sug-author">${_esc(s.author || 'anónimo')}</span> · ` +
+      `<span class="sug-date">${dt}</span> · ` +
+      `<span class="sug-badge sug-badge-${s.status}">${s.status}</span>`;
+    wrap.appendChild(meta);
+    const diff = document.createElement('div');
+    diff.className = 'sug-diff';
+    diff.innerHTML = Suggestions.renderDiffHtml(s);
+    wrap.appendChild(diff);
+    if (s.note) {
+      const n = document.createElement('div');
+      n.className = 'sug-note-display muted small';
+      n.textContent = '— ' + s.note;
+      wrap.appendChild(n);
+    }
+    const acts = document.createElement('div');
+    acts.className = 'sug-actions';
+    if (s.status === 'pending') {
+      const acc = document.createElement('button');
+      acc.className = 'btn-small btn-accept';
+      acc.textContent = 'Aceitar';
+      acc.addEventListener('click', () => {
+        const result = Suggestions.accept(State.get(), s.id);
+        State.saveDraft();
+        if (result && result.status === 'stale') {
+          toast('Sugestão obsoleta — o texto original foi alterado.', 'warn');
+        } else {
+          toast('Sugestão aplicada.', 'success');
+        }
+        if (typeof Activity !== 'undefined') Activity.log('suggestion-accepted', { eId });
+        openSuggestionModal(eId, field, title);
+        refresh();
+      });
+      acts.appendChild(acc);
+      const rej = document.createElement('button');
+      rej.className = 'btn-small btn-danger';
+      rej.textContent = 'Rejeitar';
+      rej.addEventListener('click', () => {
+        Suggestions.reject(State.get(), s.id);
+        State.saveDraft();
+        toast('Sugestão rejeitada.', 'success');
+        if (typeof Activity !== 'undefined') Activity.log('suggestion-rejected', { eId });
+        openSuggestionModal(eId, field, title);
+        refresh();
+      });
+      acts.appendChild(rej);
+    }
+    const del = document.createElement('button');
+    del.className = 'btn-small';
+    del.textContent = '× apagar';
+    del.title = 'Remove permanentemente';
+    del.addEventListener('click', () => {
+      if (!confirm('Apagar sugestão definitivamente?')) return;
+      Suggestions.remove(State.get(), s.id);
+      State.saveDraft();
+      openSuggestionModal(eId, field, title);
+      refresh();
+    });
+    acts.appendChild(del);
+    wrap.appendChild(acts);
+    return wrap;
+  }
+
+  function _esc(s) {
+    const div = document.createElement('div');
+    div.textContent = String(s == null ? '' : s);
+    return div.innerHTML;
+  }
+
   // ----- Modal: Snapshots -------------------------------------------------
+  // Vista activa no modal (chrono | phase). UI-state em memória, default chrono.
+  let _snapView = 'chrono';
+
   function openSnapshotsModal() {
+    _populatePhaseSelect();
     renderSnapshotsList();
     $('#snapshots-modal').classList.remove('hidden');
   }
+
+  function _populatePhaseSelect() {
+    const sel = $('#snap-phase');
+    if (!sel) return;
+    const doc = State.get();
+    const phases = (typeof Snapshots !== 'undefined' && Snapshots.getPhasesForActType)
+      ? Snapshots.getPhasesForActType(doc?.actName) : [];
+    // preservar valor seleccionado se possível
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">— sem fase —</option>';
+    phases.forEach(p => {
+      const o = document.createElement('option');
+      o.value = p; o.textContent = p;
+      sel.appendChild(o);
+    });
+    if (prev && phases.includes(prev)) sel.value = prev;
+  }
+
+  function _renderSnapEntry(s, opts = {}) {
+    const li = el('li', null,
+      el('div', { class: 'snap-row' },
+        el('span', { class: 'snap-label' + (s.auto ? ' snap-auto' : '') }, s.label),
+        s.phase && !opts.hidePhaseBadge
+          ? el('span', { class: 'snap-phase-badge', title: 'Fase do procedimento' }, s.phase)
+          : null,
+      ),
+      el('div', { class: 'snap-meta' }, `${new Date(s.date).toLocaleString('pt-PT')} · ${s.summary || ''}`),
+      el('div', { class: 'snap-actions' },
+        el('button', { class: 'btn-small', title: 'Carregar este snapshot como rascunho actual',
+          on: { click: () => {
+            const d = Snapshots.load(s.id);
+            if (!d) { toast('Erro ao carregar.', 'error'); return; }
+            if (!confirm('Substituir o rascunho actual por este snapshot?')) return;
+            State.init(d); State.saveDraft();
+            $('#snapshots-modal').classList.add('hidden');
+            refresh();
+            toast('Snapshot carregado.', 'success');
+          }}}, 'Abrir'),
+        el('button', { class: 'btn-small', title: 'Comparar este snapshot com o rascunho actual',
+          on: { click: () => openDiffModal(s.id, 'current') } }, 'Comparar'),
+        el('button', { class: 'btn-small btn-danger', on: { click: () => {
+          if (!confirm('Apagar snapshot?')) return;
+          Snapshots.delete(s.id);
+          renderSnapshotsList();
+        }}}, '×'),
+      ),
+    );
+    return li;
+  }
+
   function renderSnapshotsList() {
     const ul = $('#snap-list');
     ul.innerHTML = '';
@@ -1096,34 +1469,41 @@ const Editor = (() => {
       ul.appendChild(el('li', null, el('span', { class: 'muted small' }, 'Sem snapshots ainda.')));
       return;
     }
-    all.forEach(s => {
-      const li = el('li', null,
-        el('div', null,
-          el('span', { class: 'snap-label' + (s.auto ? ' snap-auto' : '') }, s.label),
-        ),
-        el('div', { class: 'snap-meta' }, `${new Date(s.date).toLocaleString('pt-PT')} · ${s.summary || ''}`),
-        el('div', { class: 'snap-actions' },
-          el('button', { class: 'btn-small', title: 'Carregar este snapshot como rascunho actual',
-            on: { click: () => {
-              const d = Snapshots.load(s.id);
-              if (!d) { toast('Erro ao carregar.', 'error'); return; }
-              if (!confirm('Substituir o rascunho actual por este snapshot?')) return;
-              State.init(d); State.saveDraft();
-              $('#snapshots-modal').classList.add('hidden');
-              refresh();
-              toast('Snapshot carregado.', 'success');
-            }}}, 'Abrir'),
-          el('button', { class: 'btn-small', title: 'Comparar este snapshot com o rascunho actual',
-            on: { click: () => openDiffModal(s.id, 'current') } }, 'Comparar'),
-          el('button', { class: 'btn-small btn-danger', on: { click: () => {
-            if (!confirm('Apagar snapshot?')) return;
-            Snapshots.delete(s.id);
-            renderSnapshotsList();
-          }}}, '×'),
-        ),
-      );
-      ul.appendChild(li);
+    // sincronizar UI dos botões
+    document.querySelectorAll('.snap-view-btn').forEach(b => {
+      const active = b.getAttribute('data-snap-view') === _snapView;
+      b.classList.toggle('is-active', active);
+      b.setAttribute('aria-selected', active ? 'true' : 'false');
     });
+
+    if (_snapView === 'chrono') {
+      all.forEach(s => ul.appendChild(_renderSnapEntry(s)));
+      return;
+    }
+
+    // Vista por fase — agrupa pelo vocabulário do tipo de acto, mais buckets
+    // residuais (qualquer fase usada mas fora do vocabulário, depois 'sem-fase').
+    const map = Snapshots.listByPhase();
+    const doc = State.get();
+    const orderedPhases = Snapshots.getPhasesForActType(doc?.actName).slice();
+    map.forEach((_v, k) => { if (k !== 'sem-fase' && !orderedPhases.includes(k)) orderedPhases.push(k); });
+    if (map.has('sem-fase')) orderedPhases.push('sem-fase');
+
+    let anyShown = false;
+    orderedPhases.forEach(phase => {
+      const entries = map.get(phase);
+      if (!entries || !entries.length) return;
+      anyShown = true;
+      const header = el('li', { class: 'snap-phase-group' },
+        el('div', { class: 'snap-phase-label' }, phase === 'sem-fase' ? 'Sem fase atribuída' : phase),
+        el('div', { class: 'snap-phase-count muted small' }, `${entries.length} entrada(s)`),
+      );
+      ul.appendChild(header);
+      entries.forEach(s => ul.appendChild(_renderSnapEntry(s, { hidePhaseBadge: true })));
+    });
+    if (!anyShown) {
+      ul.appendChild(el('li', null, el('span', { class: 'muted small' }, 'Sem milestones com fase atribuída — use o selector "Fase" ao criar.')));
+    }
   }
 
   // ----- Modal: Diff ------------------------------------------------------
@@ -1521,7 +1901,9 @@ const Editor = (() => {
     }
     if (doc.body && doc.body.items && doc.body.items.length) {
       crumbs.push({
-        label: doc.body.kind === 'articles' ? 'Articulado' : 'Pontos resolutivos',
+        label: doc.body.kind === 'articles' ? 'Articulado'
+             : doc.body.kind === 'hierarchic' ? 'Articulado'
+             : 'Pontos resolutivos',
         href: '#' + doc.body.items[0].id,
       });
     }
@@ -1548,25 +1930,33 @@ const Editor = (() => {
 
     // Mini-TOC scrollable — chips com TODOS os artigos
     // (sem limite arbitrário; scroll horizontal + fade no fim como indicador)
+    // Em modo articulado, os chips são draggable: arrastá-los reordena artigos
+    // e dispara renumber cascading. Não-articulado (RCM) não suporta reorder.
     if (doc.body && doc.body.items && doc.body.items.length > 1) {
       const wrap = el('div', { class: 'breadcrumb-mini-toc-wrap' });
+      const isArticulado = doc.body.kind === 'articles';
       const mini = el('div', {
-        class: 'breadcrumb-mini-toc',
+        class: 'breadcrumb-mini-toc' + (isArticulado ? ' is-reorderable' : ''),
         role: 'tablist',
-        'aria-label': 'Navegar para artigo',
+        'aria-label': isArticulado ? 'Navegar para artigo ou arrastar para reordenar' : 'Navegar para ponto',
       });
       const items = doc.body.items;
       items.forEach(a => {
-        mini.appendChild(el('a', {
+        const chip = el('a', {
           class: 'mini-toc-chip',
           href: '#' + a.id,
-          title: a.heading ? `${a.num || a.id} — ${a.heading}` : (a.num || a.id),
+          title: a.heading
+            ? `${a.num || a.id} — ${a.heading}${isArticulado ? ' · arraste para reordenar' : ''}`
+            : (a.num || a.id),
+          ...(isArticulado ? { draggable: 'true', 'data-eid': a.id } : {}),
           on: { click: (ev) => {
             ev.preventDefault();
             const target = document.querySelector('#' + a.id);
             if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
           }}
-        }, a.num || a.id));
+        }, a.num || a.id);
+        if (isArticulado) _wireMiniTocDrag(chip, mini);
+        mini.appendChild(chip);
       });
       wrap.appendChild(mini);
       // Contador discreto (não interfere com o scroll)
@@ -1574,6 +1964,64 @@ const Editor = (() => {
         `${items.length} ${items.length === 1 ? 'artigo' : 'artigos'}`));
       bc.appendChild(wrap);
     }
+  }
+
+  // Liga handlers HTML5 drag-and-drop a um chip do mini-TOC. Estado de drag
+  // (chip a ser arrastado) vive no `mini` container via dataset, para
+  // sobreviver ao dragover de outros chips.
+  function _wireMiniTocDrag(chip, mini) {
+    chip.addEventListener('dragstart', (ev) => {
+      const eid = chip.getAttribute('data-eid');
+      if (!eid) return;
+      ev.dataTransfer.setData('text/plain', eid);
+      ev.dataTransfer.effectAllowed = 'move';
+      chip.classList.add('is-dragging');
+      mini.dataset.dragSrc = eid;
+    });
+    chip.addEventListener('dragend', () => {
+      chip.classList.remove('is-dragging');
+      delete mini.dataset.dragSrc;
+      mini.querySelectorAll('.mini-toc-chip').forEach(c => {
+        c.classList.remove('drop-before', 'drop-after');
+      });
+    });
+    chip.addEventListener('dragover', (ev) => {
+      const src = mini.dataset.dragSrc;
+      const tgt = chip.getAttribute('data-eid');
+      if (!src || src === tgt) return;
+      ev.preventDefault();
+      ev.dataTransfer.dropEffect = 'move';
+      const rect = chip.getBoundingClientRect();
+      const before = (ev.clientX - rect.left) < rect.width / 2;
+      mini.querySelectorAll('.mini-toc-chip').forEach(c => {
+        c.classList.remove('drop-before', 'drop-after');
+      });
+      chip.classList.add(before ? 'drop-before' : 'drop-after');
+    });
+    chip.addEventListener('dragleave', () => {
+      chip.classList.remove('drop-before', 'drop-after');
+    });
+    chip.addEventListener('drop', (ev) => {
+      ev.preventDefault();
+      const src = ev.dataTransfer.getData('text/plain') || mini.dataset.dragSrc;
+      const tgt = chip.getAttribute('data-eid');
+      if (!src || !tgt || src === tgt) return;
+      const before = chip.classList.contains('drop-before');
+      const doc = State.get();
+      if (!doc || doc.body.kind !== 'articles') return;
+      const currentIds = doc.body.items.map(a => a.id);
+      const without = currentIds.filter(id => id !== src);
+      let tgtIdx = without.indexOf(tgt);
+      if (tgtIdx < 0) return;
+      const insertAt = before ? tgtIdx : tgtIdx + 1;
+      const next = without.slice(0, insertAt).concat([src], without.slice(insertAt));
+      State.reorderArticles(next);
+      // Limpar classes + refrescar UI; toast aparece automaticamente via refresh.
+      mini.querySelectorAll('.mini-toc-chip').forEach(c => {
+        c.classList.remove('drop-before', 'drop-after', 'is-dragging');
+      });
+      refresh();
+    });
   }
 
   // ---------- Régua de actividade unificada -------------------------------
@@ -2185,12 +2633,23 @@ const Editor = (() => {
     $('#snap-create')?.addEventListener('click', () => {
       try {
         const label = $('#snap-label').value.trim();
-        const e = Snapshots.save(label);
-        if (typeof Activity !== 'undefined') Activity.log('snapshot', { label: e.label });
-        toast(`Snapshot "${e.label}" criado.`, 'success');
+        const phase = $('#snap-phase')?.value || '';
+        const opts = phase ? { phase } : {};
+        const e = Snapshots.save(label, opts);
+        if (typeof Activity !== 'undefined') {
+          Activity.log(phase ? 'milestone' : 'snapshot', { label: e.label, phase: phase || null });
+        }
+        toast(phase ? `Milestone "${e.label}" (${phase}) criada.` : `Snapshot "${e.label}" criado.`, 'success');
         $('#snap-label').value = '';
         renderSnapshotsList();
       } catch (err) { toast(err.message, 'error'); }
+    });
+    // Toggle Cronológica/Por fase
+    document.querySelectorAll('.snap-view-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        _snapView = btn.getAttribute('data-snap-view') || 'chrono';
+        renderSnapshotsList();
+      });
     });
     $('#diff-run')?.addEventListener('click', runDiff);
 
@@ -2295,11 +2754,21 @@ const Editor = (() => {
   }
   function downloadConsolidatedXml(doc) {
     if (typeof LodaInline !== 'undefined') LodaInline.applyToAmendmentList(doc);
-    const consolidated = Amendment.applyAll(doc);
-    const xml = AknExport.toXml(consolidated);
+    // Usar a data da time-travel bar (UI permite escolher um {point-in-time});
+    // se for sentinela "hoje", consolida com todos os amendments aplicáveis até
+    // hoje. toAknXmlConsolidated produz FRBR + <passiveModifications> coerentes.
+    const isoDate = _amenderViewDate || _todayIso();
+    let xml;
+    try {
+      xml = Amendment.toAknXmlConsolidated(doc, isoDate);
+    } catch (e) {
+      toast('Erro a consolidar: ' + e.message, 'error');
+      return;
+    }
     const t = doc.target?.state || {};
-    const fn = `consolidado-${t.actName || 'doc'}-${t.number || 'X'}-${t.year || ''}.akn.xml`;
+    const fn = `consolidado-${t.actName || 'doc'}-${t.number || 'X'}-${t.year || ''}-${isoDate}.akn.xml`;
     _download(xml, fn, 'application/xml;charset=utf-8');
+    toast(`Versão consolidada a ${_fmtPtDate(isoDate)} exportada.`, 'success');
   }
   function _download(content, filename, mime) {
     const blob = new Blob([content], { type: mime });

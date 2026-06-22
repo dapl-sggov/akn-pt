@@ -49,12 +49,10 @@ const Preview = (() => {
     }
 
     if (doc.body.kind === 'articles') {
-      doc.body.items.forEach(a => {
-        out.push(`<div class="pv-article">`);
-        out.push(`  <p class="pv-article-num"><strong>${esc(a.num)}</strong> <em class="pv-article-heading">${textRich(a.heading, doc)}</em></p>`);
-        a.paragraphs.forEach(p => out.push(renderParagraph(p)));
-        out.push(`</div>`);
-      });
+      doc.body.items.forEach(a => out.push(renderArticle(a)));
+    } else if (doc.body.kind === 'hierarchic') {
+      // Renderiza recursivamente containers (chapter/section/etc.) e artigos
+      doc.body.items.forEach(item => out.push(renderBodyItem(item, 0)));
     } else {
       doc.body.items.forEach(p => out.push(renderParagraph(p)));
     }
@@ -96,6 +94,33 @@ const Preview = (() => {
 
     out.push(`</div>`);
     return out.join('\n');
+  }
+
+  function renderArticle(a) {
+    const out = [];
+    out.push(`<div class="pv-article">`);
+    out.push(`  <p class="pv-article-num"><strong>${esc(a.num)}</strong> <em class="pv-article-heading">${textRich(a.heading, _doc)}</em></p>`);
+    (a.paragraphs || []).forEach(p => out.push(renderParagraph(p)));
+    out.push(`</div>`);
+    return out.join('\n');
+  }
+
+  // Para body.kind='hierarchic': renderiza chapter/section/etc. com
+  // indentação progressiva, ou article folha.
+  const _CONTAINERS = new Set(['book', 'part', 'title', 'chapter', 'section', 'subsection']);
+  function renderBodyItem(item, depth) {
+    if (item && _CONTAINERS.has(item.containerType)) {
+      const indent = depth * 1.5;
+      const out = [];
+      out.push(`<div class="pv-container pv-${item.containerType}" style="margin-left:${indent}rem; border-left:2px solid #e0d8c4; padding-left:1rem; margin-top:1rem;">`);
+      if (item.num) out.push(`  <p class="pv-container-num" style="font-variant:small-caps; letter-spacing:0.05em; color:#0f2747;"><strong>${esc(item.num)}</strong></p>`);
+      if (item.heading) out.push(`  <p class="pv-container-heading"><em>${textRich(item.heading, _doc)}</em></p>`);
+      (item.items || []).forEach(child => out.push(renderBodyItem(child, depth + 1)));
+      out.push(`</div>`);
+      return out.join('\n');
+    }
+    // Article folha
+    return renderArticle(item);
   }
 
   function renderParagraph(p) {

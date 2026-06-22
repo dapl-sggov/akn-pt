@@ -262,6 +262,89 @@ const Amendment = (() => {
     return Array.from(set).sort();
   }
 
+  // ----- Export AKN-PT (versão consolidada / retificada) ----------------
+  //
+  // Em contraste com toAknXml() que produz o DIPLOMA ALTERADOR (com
+  // <quotedStructure>), toAknXmlConsolidated() produz a Expression
+  // CONSOLIDADA do diploma alvo a um ponto-no-tempo específico. O resultado
+  // partilha o FRBRWork URI com o original mas tem:
+  //   - FRBRExpression URI extendido com {isoDate}/pt
+  //   - <FRBRdate name="consolidation"/> (ou "rectification" se kind='rectification')
+  //   - <FRBRversionNumber> incrementado
+  //   - <analysis>/<passiveModifications> populado com 1 <textualMod> por
+  //     amendment aplicado, referenciando o diploma alterador como source.
+  //
+  // Notas v0.1.1:
+  //   - O motor de aplicação (applyAtDate / applyAll / _applyOne) JÁ existe;
+  //     esta função apenas serializa.
+  //   - Retificação distingue-se por kind='rectification' — produz FRBRdate
+  //     name="rectification" e type="rectification" nos textualMod. v0.1.1
+  //     não impõe novas regras Schematron para retificação (eventualmente
+  //     em v0.1.2 com TIMP-* — ver capítulo 13 da spec).
+  //
+  // API:
+  //   Amendment.toAknXmlConsolidated(amender, isoDate, opts?)
+  //     opts.kind: 'consolidation' (default) | 'rectification'
+  //     opts.version: número da Expression (default: 2)
+  //   → string XML AKN-PT válida (XSD + Schematron publication phase)
+
+  function toAknXmlConsolidated(amender, isoDate, opts) {
+    opts = opts || {};
+    const kind = opts.kind === 'rectification' ? 'rectification' : 'consolidation';
+    const version = opts.version || 2;
+    if (!amender.target) throw new Error('Sem diploma alvo.');
+    if (!isoDate || !/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) {
+      throw new Error('isoDate inválida (esperado YYYY-MM-DD).');
+    }
+    // 1. Aplicar amendments até à data isoDate (consume motor existente).
+    const consolidated = applyAtDate(amender, isoDate);
+    // 2. Flags FRBR (lidas por buildFrbr em akn-export.js).
+    consolidated._consolidatedAt = isoDate;
+    consolidated._consolidationKind = kind;
+    consolidated._consolidationVersion = version;
+    consolidated._consolidatedFrom = amender.target.uri;
+    // 3. Construir passiveModifications — 1 textualMod por amendment que
+    //    caiu dentro da janela isoDate (mesma lógica de applyAtDate).
+    const inForce = (amender.amendments || []).filter(am => {
+      const eff = am.effectiveDate || null;
+      if (eff === null) return true;
+      return eff <= isoDate;
+    });
+    const sourceUri = amender.uri || `https://eli.gov.pt/eli/${amender.country || 'pt'}/${amender.actName || 'dec-lei'}/${amender.year || '????'}/${amender.number || 'X'}/pt`;
+    const passive = inForce.map((am, idx) => {
+      // type AKN: "substitution" (replace), "repeal" (revoke), "insertion" (add-*),
+      // "rectification" para qualquer op num diploma com kind='rectification'.
+      let type;
+      if (kind === 'rectification') type = 'rectification';
+      else if (am.op === 'replace' || am.op === 'replace-paragraph' || am.op === 'replace-subpoint') type = 'substitution';
+      else if (am.op === 'revoke' || am.op === 'revoke-paragraph' || am.op === 'revoke-subpoint') type = 'repeal';
+      else if (am.op === 'add-after' || am.op === 'add-before') type = 'insertion';
+      else type = 'modification';
+      // destination: eId do artigo/parágrafo/subponto afectado
+      let destEid = am.articleId;
+      if (am.paraId) destEid = am.paraId;
+      if (am.subPointId) destEid = am.subPointId;
+      return {
+        id: `pm_${idx + 1}`,
+        type,
+        sourceUri,
+        eId: destEid,
+      };
+    });
+    consolidated._passiveModifications = passive;
+
+    // 4. Garantir metadados necessários ao exporter.
+    //    O target.state já tem actName, number, year, country, subtype,
+    //    publicationDate, adoptionDate, body, recitals, signatures, etc.
+    //    (cf. fromTarget → toDocState). Verificar campos mínimos:
+    if (!consolidated.actName) throw new Error('Target sem actName.');
+    if (!consolidated.number || !consolidated.year) {
+      throw new Error('Target sem número/ano FRBR.');
+    }
+
+    return AknExport.toXml(consolidated);
+  }
+
   // ----- Export AKN-PT (diploma alterador) -------------------------------
   //
   // Geramos um diploma alterador "padrão" da legística portuguesa:
@@ -428,7 +511,7 @@ ${paras}
   }
 
   return {
-    fromTarget, applyAll, applyAtDate, timeline, toAknXml,
+    fromTarget, applyAll, applyAtDate, timeline, toAknXml, toAknXmlConsolidated,
     addReplace, addRevoke, addAddAfter, addAddBefore,
     addReplaceParagraph, addReplaceSubPoint,
     addRevokeParagraph, addRevokeSubPoint,

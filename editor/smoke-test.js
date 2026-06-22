@@ -28,18 +28,22 @@ function loadFile(rel) {
     if (typeof LodaInline !== 'undefined') { global.LodaInline = LodaInline; globalThis.LodaInline = LodaInline; }
     if (typeof BluebellPt !== 'undefined') { global.BluebellPt = BluebellPt; globalThis.BluebellPt = BluebellPt; }
     if (typeof DreMock !== 'undefined') { global.DreMock = DreMock; globalThis.DreMock = DreMock; }
+    if (typeof Renumber !== 'undefined') { global.Renumber = Renumber; globalThis.Renumber = Renumber; }
+    if (typeof Suggestions !== 'undefined') { global.Suggestions = Suggestions; globalThis.Suggestions = Suggestions; }
     // expor para todos os módulos (akn-export precisa de ler References no fecho global)
     if (typeof AknExport !== 'undefined') globalThis.AknExport = AknExport;
   })();`);
 }
 loadFile('js/templates.js');
 loadFile('js/references.js');  // tem de carregar antes do akn-export para o xmlText resolver
+loadFile('js/renumber.js');    // tem de carregar antes do state para o renumber cascading
 loadFile('js/dre-mock.js');
 loadFile('js/akn-export.js');
 loadFile('js/preview.js');
 loadFile('js/diff.js');
 loadFile('js/amendment.js');
 loadFile('js/loda-inline.js');
+loadFile('js/suggestions.js');
 loadFile('js/bluebell-pt.js');
 loadFile('js/import-parser.js');
 
@@ -53,6 +57,8 @@ global.localStorage = {
 loadFile('js/state.js');
 // expor State (definido via IIFE em state.js)
 eval(fs.readFileSync(path.join(ROOT, 'js/state.js'), 'utf8') + '\nglobal.State = State;');
+// Snapshots depende de State + localStorage (shim acima); exposto via window-like
+eval(fs.readFileSync(path.join(ROOT, 'js/snapshots.js'), 'utf8') + '\nglobal.Snapshots = Snapshots;');
 
 const cases = [
   {
@@ -884,7 +890,635 @@ try {
   n_fail++;
 }
 
-const total = cases.length + 14;
+// 10b. Test Renumber cascading — text refs + comments + amendments
+try {
+  // Reset localStorage entre testes para evitar contaminação
+  Object.keys(_mem).forEach(k => delete _mem[k]);
+
+  const doc = global.newDocument('dec-lei');
+  doc.number = '700'; doc.year = 2026;
+  doc.shortTitle = 'Diploma para testar renumber cascading.';
+  global.State.init(doc);
+
+  // Cria 3 artigos
+  global.State.addArticle();  // art_2
+  global.State.addArticle();  // art_3
+
+  // Editar conteúdos para introduzir refs internas e externas
+  const d = global.State.get();
+  d.body.items[0].heading = 'Objeto';
+  d.body.items[0].paragraphs[0].content = 'O regime previsto neste diploma aplica-se sem prejuízo do disposto no artigo 3.º.';
+  d.body.items[1].heading = 'Definições';
+  d.body.items[1].paragraphs[0].content = 'Para efeitos do artigo 1.º, entende-se por X o que vier a ser definido.';
+  d.body.items[2].heading = 'Disposição final';
+  d.body.items[2].paragraphs[0].content = 'O presente diploma entra em vigor 30 dias após a publicação. Não derroga o artigo 3.º do Código Civil.';
+
+  d.comments = [
+    { id: 'cA', eId: 'art_2', text: 'Rever definição.', author: 'rev', date: '2026-05-25T10:00:00Z', resolved: false },
+    { id: 'cB', eId: 'art_3__para_1', text: 'Verificar prazo.', author: 'rev', date: '2026-05-25T10:01:00Z', resolved: false },
+  ];
+
+  // ---- Move 1: subir art_3 (Disposição final) para o meio (passa a art_2) ----
+  global.State.moveArticleUp('art_3');
+  let d2 = global.State.get();
+
+  // Após o 1.º move:
+  //   pos 0 = art_1 Objeto (não se moveu; ref "artigo 3.º" deve agora apontar "artigo 2.º")
+  //   pos 1 = art_2 Disposição final (era art_3)
+  //   pos 2 = art_3 Definições (era art_2)
+  if (d2.body.items[1].heading !== 'Disposição final') throw new Error('(1) Disposição final não está em art_2');
+  if (d2.body.items[2].heading !== 'Definições') throw new Error('(1) Definições não está em art_3');
+
+  // (a) ref interna em Objeto: artigo 3 → artigo 2 (old_art_3 → new_art_2)
+  if (!d2.body.items[0].paragraphs[0].content.includes('artigo 2.º')) {
+    throw new Error('(a) Objeto deveria referir "artigo 2.º"; viu: ' + d2.body.items[0].paragraphs[0].content);
+  }
+  // (b) ref externa "artigo 3.º do Código Civil" em Disposição final: anti-FP, inalterada
+  const dispNow = d2.body.items[1];
+  if (!dispNow.paragraphs[0].content.includes('artigo 3.º do Código Civil')) {
+    throw new Error('(b) ref CC foi indevidamente tocada; viu: ' + dispNow.paragraphs[0].content);
+  }
+  // (c) ref em Definições "artigo 1.º" — art_1 (Objeto) não se moveu → inalterada
+  const defNow = d2.body.items[2];
+  if (!defNow.paragraphs[0].content.includes('artigo 1.º')) {
+    throw new Error('(c) Definições "artigo 1.º" devia manter-se; viu: ' + defNow.paragraphs[0].content);
+  }
+  // (d) Comments — cA (era art_2/Definições) deve apontar para art_3
+  if (d2.comments.find(c => c.id === 'cA').eId !== 'art_3') {
+    throw new Error('(d) cA esperava art_3, viu ' + d2.comments.find(c => c.id === 'cA').eId);
+  }
+  // (e) cB (era art_3__para_1/Disposição p1) → art_2__para_1
+  if (d2.comments.find(c => c.id === 'cB').eId !== 'art_2__para_1') {
+    throw new Error('(e) cB esperava art_2__para_1, viu ' + d2.comments.find(c => c.id === 'cB').eId);
+  }
+
+  // ---- Move 2: subir art_2 (Disposição final, recentemente renumerada) ao topo ----
+  global.State.moveArticleUp('art_2');
+  d2 = global.State.get();
+
+  // Após o 2.º move:
+  //   pos 0 = art_1 Disposição final
+  //   pos 1 = art_2 Objeto (passou de art_1)
+  //   pos 2 = art_3 Definições (não se moveu)
+  if (d2.body.items[0].heading !== 'Disposição final') throw new Error('(2) Disposição final não está em art_1');
+  if (d2.body.items[1].heading !== 'Objeto') throw new Error('(2) Objeto não está em art_2');
+
+  // (f) Em Objeto, a ref que era "artigo 2.º" (do 1.º move) deve agora ser "artigo 1.º"
+  //     porque a Disposição final (alvo da ref) passou de art_2 para art_1.
+  if (!d2.body.items[1].paragraphs[0].content.includes('artigo 1.º')) {
+    throw new Error('(f) Objeto deveria referir agora "artigo 1.º"; viu: ' + d2.body.items[1].paragraphs[0].content);
+  }
+  // (g) Em Definições, ref "artigo 1.º" → "artigo 2.º" (porque Objeto passou de art_1 para art_2)
+  if (!d2.body.items[2].paragraphs[0].content.includes('artigo 2.º')) {
+    throw new Error('(g) Definições deveria referir agora "artigo 2.º"; viu: ' + d2.body.items[2].paragraphs[0].content);
+  }
+  // (h) Comments — cA (estava em art_3 após 1.º move) → mantém art_3 (Definições não se moveu)
+  if (d2.comments.find(c => c.id === 'cA').eId !== 'art_3') {
+    throw new Error('(h) cA esperava art_3, viu ' + d2.comments.find(c => c.id === 'cA').eId);
+  }
+  // (i) cB (estava em art_2__para_1) → art_1__para_1
+  if (d2.comments.find(c => c.id === 'cB').eId !== 'art_1__para_1') {
+    throw new Error('(i) cB esperava art_1__para_1, viu ' + d2.comments.find(c => c.id === 'cB').eId);
+  }
+
+  // (j) Sumário (no doc) e undo (in-memory via State) expostos
+  if (!d2._lastRenumberSummary) throw new Error('(j) sem sumário do renumber');
+  if (!global.State.hasRenumberUndo()) throw new Error('(j) sem undo in-memory');
+  const undo = global.State.consumeRenumberUndo();
+  if (!undo || !Array.isArray(undo.body.items)) throw new Error('(j) undo mal formado');
+  if (global.State.hasRenumberUndo()) throw new Error('(j) consume não limpou');
+
+  // (k) XML do exporter contém refs reescritas
+  const xml = global.AknExport.toXml(d2);
+  if (!xml.includes('href="#art_1"') || !xml.includes('href="#art_2"')) {
+    throw new Error('(k) XML sem refs reescritas; xml head: ' + xml.slice(0, 300));
+  }
+
+  console.log(`  OK   Renumber cascading (11 sub-testes: 2 moves + a-k)`);
+  n_ok++;
+} catch (e) {
+  console.log(`  FAIL Renumber cascading: ${e.message}`);
+  n_fail++;
+}
+
+// 10c. Test State.reorderArticles — base do drag-and-drop do mini-TOC
+try {
+  Object.keys(_mem).forEach(k => delete _mem[k]);
+  const doc = global.newDocument('dec-lei');
+  doc.number = '750'; doc.year = 2026;
+  doc.shortTitle = 'Reorder test.';
+  // Reset articulado para 4 artigos canónicos: A, B, C, D
+  doc.body.items = ['A','B','C','D'].map((tag, i) => ({
+    id: `art_${i+1}`, num: `Artigo ${i+1}.º`, heading: `Artigo ${tag}`,
+    paragraphs: [{ id: `art_${i+1}__para_1`, num: '', content: `Conteúdo ${tag}.`, subPoints: [] }],
+  }));
+  doc.nextArticleNum = 5;
+  global.State.init(doc);
+
+  const d = global.State.get();
+
+  // Reordenar: D, A, B, C (D vai para o início)
+  global.State.reorderArticles(['art_4', 'art_1', 'art_2', 'art_3']);
+  const d2 = global.State.get();
+  const heads = d2.body.items.map(a => a.heading);
+  // Após o reorder + renumber: pos 0 = D (com id art_1), pos 1 = A (art_2), …
+  if (heads.join(',') !== 'Artigo D,Artigo A,Artigo B,Artigo C') {
+    throw new Error('(a) ordem errada: ' + heads.join(','));
+  }
+  if (d2.body.items[0].id !== 'art_1') throw new Error('(a) eId não recolocado em pos 0');
+  if (d2.body.items[3].id !== 'art_4') throw new Error('(a) eId não recolocado em pos 3');
+
+  // Idempotente: chamar com a ordem actual não muta
+  const snapBefore = JSON.stringify(d2.body.items.map(a => a.id));
+  global.State.reorderArticles(['art_1', 'art_2', 'art_3', 'art_4']);
+  const snapAfter = JSON.stringify(global.State.get().body.items.map(a => a.id));
+  if (snapBefore !== snapAfter) throw new Error('(b) idempotente falhou');
+
+  // Robusto a ids parciais: passar só ['art_3'] coloca art_3 em primeiro e
+  // os restantes mantêm-se na ordem original a seguir.
+  global.State.reorderArticles(['art_3']);
+  const d3 = global.State.get();
+  if (d3.body.items[0].heading !== 'Artigo B') {
+    throw new Error('(c) reorder parcial falhou: ' + d3.body.items[0].heading);
+  }
+
+  console.log(`  OK   State.reorderArticles (3 sub-testes: a-c)`);
+  n_ok++;
+} catch (e) {
+  console.log(`  FAIL State.reorderArticles: ${e.message}`);
+  n_fail++;
+}
+
+// 10d. Test Suggestions — add / accept / reject / re-anchor / drift
+try {
+  Object.keys(_mem).forEach(k => delete _mem[k]);
+  const doc = global.newDocument('dec-lei');
+  doc.number = '888'; doc.year = 2026;
+  doc.shortTitle = 'Suggestions test.';
+  doc.body.items[0].id = 'art_1';
+  doc.body.items[0].heading = 'Objeto';
+  doc.body.items[0].paragraphs[0].id = 'art_1__para_1';
+  doc.body.items[0].paragraphs[0].content = 'O presente diploma estabelece o regime experimental aplicável a todas as entidades públicas.';
+  global.State.init(doc);
+  const d = global.State.get();
+
+  // (a) add — sugere "Refer um regime piloto" em vez de "estabelece o regime experimental"
+  //     Texto: "O presente diploma estabelece o regime experimental aplicável..."
+  //                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  //                                       start=21                          end=55
+  const content = d.body.items[0].paragraphs[0].content;
+  const start = content.indexOf('estabelece o regime experimental');
+  const end = start + 'estabelece o regime experimental'.length;
+  const s1 = global.Suggestions.add(d, 'art_1__para_1', 'content',
+    { start, end }, 'estatui o regime-piloto', { author: 'rev' });
+  if (s1.status !== 'pending') throw new Error('(a) status inicial não é pending');
+  if (s1.originalText !== 'estabelece o regime experimental') throw new Error('(a) originalText mal capturado');
+  if (global.Suggestions.count(d) !== 1) throw new Error('(a) count != 1');
+
+  // (b) add — uma 2.ª sugestão que vem DEPOIS da 1.ª na ranges
+  //     "entidades públicas" → "entidades do sector público"
+  const start2 = content.indexOf('entidades públicas');
+  const end2 = start2 + 'entidades públicas'.length;
+  const s2 = global.Suggestions.add(d, 'art_1__para_1', 'content',
+    { start: start2, end: end2 }, 'entidades do sector público', { author: 'rev' });
+
+  // (c) accept s1 — content muda, s2 deve ter range shiftada (porque o aceite
+  //     aconteceu antes do início da s2 e o delta é proposedText.len-original.len)
+  global.Suggestions.accept(d, s1.id);
+  if (s1.status !== 'accepted') throw new Error('(c) s1 não foi aceite');
+  const newContent = d.body.items[0].paragraphs[0].content;
+  if (!newContent.includes('estatui o regime-piloto')) {
+    throw new Error('(c) content não foi patcheado: ' + newContent);
+  }
+  // s2 ainda pending mas a range foi shiftada
+  const s2reloaded = d.suggestions.find(x => x.id === s2.id);
+  if (s2reloaded.status !== 'pending') throw new Error('(c) s2 deveria continuar pending');
+  if (newContent.slice(s2reloaded.range.start, s2reloaded.range.end) !== 'entidades públicas') {
+    throw new Error('(c) range de s2 não foi shiftada: ' + JSON.stringify(s2reloaded.range)
+      + ' slice="' + newContent.slice(s2reloaded.range.start, s2reloaded.range.end) + '"');
+  }
+
+  // (d) accept s2 — aplica e fica com o conteúdo final
+  global.Suggestions.accept(d, s2.id);
+  const finalContent = d.body.items[0].paragraphs[0].content;
+  if (!finalContent.includes('estatui o regime-piloto') || !finalContent.includes('entidades do sector público')) {
+    throw new Error('(d) s2 não foi aplicada: ' + finalContent);
+  }
+
+  // (e) reject — uma 3.ª sugestão rejeitada não deve mexer no content
+  const beforeReject = d.body.items[0].paragraphs[0].content;
+  const s3 = global.Suggestions.add(d, 'art_1__para_1', 'content',
+    { start: 0, end: 12 }, 'A presente lei', { author: 'rev' });
+  global.Suggestions.reject(d, s3.id);
+  if (s3.status !== 'rejected') throw new Error('(e) reject não mudou status');
+  if (d.body.items[0].paragraphs[0].content !== beforeReject) {
+    throw new Error('(e) reject mudou o content (não devia)');
+  }
+
+  // (f) drift — sugestão sobre originalText que já não existe deve ficar 'stale' ao aceitar
+  const s4 = global.Suggestions.add(d, 'art_1__para_1', 'content',
+    { start: 0, end: 12 }, 'X', { author: 'rev' });
+  // Editar o content directamente — simular um typo do autor que invalida a range
+  d.body.items[0].paragraphs[0].content = 'XX' + d.body.items[0].paragraphs[0].content;
+  global.Suggestions.accept(d, s4.id);
+  if (s4.status !== 'stale') throw new Error('(f) drift devia produzir stale, viu ' + s4.status);
+
+  // (g) Test re-anchor com OVERLAPPING — aceitar uma e ver a outra marcada stale
+  Object.keys(_mem).forEach(k => delete _mem[k]);
+  const doc2 = global.newDocument('dec-lei');
+  doc2.body.items[0].paragraphs[0].id = 'art_1__para_1';
+  doc2.body.items[0].paragraphs[0].content = 'abcdefghij';
+  global.State.init(doc2);
+  const d2 = global.State.get();
+  const a = global.Suggestions.add(d2, 'art_1__para_1', 'content', { start: 2, end: 5 }, 'XYZ');
+  const b = global.Suggestions.add(d2, 'art_1__para_1', 'content', { start: 4, end: 7 }, 'PQR');  // overlap
+  global.Suggestions.accept(d2, a.id);
+  const bReloaded = d2.suggestions.find(x => x.id === b.id);
+  if (bReloaded.status !== 'stale') throw new Error('(g) overlap não marcou stale');
+
+  console.log(`  OK   Suggestions accept/reject (7 sub-testes: a-g)`);
+  n_ok++;
+} catch (e) {
+  console.log(`  FAIL Suggestions: ${e.message}`);
+  n_fail++;
+}
+
+// 10e. Test Amendment.toAknXmlConsolidated — consolidação + retificação
+try {
+  Object.keys(_mem).forEach(k => delete _mem[k]);
+  // Construir um diploma alvo (DL 50/2026) com 3 artigos
+  const target = global.newDocument('dec-lei');
+  target.number = '50'; target.year = 2026;
+  target.shortTitle = 'Diploma alvo para teste de consolidação.';
+  target.adoptionDate = '2026-01-10';
+  target.publicationDate = '2026-01-15';
+  target.docDate = '2026-01-15'; target.docDateText = '15 de janeiro';
+  target.body.items = [
+    {
+      id: 'art_1', num: 'Artigo 1.º', heading: 'Objeto',
+      paragraphs: [{ id: 'art_1__para_1', num: '', content: 'O presente DL estabelece o regime de teste.', subPoints: [] }],
+    },
+    {
+      id: 'art_2', num: 'Artigo 2.º', heading: 'Definições',
+      paragraphs: [{ id: 'art_2__para_1', num: '', content: 'Regime A.', subPoints: [] }],
+    },
+    {
+      id: 'art_3', num: 'Artigo 3.º', heading: 'Entrada em vigor',
+      paragraphs: [{ id: 'art_3__para_1', num: '', content: 'Entra em vigor em 1 de fevereiro.', subPoints: [] }],
+    },
+  ];
+  target.signatures = [
+    { role: 'countersignature', as: 'primeiro-ministro', name: 'PM', date: '2026-01-10' },
+    { role: 'promulgation', as: 'presidente-republica', name: 'PR', date: '2026-01-12' },
+  ];
+
+  // Criar amender + 2 amendments (substituição art_2 + revogação art_3).
+  // Amendment.fromTarget aceita o doc do alvo directamente.
+  const amender = global.Amendment.fromTarget(target);
+  amender.number = '120'; amender.year = 2026;
+  amender.publicationDate = '2026-04-15';
+  amender.adoptionDate = '2026-04-10';
+  amender.docDate = '2026-04-15'; amender.docDateText = '15 de abril';
+  amender.signatures = [
+    { role: 'countersignature', as: 'primeiro-ministro', name: 'PM', date: '2026-04-10' },
+    { role: 'promulgation', as: 'presidente-republica', name: 'PR', date: '2026-04-12' },
+  ];
+  amender.uri = `https://eli.gov.pt/eli/pt/dec-lei/2026/120/pt`;
+  global.Amendment.addReplace(amender, 'art_2', {
+    id: 'art_2', num: 'Artigo 2.º', heading: 'Definições',
+    paragraphs: [{ id: 'art_2__para_1', num: '', content: 'Regime A bis (alterado).', subPoints: [] }],
+  }, '2026-05-01');
+  global.Amendment.addRevoke(amender, 'art_3', '2026-05-01');
+
+  // (a) Consolidar à data 2026-05-01 (após amendments entrarem em vigor)
+  const xmlCons = global.Amendment.toAknXmlConsolidated(amender, '2026-05-01');
+  if (!xmlCons.includes('name="consolidation"')) {
+    throw new Error('(a) XML sem FRBRdate name="consolidation"');
+  }
+  if (!xmlCons.includes('FRBRversionNumber value="2"')) {
+    throw new Error('(a) versão FRBR não foi incrementada');
+  }
+  if (!xmlCons.includes('2026-05-01')) {
+    throw new Error('(a) URI Expression não usa data de consolidação');
+  }
+  if (!xmlCons.includes('Regime A bis')) {
+    throw new Error('(a) conteúdo do amendment não foi aplicado');
+  }
+  if (!xmlCons.includes('<passiveModifications>')) {
+    throw new Error('(a) <passiveModifications> não preenchido');
+  }
+  if (!xmlCons.includes('type="substitution"')) {
+    throw new Error('(a) textualMod type="substitution" em falta');
+  }
+  if (!xmlCons.includes('type="repeal"')) {
+    throw new Error('(a) textualMod type="repeal" em falta');
+  }
+  fs.writeFileSync(path.join(OUT, 'consolidated-frbr.akn.xml'), xmlCons);
+
+  // (b) Consolidar à data 2026-02-01 (ANTES dos amendments — só vigentes os null)
+  const xmlEarly = global.Amendment.toAknXmlConsolidated(amender, '2026-02-01');
+  if (xmlEarly.includes('Regime A bis')) {
+    throw new Error('(b) amendment com effectiveDate=2026-05-01 não devia aplicar em 2026-02-01');
+  }
+  if (!xmlEarly.includes('Regime A.')) {
+    throw new Error('(b) conteúdo original não preservado');
+  }
+
+  // (c) Retificação — kind='rectification' produz FRBRdate name="rectification"
+  const xmlRect = global.Amendment.toAknXmlConsolidated(amender, '2026-05-01', { kind: 'rectification' });
+  if (!xmlRect.includes('name="rectification"')) {
+    throw new Error('(c) FRBRdate name="rectification" em falta');
+  }
+  if (!xmlRect.includes('type="rectification"')) {
+    throw new Error('(c) textualMod type="rectification" em falta');
+  }
+  fs.writeFileSync(path.join(OUT, 'rectification.akn.xml'), xmlRect);
+
+  // (d) Validação de inputs
+  try {
+    global.Amendment.toAknXmlConsolidated(amender, 'invalid');
+    throw new Error('(d) deveria rejeitar data inválida');
+  } catch (e) {
+    if (!e.message.includes('isoDate')) throw e;
+  }
+
+  console.log(`  OK   Amendment.toAknXmlConsolidated (4 sub-testes: a-d; ${xmlCons.length}b consolidated + ${xmlRect.length}b rectification)`);
+  n_ok++;
+} catch (e) {
+  console.log(`  FAIL Amendment.toAknXmlConsolidated: ${e.message}`);
+  n_fail++;
+}
+
+// 10f. Test hierarquia profunda — round-trip de body com chapter/section
+try {
+  Object.keys(_mem).forEach(k => delete _mem[k]);
+  // Carregar o CIRS excerpt (corpus #11) e fazer round-trip via ImportParser
+  const cirsPath = path.join(ROOT, '..', 'corpus', 'dec-lei', 'codigo-irs-excerpt.akn.xml');
+  if (!fs.existsSync(cirsPath)) {
+    throw new Error(`(a) fixture não encontrada em ${cirsPath}`);
+  }
+  const xmlIn = fs.readFileSync(cirsPath, 'utf8');
+  // ImportParser.parseAknXml usa DOMParser; em Node precisamos shim minimal.
+  // jsdom (já dep do projeto pelos UI tests) — load on demand.
+  if (typeof global.DOMParser === 'undefined') {
+    try {
+      const { JSDOM } = require('jsdom');
+      const dom = new JSDOM('');
+      global.DOMParser = dom.window.DOMParser;
+    } catch (e) {
+      throw new Error('(a) DOMParser não disponível (jsdom em falta): ' + e.message);
+    }
+  }
+  const parsed = global.ImportParser.parseAknXml(xmlIn);
+  if (parsed.bodyKind !== 'hierarchic') {
+    throw new Error(`(a) parseAknXml não detectou hierarchic, viu ${parsed.bodyKind}`);
+  }
+  if (!parsed.bodyItems || parsed.bodyItems.length !== 1) {
+    throw new Error(`(a) esperava 1 container raiz (cap_1), vi ${parsed.bodyItems?.length}`);
+  }
+  const cap = parsed.bodyItems[0];
+  if (cap.containerType !== 'chapter' || cap.id !== 'cap_1') {
+    throw new Error(`(a) container raiz mal parseado: type=${cap.containerType} id=${cap.id}`);
+  }
+  if ((cap.items || []).length !== 2) {
+    throw new Error(`(a) capítulo deve ter 2 secções, viu ${cap.items?.length}`);
+  }
+  const sec1 = cap.items[0];
+  if (sec1.containerType !== 'section') throw new Error('(a) primeira section mal parseada');
+
+  // (b) toDocState produz body.kind='hierarchic'
+  const doc = global.ImportParser.toDocState(parsed);
+  if (doc.body.kind !== 'hierarchic') {
+    throw new Error(`(b) toDocState não preservou hierarchic, viu ${doc.body.kind}`);
+  }
+
+  // (c) Re-export para XML e validar contra XSD
+  const xmlOut = global.AknExport.toXml(doc);
+  if (!xmlOut.includes('<chapter eId="cap_1">')) {
+    throw new Error('(c) re-export sem <chapter>');
+  }
+  if (!xmlOut.includes('<section eId="cap_1__sec_1">')) {
+    throw new Error('(c) re-export sem <section>');
+  }
+  if (!xmlOut.includes('<article eId="art_1">')) {
+    throw new Error('(c) re-export sem <article art_1>');
+  }
+  fs.writeFileSync(path.join(OUT, 'cirs-roundtrip.akn.xml'), xmlOut);
+
+  // (d) Estatísticas para confirmar — 3 articles total no XML
+  const artCount = (xmlOut.match(/<article eId=/g) || []).length;
+  if (artCount !== 3) throw new Error(`(d) esperava 3 articles no XML re-exportado, viu ${artCount}`);
+
+  console.log(`  OK   Hierarchic body round-trip (4 sub-testes: a-d; ${xmlOut.length}b CIRS re-exported)`);
+  n_ok++;
+} catch (e) {
+  console.log(`  FAIL Hierarchic body round-trip: ${e.message}`);
+  n_fail++;
+}
+
+// 10g. Test State containers — addContainer / moveContainerUp/Down / removeContainer
+try {
+  Object.keys(_mem).forEach(k => delete _mem[k]);
+  const doc = global.newDocument('dec-lei');
+  doc.number = '888'; doc.year = 2026;
+  doc.shortTitle = 'Containers test.';
+  // 4 artigos baseline
+  doc.body.items = ['A', 'B', 'C', 'D'].map((tag, i) => ({
+    id: `art_${i+1}`, num: `Artigo ${i+1}.º`, heading: `Artigo ${tag}`,
+    paragraphs: [{ id: `art_${i+1}__para_1`, num: '', content: `Conteúdo ${tag}.`, subPoints: [] }],
+  }));
+  global.State.init(doc);
+
+  // (a) ensureHierarchicBody promove articles → hierarchic
+  global.State.ensureHierarchicBody();
+  let d = global.State.get();
+  if (d.body.kind !== 'hierarchic') {
+    throw new Error('(a) ensureHierarchicBody falhou; viu ' + d.body.kind);
+  }
+  if (d.body.items.length !== 4) {
+    throw new Error('(a) artigos perdidos no upgrade');
+  }
+
+  // (b) addContainer chapter no root
+  const capId = global.State.addContainer('chapter');
+  d = global.State.get();
+  // Esperar: 4 artigos + 1 capítulo (sem filhos ainda)
+  if (d.body.items.length !== 5) {
+    throw new Error('(b) esperava 5 items após addContainer, vi ' + d.body.items.length);
+  }
+  const cap = d.body.items.find(it => it.containerType === 'chapter');
+  if (!cap) throw new Error('(b) chapter não encontrado');
+  if (cap.id !== 'cap_1') throw new Error('(b) eId esperado cap_1, vi ' + cap.id);
+  if (cap.num !== 'CAPÍTULO I') throw new Error('(b) num esperado "CAPÍTULO I", vi ' + cap.num);
+
+  // (c) addContainer section dentro do chapter
+  global.State.addContainer('section', { parentEId: 'cap_1' });
+  d = global.State.get();
+  const cap1 = d.body.items.find(it => it.id === 'cap_1');
+  if (!cap1 || !cap1.items || cap1.items.length !== 1) {
+    throw new Error('(c) secção não foi adicionada dentro do capítulo');
+  }
+  const sec = cap1.items[0];
+  if (sec.id !== 'sec_1' || sec.num !== 'SECÇÃO I') {
+    throw new Error('(c) section eId/num errados: ' + JSON.stringify({id: sec.id, num: sec.num}));
+  }
+
+  // (d) updateContainer altera heading
+  global.State.updateContainer('cap_1', { heading: 'Disposições gerais' });
+  d = global.State.get();
+  if (d.body.items.find(it => it.id === 'cap_1').heading !== 'Disposições gerais') {
+    throw new Error('(d) updateContainer falhou');
+  }
+
+  // (e) Renumeração mantém artigos flat (art_1..art_4)
+  const arts = d.body.items.filter(it => it.containerType === undefined);
+  if (arts.length !== 4) throw new Error('(e) esperava 4 artigos no root, vi ' + arts.length);
+  if (arts.map(a => a.id).join(',') !== 'art_1,art_2,art_3,art_4') {
+    throw new Error('(e) artigos não estão flat: ' + arts.map(a => a.id).join(','));
+  }
+
+  // (f) addContainer chapter — esperar cap_2 (counter por tipo)
+  global.State.addContainer('chapter');
+  d = global.State.get();
+  const caps = d.body.items.filter(it => it.containerType === 'chapter');
+  if (caps.length !== 2) throw new Error('(f) esperava 2 chapters');
+  if (!caps.find(c => c.id === 'cap_2' && c.num === 'CAPÍTULO II')) {
+    throw new Error('(f) cap_2 não numerado correctamente');
+  }
+
+  // (g) removeContainer com keepChildren=true promove filhos
+  global.State.removeContainer('cap_1', { keepChildren: true });
+  d = global.State.get();
+  // A secção sec_1 que estava em cap_1 deve agora ser sibling no root
+  // (mas renumerada para sec_1 ainda — única secção).
+  // cap_2 também é renumerado para cap_1 (único chapter restante).
+  const newCaps = d.body.items.filter(it => it.containerType === 'chapter');
+  if (newCaps.length !== 1 || newCaps[0].id !== 'cap_1') {
+    throw new Error('(g) cap_2 não foi renumerado para cap_1 após remove');
+  }
+  const orphanSec = d.body.items.find(it => it.containerType === 'section');
+  if (!orphanSec) {
+    throw new Error('(g) secção órfã perdida no promote');
+  }
+
+  // (h) moveContainerUp move chapter para o topo
+  global.State.addContainer('chapter');  // cap_2
+  global.State.moveContainerUp(d.body.items.find(c => c.containerType === 'chapter')?.id || 'cap_1');
+  // Apenas confirmar que renumber atribui IDs sequenciais sem crash
+  d = global.State.get();
+  const finalCaps = d.body.items.filter(it => it.containerType === 'chapter');
+  if (finalCaps.length !== 2) throw new Error('(h) esperava 2 caps após add+move');
+
+  // (i) Para exportar XML válido contra Schematron (STR-0005: capítulo deve
+  //     ter ≥1 artigo/secção), populamos manualmente o doc de teste com 1
+  //     capítulo contendo 1 secção contendo 1 artigo. Os mutators de container
+  //     só inserem containers vazios — promoção de artigos para dentro de
+  //     containers fica para v0.1.3 (move-into-container).
+  d.body = {
+    kind: 'hierarchic',
+    items: [{
+      id: 'cap_1', containerType: 'chapter',
+      num: 'CAPÍTULO I', heading: 'Disposições gerais',
+      items: [{
+        id: 'cap_1__sec_1', containerType: 'section',
+        num: 'SECÇÃO I', heading: 'Disposições preliminares',
+        items: [{
+          id: 'art_1', num: 'Artigo 1.º', heading: 'Objeto',
+          paragraphs: [{ id: 'art_1__para_1', num: '', content: 'Teste de container.', subPoints: [] }],
+        }],
+      }],
+    }],
+  };
+  d.number = '888'; d.year = 2026;
+  d.shortTitle = 'Test containers'; d.adoptionDate = '2026-01-10';
+  d.publicationDate = '2026-01-15'; d.docDate = '2026-01-15'; d.docDateText = '15 de janeiro';
+  d.signatures = [
+    { role: 'countersignature', as: 'primeiro-ministro', name: 'PM', date: '2026-01-10' },
+    { role: 'promulgation', as: 'presidente-republica', name: 'PR', date: '2026-01-12' },
+  ];
+  const xml = global.AknExport.toXml(d);
+  if (!xml.includes('<chapter eId="cap_1">')) {
+    throw new Error('(i) XML sem <chapter eId="cap_1">');
+  }
+  fs.writeFileSync(path.join(OUT, 'containers-roundtrip.akn.xml'), xml);
+
+  console.log(`  OK   State containers (9 sub-testes: a-i; ${xml.length}b)`);
+  n_ok++;
+} catch (e) {
+  console.log(`  FAIL State containers: ${e.message}`);
+  n_fail++;
+}
+
+// 11. Test Snapshots / Milestones — fase + listByPhase + getPhasesForActType
+try {
+  const doc = global.newDocument('dec-lei');
+  doc.number = '500'; doc.year = 2026;
+  doc.shortTitle = 'Diploma para testar milestones.';
+  doc.body.items[0].heading = 'Objeto';
+  doc.body.items[0].paragraphs[0].content = 'Conteúdo inicial.';
+  global.State.init(doc);
+
+  // 11a. Backwards compat — save sem opts continua a funcionar
+  const s1 = global.Snapshots.save('snap-sem-fase');
+  if (s1.phase) throw new Error('(a) snap sem opts não devia ter phase');
+
+  // 11b. Save com fase explícita
+  const s2 = global.Snapshots.save('m1', { phase: 'rascunho' });
+  if (s2.phase !== 'rascunho') throw new Error('(b) phase não persistida');
+
+  // 11c. Save com note via string (compat de 2.º arg como string)
+  const s3 = global.Snapshots.save('com-nota', 'Nota livre.');
+  if (s3.note !== 'Nota livre.') throw new Error('(c) compat note-string falhou');
+
+  // 11d. Save 2.ª milestone com mesma fase + 1 noutra fase
+  global.Snapshots.save('m2', { phase: 'rascunho' });
+  global.Snapshots.save('m3', { phase: 'consulta-pública' });
+
+  // 11e. listByPhase agrupa
+  const m = global.Snapshots.listByPhase();
+  const r = m.get('rascunho') || [];
+  const c = m.get('consulta-pública') || [];
+  const semFase = m.get('sem-fase') || [];
+  if (r.length !== 2) throw new Error(`(e) esperava 2 em 'rascunho', vi ${r.length}`);
+  if (c.length !== 1) throw new Error(`(e) esperava 1 em 'consulta-pública', vi ${c.length}`);
+  if (semFase.length !== 2) throw new Error(`(e) esperava 2 'sem-fase', vi ${semFase.length}`);
+
+  // 11f. Ordenação dentro do bucket (cronológica asc)
+  if (r[0].date > r[1].date) throw new Error('(f) bucket não está em ordem asc');
+
+  // 11g. getPhasesForActType — vocabulário esperado para dec-lei
+  const phases = global.Snapshots.getPhasesForActType('dec-lei');
+  if (!phases.includes('consulta-pública') || !phases.includes('promulgação')) {
+    throw new Error('(g) vocabulário dec-lei incompleto: ' + JSON.stringify(phases));
+  }
+
+  // 11h. getPhasesForActType — fallback por prefixo (e.g. 'dlr-acores' → 'dlr')
+  const pDlr = global.Snapshots.getPhasesForActType('dlr-acores');
+  if (!pDlr.includes('aprovação-ALR')) {
+    throw new Error('(h) fallback de prefixo falhou: ' + JSON.stringify(pDlr));
+  }
+
+  // 11i. getPhasesForActType — actType desconhecido → vocabulário common
+  const pUnk = global.Snapshots.getPhasesForActType('inexistente');
+  if (!pUnk.includes('rascunho')) {
+    throw new Error('(i) fallback common falhou: ' + JSON.stringify(pUnk));
+  }
+
+  // 11j. delete + listByPhase — o entry desaparece do bucket
+  global.Snapshots.delete(s2.id);
+  const m2 = global.Snapshots.listByPhase();
+  if ((m2.get('rascunho') || []).length !== 1) {
+    throw new Error('(j) delete não removeu do bucket');
+  }
+
+  console.log(`  OK   Snapshots milestones (10 sub-testes: a-j)`);
+  n_ok++;
+} catch (e) {
+  console.log(`  FAIL Snapshots milestones: ${e.message}`);
+  n_fail++;
+}
+
+const total = cases.length + 21;
 console.log(`\n${n_ok}/${total} files generated.`);
 console.log(`Next: validate with akn-pt:`);
 console.log(`  python -m akn_pt batch editor/.smoke-output`);

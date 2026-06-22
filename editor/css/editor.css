@@ -1563,6 +1563,32 @@ textarea.point-content:focus {
 .toast.success { background: var(--color-green); color: #fff; border-left-color: #fff; }
 .toast.error   { background: var(--color-error); color: #fff; border-left-color: #fff; }
 .toast.warn    { background: var(--color-amber); color: #fff; border-left-color: #fff; }
+.toast.toast-action {
+  background: var(--color-navy);
+  color: #fff;
+  border-left-color: var(--color-amber);
+  padding-right: var(--sp-2);
+  gap: var(--sp-3);
+}
+.toast .toast-msg { line-height: 1.3; }
+.toast .toast-action-btn {
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  background: transparent;
+  color: var(--color-amber-soft);
+  border: 1px solid var(--color-amber-soft);
+  border-radius: var(--radius);
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.toast .toast-action-btn:hover {
+  background: var(--color-amber);
+  color: var(--color-ink);
+  border-color: var(--color-amber);
+}
 @keyframes toast-in {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: none; }
@@ -2185,6 +2211,211 @@ textarea.point-content:focus {
   font-size: 10px;
   color: var(--color-faint);
 }
+
+/* ============================================================
+   Suggestions (cf. LEOS) — botão ✎ + modal popover + diff
+   ============================================================ */
+.btn-suggest {
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  color: var(--color-amber);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease);
+}
+.btn-suggest:hover { background: var(--color-amber-soft); }
+.btn-suggest.has-suggestions {
+  background: var(--color-amber-soft);
+  border-color: var(--color-amber);
+  font-weight: 600;
+}
+
+.sug-create { margin-bottom: var(--sp-3); }
+.sug-create .hint { font-size: var(--fs-sm); color: var(--color-muted); }
+.sug-original {
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--color-bg-soft);
+  border-left: 3px solid var(--color-amber);
+  margin-bottom: var(--sp-2);
+}
+.sug-original .sug-label {
+  color: var(--color-muted);
+  text-transform: uppercase;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.05em;
+  margin-right: var(--sp-2);
+}
+.sug-proposed {
+  width: 100%;
+  font-family: var(--font-text);
+  font-size: var(--fs-base);
+  padding: var(--sp-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  resize: vertical;
+  min-height: 64px;
+  margin-bottom: var(--sp-2);
+}
+.sug-note {
+  width: 100%;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  padding: var(--sp-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  margin-bottom: var(--sp-2);
+}
+.sug-sep {
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  margin: var(--sp-4) 0;
+}
+.sug-section-title {
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-navy);
+  margin-bottom: var(--sp-3);
+}
+
+.sug-item {
+  padding: var(--sp-3);
+  margin-bottom: var(--sp-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg-emph);
+}
+.sug-item.sug-status-accepted { opacity: 0.85; border-left: 3px solid var(--color-green); }
+.sug-item.sug-status-rejected { opacity: 0.65; border-left: 3px solid var(--color-accent); }
+.sug-item.sug-status-stale    { opacity: 0.65; border-left: 3px solid var(--color-amber); }
+.sug-item.sug-status-pending  { border-left: 3px solid var(--color-amber); }
+
+.sug-meta {
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  color: var(--color-muted);
+  margin-bottom: var(--sp-2);
+}
+.sug-author { font-weight: 600; color: var(--color-ink-soft); }
+.sug-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-xs);
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.sug-badge-pending  { background: var(--color-amber-soft); color: var(--color-amber); }
+.sug-badge-accepted { background: var(--color-green-soft); color: var(--color-green); }
+.sug-badge-rejected { background: var(--color-accent-soft); color: var(--color-accent); }
+.sug-badge-stale    { background: var(--color-amber-soft); color: var(--color-amber); font-style: italic; }
+
+.sug-diff {
+  font-family: var(--font-text);
+  font-size: var(--fs-base);
+  padding: var(--sp-2);
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  line-height: 1.5;
+}
+.sug-diff ins {
+  background: var(--color-green-soft);
+  color: var(--color-green);
+  text-decoration: none;
+  padding: 0 2px;
+}
+.sug-diff del {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  text-decoration: line-through;
+  padding: 0 2px;
+}
+
+.sug-actions {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+.btn-accept {
+  background: var(--color-green);
+  color: #fff;
+  border: 1px solid var(--color-green);
+}
+.btn-accept:hover { background: color-mix(in oklab, var(--color-green) 90%, black); }
+
+/* ============================================================
+   Containers hierárquicos no canvas (v0.1.2)
+   Capítulo / secção / subsecção / título / parte / livro
+   ============================================================ */
+.container-block { padding-bottom: var(--sp-2); }
+
+.container-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  padding: var(--sp-2) 0;
+}
+.container-head-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+.container-type-label {
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-amber);
+  background: var(--color-amber-soft);
+  padding: 1px 8px;
+  border-radius: var(--radius-sm);
+}
+.container-num {
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  color: var(--color-navy);
+  letter-spacing: 0.02em;
+}
+.container-heading {
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  font-style: italic;
+  color: var(--color-ink-soft);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px dashed var(--color-border);
+  padding: 4px 0;
+  width: 100%;
+}
+.container-heading:focus {
+  outline: none;
+  border-bottom-color: var(--color-navy);
+}
+.container-actions { margin-left: auto; }
+
+/* Drag-and-drop reorder no mini-TOC (modo articulado).
+   Os chips ficam grab-able; durante o drag mostra-se um indicador navy
+   à esquerda/direita do chip-alvo, conforme o cursor cair antes ou depois.
+   Em RCM/Resoluções (body.kind !== 'articles') o reorder está desactivado. */
+.breadcrumb-mini-toc.is-reorderable .mini-toc-chip { cursor: grab; }
+.breadcrumb-mini-toc.is-reorderable .mini-toc-chip:active { cursor: grabbing; }
+.mini-toc-chip.is-dragging {
+  opacity: 0.4;
+  background: var(--color-navy-faint);
+  border-color: var(--color-navy);
+}
+.mini-toc-chip.drop-before { box-shadow: inset 3px 0 0 0 var(--color-navy); }
+.mini-toc-chip.drop-after  { box-shadow: inset -3px 0 0 0 var(--color-navy); }
 
 /* Canvas + scroll wrapper */
 #canvas-wrap {
@@ -2907,4 +3138,87 @@ textarea.point-content:focus {
   font-family: var(--font-ui);
 }
 .preview-time-banner strong { color: var(--color-ink); }
+
+/* ============================================================
+   Snapshots / Milestones — fase de procedimento (cf. LEOS)
+   ============================================================ */
+
+.snap-new {
+  display: flex;
+  flex-wrap: wrap;                    /* mobile: colapsa em 2 linhas */
+  gap: var(--sp-2);
+  align-items: center;
+  margin-bottom: var(--sp-3);
+}
+.snap-new input[type="text"] {
+  flex: 1 1 220px;                    /* não desce abaixo de 220 px no wrap */
+  min-width: 0;
+}
+.snap-phase-select {
+  flex: 0 0 200px;            /* largura fixa — não compete com o input */
+  width: 200px;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  padding: 4px 26px 4px 8px;  /* deixa espaço para a seta custom de `select` */
+  background-color: var(--color-bg-emph);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-ink-soft);
+}
+
+.snap-view-toggle {
+  display: inline-flex;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: var(--sp-3);
+}
+.snap-view-btn {
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  padding: 4px 12px;
+  background: transparent;
+  border: 0;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+.snap-view-btn + .snap-view-btn { border-left: 1px solid var(--color-border); }
+.snap-view-btn:hover { background: var(--color-navy-faint); color: var(--color-navy); }
+.snap-view-btn.is-active {
+  background: var(--color-navy);
+  color: #fff;
+}
+
+.snap-row { display: flex; align-items: baseline; gap: var(--sp-2); }
+.snap-phase-badge {
+  display: inline-block;
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.02em;
+  padding: 1px 6px;
+  background: var(--color-amber-soft);
+  color: var(--color-amber);
+  border-radius: var(--radius-sm);
+  text-transform: lowercase;
+}
+
+.snap-phase-group {
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: var(--sp-3) 0 var(--sp-1);
+  border-bottom: 1px solid var(--color-border);
+  margin-top: var(--sp-3);
+}
+.snap-phase-group:first-child { margin-top: 0; }
+.snap-phase-label {
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-navy);
+}
+.snap-phase-count { font-style: italic; }
 

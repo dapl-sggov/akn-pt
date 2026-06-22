@@ -266,18 +266,25 @@
     </div>
   </div>
 
-  <!-- Snapshots -->
+  <!-- Snapshots / Milestones -->
   <div id="snapshots-modal" class="modal hidden" data-modal>
     <div class="modal-content">
       <header class="modal-header">
-        <h2>Snapshots</h2>
+        <h2>Snapshots <span class="muted small">e milestones</span></h2>
         <button class="btn-close" data-close="snapshots-modal">×</button>
       </header>
       <div class="modal-body">
-        <p class="hint">Fotografias nomeadas do diploma, guardadas no seu browser.</p>
+        <p class="hint">Fotografias nomeadas do diploma, opcionalmente associadas a uma fase do procedimento legislativo (milestones, cf. LEOS).</p>
         <div class="snap-new">
           <input type="text" id="snap-label" placeholder="Etiqueta (ex. revisão DAPL 19/05)">
-          <button class="btn-primary" id="snap-create">+ Criar snapshot</button>
+          <select id="snap-phase" class="snap-phase-select" title="Fase do procedimento (opcional)">
+            <option value="">— sem fase —</option>
+          </select>
+          <button class="btn-primary" id="snap-create">+ Criar</button>
+        </div>
+        <div class="snap-view-toggle" role="tablist">
+          <button class="snap-view-btn is-active" data-snap-view="chrono" role="tab" aria-selected="true">Cronológica</button>
+          <button class="snap-view-btn" data-snap-view="phase" role="tab" aria-selected="false">Por fase</button>
         </div>
         <ul id="snap-list" class="snap-list"></ul>
       </div>
@@ -310,6 +317,17 @@
         <button class="btn-close" data-close="comment-thread-modal">×</button>
       </header>
       <div class="modal-body" id="comment-thread-body"></div>
+    </div>
+  </div>
+
+  <!-- Suggestion thread / popover (criar nova sugestão + lista pending por eId) -->
+  <div id="suggestion-modal" class="modal hidden" data-modal>
+    <div class="modal-content">
+      <header class="modal-header">
+        <h2 id="suggestion-modal-title">Sugestões</h2>
+        <button class="btn-close" data-close="suggestion-modal">×</button>
+      </header>
+      <div class="modal-body" id="suggestion-modal-body"></div>
     </div>
   </div>
 
@@ -390,25 +408,27 @@
 
   <!-- Scripts -->
   <script src="js/templates.js"></script>
-  <script src="js/state.js"></script>
+  <script src="js/state.js?v=v012"></script>
   <script src="js/stack.js"></script>
   <script src="js/activity.js"></script>
   <script src="js/cmdk.js"></script>
   <script src="js/references.js"></script>
+  <script src="js/renumber.js?v=v012"></script>
   <script src="js/dre-mock.js"></script>
   <script src="js/akn-export.js"></script>
-  <script src="js/validation.js"></script>
+  <script src="js/validation.js?v=v012"></script>
   <script src="js/preview.js"></script>
   <script src="js/exporters.js"></script>
-  <script src="js/snapshots.js"></script>
+  <script src="js/snapshots.js?v=v012"></script>
   <script src="js/diff.js"></script>
   <script src="js/comments.js"></script>
   <script src="js/amendment.js"></script>
   <script src="js/loda-inline.js"></script>
+  <script src="js/suggestions.js?v=v012"></script>
   <script src="js/ai.js"></script>
   <script src="js/bluebell-pt.js"></script>
   <script src="js/collab.js"></script>
   <script src="js/import-parser.js"></script>
-  <script src="js/editor.js"></script>
+  <script src="js/editor.js?v=v012"></script>
 </body>
 </html>

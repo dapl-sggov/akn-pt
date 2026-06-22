@@ -48,8 +48,19 @@ const AknExport = (() => {
   function buildFrbr(doc) {
     const actor = ACTOR_FOR_TYPE[doc.actName] || 'governo';
     const uriBase = `https://eli.gov.pt/eli/${doc.country}/${doc.actName}/${doc.year}/${doc.number || 'X'}/pt`;
-    const expr = `${uriBase}/${doc.publicationDate || doc.adoptionDate}`;
+
+    // Modo consolidação/retificação: o Expression URI tem {point-in-time}
+    // igual à data de consolidação/retificação, e a versão FRBR incrementa.
+    // Flags em doc._consolidatedAt (ISO date) + doc._consolidationKind
+    // ('consolidation' | 'rectification'). Sentinela '9999-12-31' do
+    // applyAll é tratada como ausência de consolidação (significa "estado
+    // actual incluindo tudo no futuro").
+    const isConsol = doc._consolidatedAt && doc._consolidatedAt !== '9999-12-31';
+    const consolKind = doc._consolidationKind || 'consolidation';
+    const exprDate = isConsol ? doc._consolidatedAt : (doc.publicationDate || doc.adoptionDate);
+    const expr = `${uriBase}/${exprDate}`;
     const manif = `${expr}.xml`;
+    const version = isConsol ? (doc._consolidationVersion || 2) : 1;
 
     return `      <identification source="#dapl">
         <FRBRWork>
@@ -64,10 +75,11 @@ const AknExport = (() => {
         <FRBRExpression>
           <FRBRthis value="${expr}/!main"/>
           <FRBRuri value="${expr}"/>
-          <FRBRdate date="${doc.publicationDate}" name="publication"/>
+          <FRBRdate date="${doc.publicationDate}" name="publication"/>${isConsol ? `
+          <FRBRdate date="${doc._consolidatedAt}" name="${consolKind}"/>` : ''}
           <FRBRauthor href="#${actor}"/>
           <FRBRlanguage language="por"/>
-          <FRBRversionNumber value="1"/>
+          <FRBRversionNumber value="${version}"/>
         </FRBRExpression>
         <FRBRManifestation>
           <FRBRthis value="${manif}/!main"/>
@@ -167,26 +179,50 @@ ${events.map((e, i) => `        <eventRef eId="e${i + 1}" date="${i === 0 ? doc.
   function buildWorkflow(doc) {
     if (!doc.workflow || doc.workflow.length === 0) return '';
 
+    // Workflow vive no namespace akn-pt: (ADR-0011); o root <akomaNtoso>
+    // declara xmlns:akn-pt em buildAkomaNtosoOpen.
     const steps = doc.workflow.map(step => {
       const desc = step.description ? `
-          <description><p>${escapeXml(step.description)}</p></description>` : '';
+          <akn-pt:description><p>${escapeXml(step.description)}</p></akn-pt:description>` : '';
       const inputs = step.inputs.map(inp => {
         const idesc = inp.description ? `
-            <description><p>${escapeXml(inp.description)}</p></description>` : '';
-        return `          <input eId="${inp.id}" date="${inp.date}" source="#${id(inp.source) || 'unknown'}" type="${inp.type}">${idesc}
-          </input>`;
+            <akn-pt:description><p>${escapeXml(inp.description)}</p></akn-pt:description>` : '';
+        return `          <akn-pt:input eId="${inp.id}" date="${inp.date}" source="#${id(inp.source) || 'unknown'}" type="${inp.type}">${idesc}
+          </akn-pt:input>`;
       }).join('\n');
-      return `        <step eId="${step.id}" date="${step.date}" refersTo="#${step.refersTo}" source="#${id(step.source) || 'governo'}">${desc}${inputs ? '\n' + inputs : ''}
-        </step>`;
+      return `        <akn-pt:step eId="${step.id}" date="${step.date}" refersTo="#${step.refersTo}" source="#${id(step.source) || 'governo'}">${desc}${inputs ? '\n' + inputs : ''}
+        </akn-pt:step>`;
     });
 
-    return `      <workflow source="#dapl">
+    return `      <akn-pt:workflow source="#dapl">
 ${steps.join('\n')}
-      </workflow>`;
+      </akn-pt:workflow>`;
   }
 
-  function buildAnalysis() {
-    return `      <analysis source="#dapl"><activeModifications/><passiveModifications/></analysis>`;
+  function buildAnalysis(doc) {
+    // Em consolidações, doc._passiveModifications é uma lista de objectos
+    // { id, type, sourceUri, eId } produzidos por Amendment.toAknXmlConsolidated.
+    // type: 'substitution' | 'repeal' | 'insertion' | 'rectification'.
+    const passive = (doc && doc._passiveModifications) || [];
+    if (!passive.length) {
+      return `      <analysis source="#dapl"><activeModifications/><passiveModifications/></analysis>`;
+    }
+    // destination usa URI absoluto (o eId vive no Work do diploma TARGET, não
+    // no consolidado actual — onde pode até ter sido revogado). Construímos a
+    // URI Work do target a partir do doc._consolidatedFrom (Amendment.fromTarget
+    // preenche este campo).
+    const targetWorkUri = doc._consolidatedFrom || '';
+    const items = passive.map((m, i) =>
+      `        <textualMod type="${escapeXml(m.type)}" eId="mod_${escapeXml(m.id || String(i + 1))}">
+          <source href="${escapeXml(m.sourceUri)}"/>
+          <destination href="${escapeXml(targetWorkUri)}#${escapeXml(m.eId)}"/>
+        </textualMod>`).join('\n');
+    return `      <analysis source="#dapl">
+        <activeModifications/>
+        <passiveModifications>
+${items}
+        </passiveModifications>
+      </analysis>`;
   }
 
   function buildMeta(doc) {
@@ -197,7 +233,7 @@ ${steps.join('\n')}
     ];
     const wf = buildWorkflow(doc);
     if (wf) blocks.push(wf);
-    blocks.push(buildAnalysis());
+    blocks.push(buildAnalysis(doc));
     return `    <meta>\n${blocks.join('\n')}\n    </meta>`;
   }
 
@@ -259,19 +295,45 @@ ${recitals.join('\n')}${formula}
 
   function buildBody(doc) {
     if (doc.body.kind === 'articles') {
-      const articles = doc.body.items.map(a => {
-        const paras = a.paragraphs.map(p => buildParagraph(p, a.id, true, doc)).join('\n');
-        return `      <article eId="${a.id}">
-        <num>${escapeXml(a.num)}</num>
-        <heading>${xmlText(a.heading || '…', doc)}</heading>
-${paras}
-      </article>`;
-      }).join('\n');
+      const articles = doc.body.items.map(a => _buildArticleOrContainer(a, doc, '      ')).join('\n');
       return `    <body>\n${articles}\n    </body>`;
+    } else if (doc.body.kind === 'hierarchic') {
+      // Body com containers (book/part/title/chapter/section/subsection)
+      // mais artigos folha. Cada item de doc.body.items pode ser um
+      // Container ou um Article; rendering recursivo via _buildArticleOrContainer.
+      const items = doc.body.items.map(it => _buildArticleOrContainer(it, doc, '      ')).join('\n');
+      return `    <body>\n${items}\n    </body>`;
     } else {
       const paras = doc.body.items.map(p => buildParagraph(p, null, false, doc)).join('\n');
       return `    <body>\n${paras}\n    </body>`;
     }
+  }
+
+  // Container types AKN canónicos que aceitamos no body hierárquico.
+  const CONTAINER_TYPES = new Set(['book', 'part', 'title', 'chapter', 'section', 'subsection']);
+
+  // Renderiza um item do body — pode ser um Container (chapter/section/etc.)
+  // que contém recursivamente outros Containers ou Articles, ou um Article
+  // folha com paragraphs. Container distingue-se por ter `containerType`.
+  function _buildArticleOrContainer(item, doc, indent) {
+    if (item && CONTAINER_TYPES.has(item.containerType)) {
+      const childrenIndent = indent + '  ';
+      const children = (item.items || []).map(child =>
+        _buildArticleOrContainer(child, doc, childrenIndent)).join('\n');
+      const num = item.num ? `\n${indent}  <num>${escapeXml(item.num)}</num>` : '';
+      const heading = item.heading ? `\n${indent}  <heading>${xmlText(item.heading, doc)}</heading>` : '';
+      return `${indent}<${item.containerType} eId="${item.id}">${num}${heading}
+${children}
+${indent}</${item.containerType}>`;
+    }
+    // Article (folha)
+    const a = item;
+    const paras = (a.paragraphs || []).map(p => buildParagraph(p, a.id, true, doc)).join('\n');
+    return `${indent}<article eId="${a.id}">
+${indent}  <num>${escapeXml(a.num || '')}</num>
+${indent}  <heading>${xmlText(a.heading || '…', doc)}</heading>
+${paras}
+${indent}</article>`;
   }
 
   function buildParagraph(p, parentId, isArticle, doc) {
@@ -341,9 +403,12 @@ ${sigs}
       buildAttachments(doc),
     ].filter(Boolean);
 
+    // xmlns:akn-pt: declarado sempre, mesmo sem workflow — não tem custo
+    // semântico em XML e simplifica round-trips de import/export.
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <!-- Generated by AKN-PT Editor v0.1.0 (demo) -->
-<akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17">
+<akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0/CSD17"
+            xmlns:akn-pt="http://eli.gov.pt/ns/akn-pt/1.0">
   <act name="${doc.actName}">
 ${parts.join('\n')}
   </act>

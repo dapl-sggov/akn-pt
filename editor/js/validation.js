@@ -36,18 +36,32 @@ const Validation = (() => {
       issues.push({ level: 'error', msg: 'Body sem artigos / pontos resolutivos.' });
     }
 
-    // Articles must have heading; non-empty content
-    if (doc.body.kind === 'articles') {
-      doc.body.items.forEach(a => {
-        if (!a.heading || !a.heading.trim()) {
-          issues.push({ level: 'warn', msg: `${a.num} sem epígrafe.`, eId: a.id });
+    // Articles must have heading; non-empty content. Para body hierárquico,
+    // walk recursivo nas folhas (articles dentro de containers).
+    const _checkArticle = (a) => {
+      if (!a.heading || !a.heading.trim()) {
+        issues.push({ level: 'warn', msg: `${a.num} sem epígrafe.`, eId: a.id });
+      }
+      (a.paragraphs || []).forEach(p => {
+        if (!p.content && !(p.subPoints || []).length) {
+          issues.push({ level: 'warn', msg: `${a.num} ${p.num || ''} sem conteúdo.`, eId: p.id });
         }
-        a.paragraphs.forEach(p => {
-          if (!p.content && !p.subPoints.length) {
-            issues.push({ level: 'warn', msg: `${a.num} ${p.num || ''} sem conteúdo.`, eId: p.id });
-          }
-        });
       });
+    };
+    const _CONTAINERS_VAL = new Set(['book', 'part', 'title', 'chapter', 'section', 'subsection']);
+    const _walkItems = (items) => {
+      (items || []).forEach(it => {
+        if (it && _CONTAINERS_VAL.has(it.containerType)) {
+          _walkItems(it.items);
+        } else {
+          _checkArticle(it);
+        }
+      });
+    };
+    if (doc.body.kind === 'articles') {
+      doc.body.items.forEach(_checkArticle);
+    } else if (doc.body.kind === 'hierarchic') {
+      _walkItems(doc.body.items);
     } else {
       doc.body.items.forEach(p => {
         if (!p.content && !p.subPoints.length) {
@@ -113,6 +127,32 @@ const Validation = (() => {
   function collectEids(doc) {
     const ids = [];
     doc.recitals.forEach(r => ids.push(r.id));
+    const _CONTAINERS_COLL = new Set(['book', 'part', 'title', 'chapter', 'section', 'subsection']);
+    const _collectFromArticle = (a) => {
+      ids.push(a.id);
+      (a.paragraphs || []).forEach(p => {
+        ids.push(p.id);
+        (p.subPoints || []).forEach(sp => {
+          ids.push(sp.id);
+          (sp.subPoints || []).forEach(ssp => ids.push(ssp.id));
+        });
+      });
+    };
+    const _collectItems = (items) => {
+      (items || []).forEach(it => {
+        if (it && _CONTAINERS_COLL.has(it.containerType)) {
+          if (it.id) ids.push(it.id);
+          _collectItems(it.items);
+        } else {
+          _collectFromArticle(it);
+        }
+      });
+    };
+    if (doc.body.kind === 'hierarchic') {
+      _collectItems(doc.body.items);
+      doc.attachments.forEach(a => ids.push(a.id));
+      return ids;
+    }
     if (doc.body.kind === 'articles') {
       doc.body.items.forEach(a => {
         ids.push(a.id);

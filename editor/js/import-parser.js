@@ -884,7 +884,28 @@ const ImportParser = (() => {
     doc.signatures = parsed.signatures.length ? parsed.signatures : doc.signatures;
     doc.attachments = parsed.attachments;
 
-    if (parsed.bodyKind === 'articles' && parsed.articles.length) {
+    if (parsed.bodyKind === 'hierarchic' && parsed.bodyItems && parsed.bodyItems.length) {
+      // Body com containers (chapter/section/etc.) + articles folha.
+      doc.body = { kind: 'hierarchic', items: parsed.bodyItems };
+      // Garantir subPoints array em todos os parágrafos (walk recursivo)
+      const ensure = (item) => {
+        if (item.paragraphs) {
+          item.paragraphs.forEach(p => { if (!p.subPoints) p.subPoints = []; });
+        }
+        if (item.items) item.items.forEach(ensure);
+      };
+      doc.body.items.forEach(ensure);
+      // Bookkeeping — contar artigos no walk recursivo para nextArticleNum
+      let maxArt = 0;
+      const countArts = (item) => {
+        if (item.id && /^art_(\d+)$/.test(item.id)) {
+          maxArt = Math.max(maxArt, parseInt(RegExp.$1, 10));
+        }
+        if (item.items) item.items.forEach(countArts);
+      };
+      doc.body.items.forEach(countArts);
+      doc.nextArticleNum = maxArt + 1;
+    } else if (parsed.bodyKind === 'articles' && parsed.articles.length) {
       doc.body = { kind: 'articles', items: parsed.articles };
       // Ensure each paragraph has subPoints array
       doc.body.items.forEach(a => {
@@ -1017,26 +1038,43 @@ const ImportParser = (() => {
       if (p) result.formula = p.textContent.trim();
     }
 
-    // Body
+    // Body — suporta hierarquia profunda (book/part/title/chapter/section/subsection)
+    // contendo recursivamente outros containers e/ou articles. Se body só tem
+    // articles directos, bodyKind='articles'; se tem containers, 'hierarchic'.
     result.bodyKind = ['res-cm', 'res-ar'].includes(result.actType) ? 'paragraphs' : 'articles';
+    const CONTAINER_LOCAL = new Set(['book', 'part', 'title', 'chapter', 'section', 'subsection']);
     const body = qq('body');
     if (body) {
       if (result.bodyKind === 'articles') {
-        for (const art of body.children) {
-          if (art.localName !== 'article') continue;
-          const num = qq('num', art);
-          const heading = qq('heading', art);
-          const paragraphs = [];
-          for (const para of art.children) {
-            if (para.localName !== 'paragraph') continue;
-            paragraphs.push(parseParagraph(para, ns));
+        // Detectar se há containers — se sim, escalar para 'hierarchic'
+        let hasContainer = false;
+        for (const ch of body.children) {
+          if (CONTAINER_LOCAL.has(ch.localName)) { hasContainer = true; break; }
+        }
+        if (hasContainer) {
+          result.bodyKind = 'hierarchic';
+          result.bodyItems = [];
+          for (const ch of body.children) {
+            const item = _parseBodyItem(ch, ns);
+            if (item) result.bodyItems.push(item);
           }
-          result.articles.push({
-            id: art.getAttribute('eId'),
-            num: num ? num.textContent : '',
-            heading: heading ? heading.textContent : '',
-            paragraphs,
-          });
+        } else {
+          for (const art of body.children) {
+            if (art.localName !== 'article') continue;
+            const num = qq('num', art);
+            const heading = qq('heading', art);
+            const paragraphs = [];
+            for (const para of art.children) {
+              if (para.localName !== 'paragraph') continue;
+              paragraphs.push(parseParagraph(para, ns));
+            }
+            result.articles.push({
+              id: art.getAttribute('eId'),
+              num: num ? num.textContent : '',
+              heading: heading ? heading.textContent : '',
+              paragraphs,
+            });
+          }
         }
       } else {
         for (const para of body.children) {
@@ -1077,6 +1115,53 @@ const ImportParser = (() => {
     }
 
     return result;
+  }
+
+  // Helper recursivo para parseAknXml: identifica article (folha) ou
+  // container (chapter/section/etc.). Devolve null se elemento não é
+  // reconhecido (recital, formula, etc. são filtrados no caller).
+  function _parseBodyItem(el, ns) {
+    const CONTAINER_LOCAL = new Set(['book', 'part', 'title', 'chapter', 'section', 'subsection']);
+    if (el.localName === 'article') {
+      // Article (folha)
+      const num = el.getElementsByTagNameNS(ns, 'num')[0];
+      const heading = el.getElementsByTagNameNS(ns, 'heading')[0];
+      const paragraphs = [];
+      for (const para of el.children) {
+        if (para.localName === 'paragraph') paragraphs.push(parseParagraph(para, ns));
+      }
+      return {
+        id: el.getAttribute('eId'),
+        num: num ? num.textContent.trim() : '',
+        heading: heading ? heading.textContent.trim() : '',
+        paragraphs,
+      };
+    }
+    if (CONTAINER_LOCAL.has(el.localName)) {
+      // Container — recursivo
+      const num = el.getElementsByTagNameNS(ns, 'num')[0];
+      const heading = el.getElementsByTagNameNS(ns, 'heading')[0];
+      // Recolher num/heading apenas se forem filhos directos (não dos descendentes)
+      let directNum = null, directHeading = null;
+      for (const ch of el.children) {
+        if (ch.localName === 'num' && !directNum) directNum = ch;
+        else if (ch.localName === 'heading' && !directHeading) directHeading = ch;
+      }
+      const items = [];
+      for (const ch of el.children) {
+        if (ch.localName === 'num' || ch.localName === 'heading') continue;
+        const sub = _parseBodyItem(ch, ns);
+        if (sub) items.push(sub);
+      }
+      return {
+        id: el.getAttribute('eId'),
+        containerType: el.localName,
+        num: directNum ? directNum.textContent.trim() : '',
+        heading: directHeading ? directHeading.textContent.trim() : '',
+        items,
+      };
+    }
+    return null;
   }
 
   function parseParagraph(para, ns) {
