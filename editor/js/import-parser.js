@@ -588,7 +588,8 @@ const ImportParser = (() => {
     let href = null;
     const cd = _citationDate(choice.dateText, choice.year);
     if (cd) {
-      href = `https://data.dre.pt/eli/${choice.type}/${choice.number}/${cd.yyyy}/${cd.mm}/${cd.dd}`;
+      // Work canónico INCM: .../{ano}/{mês}/{dia}/p/dre (número em minúsculas).
+      href = `https://data.dre.pt/eli/${choice.type}/${String(choice.number).toLowerCase()}/${cd.yyyy}/${cd.mm}/${cd.dd}/p/dre`;
     } else if (typeof DreMock !== 'undefined' && DreMock.all) {
       const needle = `/eli/${choice.type}/${choice.number}/${choice.year}/`;
       const hit = DreMock.all().find(e => e.eli && e.eli.includes(needle));

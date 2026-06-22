@@ -376,7 +376,7 @@ try {
   if (!xml.includes('<ref href="')) throw new Error('Nenhuma ref resolvida no XML.');
   if (!xml.includes('data.europa.eu/eli/dir/2019/1937')) throw new Error('Diretiva UE não resolvida.');
   // DL 21/2023 está no DreMock (data 2023-03-27) → resolve à forma canónica data.dre.pt.
-  if (!xml.includes('data.dre.pt/eli/dec-lei/21/2023/03/27')) throw new Error('DL externo não resolvido na forma canónica data.dre.pt.');
+  if (!xml.includes('data.dre.pt/eli/dec-lei/21/2023/03/27/p/dre')) throw new Error('DL externo não resolvido na forma canónica data.dre.pt.');
   if (!xml.includes('href="#art_1"')) throw new Error('Ref interna ao art_1 não resolvida.');
   fs.writeFileSync(path.join(OUT, 'dec-lei-with-refs.akn.xml'), xml);
   console.log(`  OK   dec-lei-with-refs.akn.xml  (${xml.length} bytes; refs internas+PT+UE resolvidas)`);
@@ -716,7 +716,7 @@ try {
     ['no shortTitle absorption', parsed.shortTitle.length < 250],
     ['2+ recitals', parsed.recitals.length >= 2],
     ['formula apanhada', parsed.formula && parsed.formula.length > 100],
-    ['habilitante = DL 43-B/2024', parsed.habilitante.includes('43-B') && parsed.habilitante.includes('2024')],
+    ['habilitante = DL 43-B/2024', parsed.habilitante.toLowerCase().includes('43-b') && parsed.habilitante.includes('2024')],
     ['12 artigos', parsed.articles.length === 12],
     ['todas epígrafes', parsed.articles.every(a => a.heading && a.heading.length > 3)],
     ['2 ministros assinantes', parsed.signatures.filter(s => s.name).length === 2],
@@ -1548,18 +1548,18 @@ try {
     ['title presente', ld['eli:title']['@value'].includes('Diário da República')],
     ['date_document', ld['eli:date_document']['@value'] === '2016-12-15'],
     ['is_realized_by Expression', ld['eli:is_realized_by']['@type'] === 'eli:LegalExpression'],
-    ['language POR', ld['eli:is_realized_by']['eli:language']['@id'].endsWith('/POR')],
+    ['language PRT', ld['eli:is_realized_by']['eli:language']['@id'].endsWith('/PRT')],
     ['date_publication', ld['eli:is_realized_by']['eli:date_publication']['@value'] === '2016-12-16'],
     ['2 manifestações (xml+html)', ld['eli:is_realized_by']['eli:is_embodied_by'].length === 2],
     ['passed_by Governo', ld['eli:passed_by']['skos:prefLabel']['@value'].includes('Governo')],
-    // Canónico (data.dre.pt) — Work sem /p/dre/pt; Expression com; Manifestation com formato-segmento
-    ['canonical Work data.dre.pt', cmp.canonical.work === 'https://data.dre.pt/eli/dec-lei/83/2016/12/16'],
+    // Canónico (forma real INCM) — Work termina em /{terr}/dre; Expression +/pt; Manifestation +/fmt
+    ['canonical Work .../p/dre', cmp.canonical.work === 'https://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre'],
     ['canonical Expression /p/dre/pt', cmp.canonical.expression === 'https://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre/pt'],
     ['canonical Manifestation /xml (segmento)', cmp.canonical.manifestation === 'https://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre/pt/xml'],
     // Proposed (forma DAPL anterior): ano+número, eli.gov.pt
     ['proposed Work eli.gov.pt ano+número', cmp.proposed.work === 'https://eli.gov.pt/eli/pt/dec-lei/2016/83/pt'],
     // JSON-LD @id deve ser o Work canónico data.dre.pt
-    ['JSON-LD @id = Work canónico', ld['@id'] === 'https://data.dre.pt/eli/dec-lei/83/2016/12/16'],
+    ['JSON-LD @id = Work canónico', ld['@id'] === 'https://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre'],
     // JSON-LD válido (parseável)
     ['JSON-LD parseável', (() => { try { JSON.parse(global.EliMetadata.toJsonLdString(doc)); return true; } catch { return false; } })()],
     ['RDFa tem typeof LegalResource', rdfa.includes('typeof="eli:LegalResource"')],

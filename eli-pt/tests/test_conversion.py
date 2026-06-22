@@ -21,8 +21,9 @@ from conversion import (  # noqa: E402
 # --- forma CANÓNICA data.dre.pt (exige data de publicação) -----------------
 
 def test_canonical_work_uri() -> None:
+    # Work inclui /{terr}/dre (forma real INCM).
     eid = EliId("dec-lei", 2016, "83", pub_date="2016-12-16")
-    assert eid.to_uri() == "https://data.dre.pt/eli/dec-lei/83/2016/12/16"
+    assert eid.to_uri() == "https://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre"
 
 
 def test_canonical_expression_and_manifestation() -> None:
@@ -32,8 +33,9 @@ def test_canonical_expression_and_manifestation() -> None:
 
 
 def test_canonical_consolidated() -> None:
+    # Consolidada: /{ano}/{terr}/cons/{AAAAMMDD} (só ano; data compacta).
     eid = EliId("dec-lei", 2016, "83", pub_date="2016-12-16", point_in_time="2024-01-01", fmt="xml")
-    assert eid.to_uri() == "https://data.dre.pt/eli/dec-lei/83/2016/12/16/2024-01-01/dre/pt/xml"
+    assert eid.to_uri() == "https://data.dre.pt/eli/dec-lei/83/2016/p/cons/20240101/pt/xml"
 
 
 def test_canonical_requires_pub_date() -> None:
@@ -44,16 +46,16 @@ def test_canonical_requires_pub_date() -> None:
 def test_canonical_number_with_suffix() -> None:
     # Sufixo em minúsculas no URI canónico (convenção INCM).
     eid = EliId("dec-lei", 1988, "442-A", pub_date="1988-11-30")
-    assert eid.to_uri() == "https://data.dre.pt/eli/dec-lei/442-a/1988/11/30"
+    assert eid.to_uri() == "https://data.dre.pt/eli/dec-lei/442-a/1988/11/30/p/dre"
 
 
 @pytest.mark.parametrize(
     ("uri",),
     [
-        ("https://data.dre.pt/eli/dec-lei/83/2016/12/16",),
+        ("https://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre",),
         ("https://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre/pt/html",),
         ("https://data.dre.pt/eli/port/249/2021/11/22/p/dre/pt/xml#art_2__para_1",),
-        ("https://data.dre.pt/eli/lei/7/2020/04/10/2024-06-01/dre/pt",),
+        ("https://data.dre.pt/eli/lei/7/2020/p/cons/20240601/pt",),
     ],
 )
 def test_parse_canonical_roundtrip(uri: str) -> None:
@@ -66,12 +68,12 @@ def test_parse_canonical_roundtrip(uri: str) -> None:
 def test_citation_complete_yields_canonical() -> None:
     # A citação completa traz a data (", de 2 de julho") → URI canónico directo.
     assert (citation_to_eli("Decreto-Lei n.º 43-B/2024, de 2 de julho")
-            == "https://data.dre.pt/eli/dec-lei/43-b/2024/07/02")
+            == "https://data.dre.pt/eli/dec-lei/43-b/2024/07/02/p/dre")
 
 
 def test_citation_month_with_cedilla() -> None:
     assert (citation_to_eli("Lei n.º 7/2009, de 12 de março de 2009")
-            == "https://data.dre.pt/eli/lei/7/2009/03/12")
+            == "https://data.dre.pt/eli/lei/7/2009/03/12/p/dre")
 
 
 def test_citation_year_from_date_tail() -> None:
@@ -79,7 +81,7 @@ def test_citation_year_from_date_tail() -> None:
     eid = parse_citation("Portaria n.º 249/2021, de 22 de novembro de 2021")
     assert eid.pub_date == "2021-11-22"
     assert eid.act_type == "port"  # slug ELI real da INCM
-    assert eid.to_uri() == "https://data.dre.pt/eli/port/249/2021/11/22"
+    assert eid.to_uri() == "https://data.dre.pt/eli/port/249/2021/11/22/p/dre"
 
 
 def test_abbreviated_citation_raises() -> None:
@@ -115,7 +117,7 @@ def test_dre_to_eli_without_date_yields_proposed(legacy: str, expected_proposed:
 
 def test_dre_to_eli_with_date_yields_canonical() -> None:
     eli = dre_to_eli("https://dre.pt/dre/detalhe/decreto-lei/83-2016-100000000", pub_date="2016-12-16")
-    assert eli == "https://data.dre.pt/eli/dec-lei/83/2016/12/16"
+    assert eli == "https://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre"
 
 
 def test_parse_proposed_full() -> None:
