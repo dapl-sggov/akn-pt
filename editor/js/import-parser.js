@@ -559,7 +559,17 @@ const ImportParser = (() => {
     const dls = candidates.filter(c => c.type === 'dec-lei');
     const choice = dls.length ? dls[dls.length - 1] : candidates[candidates.length - 1];
 
-    r.habilitante = `https://eli.gov.pt/eli/pt/${choice.type}/${choice.year}/${choice.number}/pt`;
+    // CANÓNICO = data.dre.pt, mas exige a data de publicação (mês/dia) que a
+    // citação do habilitante não dá. Se o diploma for conhecido (DreMock tem
+    // a data) usamos a forma canónica; senão, a forma construível eli.gov.pt
+    // (a resolver para o URI canónico via lookup ao DRE).
+    let href = `https://eli.gov.pt/eli/pt/${choice.type}/${choice.year}/${choice.number}/pt`;
+    if (typeof DreMock !== 'undefined' && DreMock.all) {
+      const needle = `/eli/${choice.type}/${choice.number}/${choice.year}/`;
+      const hit = DreMock.all().find(e => e.eli && e.eli.includes(needle));
+      if (hit) href = hit.eli;
+    }
+    r.habilitante = href;
     r.habilitanteLabel = choice.raw;
   }
 
