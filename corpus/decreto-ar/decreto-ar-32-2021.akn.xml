@@ -9,8 +9,8 @@
     <meta>
       <identification source="#dapl">
         <FRBRWork>
-          <FRBRthis value="https://eli.gov.pt/eli/pt/decreto-ar/2021/32/pt/!main"/>
-          <FRBRuri value="https://eli.gov.pt/eli/pt/decreto-ar/2021/32/pt"/>
+          <FRBRthis value="https://data.dre.pt/eli/decreto-ar/32/2021/04/23/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/decreto-ar/32/2021/04/23"/>
           <FRBRdate date="2021-04-15" name="adoption"/>
           <FRBRauthor href="#ar"/>
           <FRBRcountry value="pt"/>
@@ -18,16 +18,16 @@
           <FRBRnumber value="32"/>
         </FRBRWork>
         <FRBRExpression>
-          <FRBRthis value="https://eli.gov.pt/eli/pt/decreto-ar/2021/32/pt/2021-04-23/!main"/>
-          <FRBRuri value="https://eli.gov.pt/eli/pt/decreto-ar/2021/32/pt/2021-04-23"/>
+          <FRBRthis value="https://data.dre.pt/eli/decreto-ar/32/2021/04/23/p/dre/pt/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/decreto-ar/32/2021/04/23/p/dre/pt"/>
           <FRBRdate date="2021-04-23" name="publication"/>
           <FRBRauthor href="#ar"/>
           <FRBRlanguage language="por"/>
           <FRBRversionNumber value="1"/>
         </FRBRExpression>
         <FRBRManifestation>
-          <FRBRthis value="https://eli.gov.pt/eli/pt/decreto-ar/2021/32/pt/2021-04-23.xml/!main"/>
-          <FRBRuri value="https://eli.gov.pt/eli/pt/decreto-ar/2021/32/pt/2021-04-23.xml"/>
+          <FRBRthis value="https://data.dre.pt/eli/decreto-ar/32/2021/04/23/p/dre/pt/xml/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/decreto-ar/32/2021/04/23/p/dre/pt/xml"/>
           <FRBRdate date="2021-04-23" name="publication"/>
           <FRBRauthor href="#dre"/>
           <FRBRformat value="application/akn+xml; profile=akn-pt-1.0"/>

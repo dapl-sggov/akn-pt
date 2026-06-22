@@ -20,8 +20,8 @@
     <meta>
       <identification source="#dapl">
         <FRBRWork>
-          <FRBRthis value="https://eli.gov.pt/eli/pt/lei/2018/4/pt/!main"/>
-          <FRBRuri value="https://eli.gov.pt/eli/pt/lei/2018/4/pt"/>
+          <FRBRthis value="https://data.dre.pt/eli/lei/4/2018/02/09/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/lei/4/2018/02/09"/>
           <FRBRdate date="2018-02-06" name="adoption"/>
           <FRBRauthor href="#ar"/>
           <FRBRcountry value="pt"/>
@@ -29,16 +29,16 @@
           <FRBRnumber value="4"/>
         </FRBRWork>
         <FRBRExpression>
-          <FRBRthis value="https://eli.gov.pt/eli/pt/lei/2018/4/pt/2018-02-09/!main"/>
-          <FRBRuri value="https://eli.gov.pt/eli/pt/lei/2018/4/pt/2018-02-09"/>
+          <FRBRthis value="https://data.dre.pt/eli/lei/4/2018/02/09/p/dre/pt/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/lei/4/2018/02/09/p/dre/pt"/>
           <FRBRdate date="2018-02-09" name="publication"/>
           <FRBRauthor href="#ar"/>
           <FRBRlanguage language="por"/>
           <FRBRversionNumber value="1"/>
         </FRBRExpression>
         <FRBRManifestation>
-          <FRBRthis value="https://eli.gov.pt/eli/pt/lei/2018/4/pt/2018-02-09.xml/!main"/>
-          <FRBRuri value="https://eli.gov.pt/eli/pt/lei/2018/4/pt/2018-02-09.xml"/>
+          <FRBRthis value="https://data.dre.pt/eli/lei/4/2018/02/09/p/dre/pt/xml/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/lei/4/2018/02/09/p/dre/pt/xml"/>
           <FRBRdate date="2018-02-09" name="publication"/>
           <FRBRauthor href="#dre"/>
           <FRBRformat value="application/akn+xml; profile=akn-pt-1.0"/>
