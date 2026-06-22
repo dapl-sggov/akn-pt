@@ -70,8 +70,8 @@ Each document carries the full FRBR triple in `<meta>/<identification>`:
 ```xml
 <identification source="#dapl">
   <FRBRWork>
-    <FRBRthis    value="https://data.dre.pt/eli/dec-lei/22/2026/03/15/!main"/>
-    <FRBRuri     value="https://data.dre.pt/eli/dec-lei/22/2026/03/15"/>
+    <FRBRthis    value="https://data.dre.pt/eli/dec-lei/22/2026/03/15/p/dre/!main"/>
+    <FRBRuri     value="https://data.dre.pt/eli/dec-lei/22/2026/03/15/p/dre"/>
     <FRBRdate    date="2026-03-10" name="adoption"/>
     <FRBRauthor  href="#governo"/>
     <FRBRcountry value="pt"/>
@@ -176,7 +176,7 @@ mapping between current `dre.pt` URLs and ELI-PT canonical URIs:
 ```
 https://dre.pt/dre/detalhe/decreto-lei/22-2026-XXXXXXXX
    ↔
-https://data.dre.pt/eli/dec-lei/22/2026/03/15   (canonical; date taken from the full citation or INCM table)
+https://data.dre.pt/eli/dec-lei/22/2026/03/15/p/dre   (canonical; date taken from the full citation or INCM table)
 ```
 
 Neither the legacy `{hash}` segment nor the **publication date** (month/day) is
@@ -321,7 +321,7 @@ eId uses underscore (`art_5_a`), not hyphen. Position is immediately after
 ```xml
 <paragraph eId="art_2__para_1">
   <intro>
-    <p>São alterados os artigos 3.º e 5.º do <ref href="https://data.dre.pt/eli/dec-lei/22/2025/11/05">Decreto-Lei n.º 22/2025</ref>, que passam a ter a seguinte redação:</p>
+    <p>São alterados os artigos 3.º e 5.º do <ref href="https://data.dre.pt/eli/dec-lei/22/2025/11/05/p/dre">Decreto-Lei n.º 22/2025</ref>, que passam a ter a seguinte redação:</p>
   </intro>
   <quotedStructure>
     <article eId="quoted__art_3">

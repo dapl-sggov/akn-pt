@@ -6,7 +6,7 @@ e regras próprias:
 | Família | Identifica | Visibilidade | Exemplo |
 |---|---|---|---|
 | `eId` | Fragmentos internos do documento | Interno; estável por documento | `art_5__para_1__lit_a` |
-| FRBR URI | A obra (Work), versão (Expression) ou ficheiro (Manifestation) | Global; resolúvel | `https://data.dre.pt/eli/dec-lei/83/2016/12/16` |
+| FRBR URI | A obra (Work), versão (Expression) ou ficheiro (Manifestation) | Global; resolúvel | `https://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre` |
 | ELI-PT (sub-conjunto canónico de FRBR URI) | Identificação institucional do ato | Global; permanente | (mesma forma que FRBR URI) |
 
 ## 8.1 eIds — identificadores internos

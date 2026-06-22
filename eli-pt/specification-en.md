@@ -94,9 +94,9 @@ Real resolvable example: `http://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre/pt/
 
 ### 3.1 FRBR layers
 
-- **Work:** up to `{day}`. `https://data.dre.pt/eli/dec-lei/83/2016/12/16`
-- **Expression (as published):** adds `/p/dre/pt`. `…/16/p/dre/pt`
-- **Expression (consolidated):** `p` becomes `{point-in-time}`. `…/16/2024-01-01/dre/pt`
+- **Work:** ends in `/{p|a|m}/dre`. `https://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre`
+- **Expression (as published):** adds `/{lang}`. `…/16/p/dre/pt`
+- **Expression (consolidated):** Work uses `/{year}/{p|a|m}/cons/{AAAAMMDD}`. `…/2016/p/cons/20240101/pt`
 - **Manifestation:** adds `/{format}` (segment). `…/16/p/dre/pt/xml`
 - **Fragment URI:** adds `#{fragment}`. `…/p/dre/pt#art_5__para_1__lit_a`
 

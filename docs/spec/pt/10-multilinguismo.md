@@ -50,10 +50,10 @@ referências externas normais com URI ELI-PT completo:
 
 ```xml
 <!-- Num DL nacional que referencia um DLR -->
-<p>... nos termos do <ref href="https://data.dre.pt/eli/dlr/4/2025/03/01">Decreto Legislativo Regional n.º 4/2025/A, de 1 de março</ref> ...</p>
+<p>... nos termos do <ref href="https://data.dre.pt/eli/declegreg/4/2025/03/01/a/dre">Decreto Legislativo Regional n.º 4/2025/A, de 1 de março</ref> ...</p>
 
 <!-- Num DLR que referencia uma lei nacional -->
-<p>... em conformidade com a <ref href="https://data.dre.pt/eli/lei/12/2026/02/20">Lei n.º 12/2026, de 20 de fevereiro</ref> ...</p>
+<p>... em conformidade com a <ref href="https://data.dre.pt/eli/lei/12/2026/02/20/p/dre">Lei n.º 12/2026, de 20 de fevereiro</ref> ...</p>
 ```
 
 Nada de especial — o validador trata referências cruzadas como qualquer outra

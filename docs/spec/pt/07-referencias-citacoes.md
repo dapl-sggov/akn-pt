@@ -35,7 +35,7 @@ contrária no eId (do mais geral para o mais específico, separado por `__`).
 ## 7.4 Referência externa a outro acto português
 
 ```xml
-<p>O <ref href="https://data.dre.pt/eli/dec-lei/120/2025/11/05">Decreto-Lei n.º 120/2025, de 5 de novembro</ref>, estabeleceu o regime de ...</p>
+<p>O <ref href="https://data.dre.pt/eli/dec-lei/120/2025/11/05/p/dre">Decreto-Lei n.º 120/2025, de 5 de novembro</ref>, estabeleceu o regime de ...</p>
 ```
 
 A referência externa **deve** usar URI ELI-PT canónico (ver [cap. 8](08-identificadores.md)).
@@ -45,13 +45,13 @@ Atalhos para URIs legados do dre.pt **não são** aceitáveis nos `@href` de
 Para referenciar um fragmento específico de outro acto:
 
 ```xml
-<p>... nos termos do <ref href="https://data.dre.pt/eli/dec-lei/120/2025/11/05#art_8__para_3">n.º 3 do artigo 8.º do Decreto-Lei n.º 120/2025</ref> ...</p>
+<p>... nos termos do <ref href="https://data.dre.pt/eli/dec-lei/120/2025/11/05/p/dre#art_8__para_3">n.º 3 do artigo 8.º do Decreto-Lei n.º 120/2025</ref> ...</p>
 ```
 
 Para referenciar uma versão consolidada concreta:
 
 ```xml
-<p>... na redação dada pela <ref href="https://data.dre.pt/eli/dec-lei/120/2025/11/05/2027-01-15/dre/pt">redacção em vigor a 15 de janeiro de 2027</ref> ...</p>
+<p>... na redação dada pela <ref href="https://data.dre.pt/eli/dec-lei/120/2025/p/cons/20270115/pt">redacção em vigor a 15 de janeiro de 2027</ref> ...</p>
 ```
 
 ## 7.5 Referência a directiva ou regulamento UE
@@ -133,7 +133,7 @@ mais geral:
 
 O `@href`, por contraste, é estruturado do mais geral para o mais específico:
 
-> `https://data.dre.pt/eli/dec-lei/22/2026/03/15#art_5__para_2__lit_b`
+> `https://data.dre.pt/eli/dec-lei/22/2026/03/15/p/dre#art_5__para_2__lit_b`
 
 Esta dualidade é deliberada — o texto visível obedece à legística humana, o
 identificador máquina obedece à navegabilidade técnica. Não há "tradução

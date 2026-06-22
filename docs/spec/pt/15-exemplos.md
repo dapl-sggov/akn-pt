@@ -12,8 +12,8 @@ em `corpus/` no repositório, com README descritivo.
     <meta>
       <identification source="#dapl">
         <FRBRWork>
-          <FRBRthis value="https://data.dre.pt/eli/dec-lei/22/2026/03/15/!main"/>
-          <FRBRuri value="https://data.dre.pt/eli/dec-lei/22/2026/03/15"/>
+          <FRBRthis value="https://data.dre.pt/eli/dec-lei/22/2026/03/15/p/dre/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/dec-lei/22/2026/03/15/p/dre"/>
           <FRBRdate date="2026-03-10" name="adoption"/>
           <FRBRauthor href="#governo"/>
           <FRBRcountry value="pt"/>
@@ -187,7 +187,7 @@ Quando uma alínea precisa de subdivisões, o `<point>` da alínea contém uma
   <heading>Alteração ao Decreto-Lei n.º 22/2025, de 5 de novembro</heading>
   <paragraph eId="art_2__para_1">
     <intro>
-      <p>São alterados os artigos 3.º e 5.º do <ref href="https://data.dre.pt/eli/dec-lei/22/2025/11/05">Decreto-Lei n.º 22/2025, de 5 de novembro</ref>, que passam a ter a seguinte redação:</p>
+      <p>São alterados os artigos 3.º e 5.º do <ref href="https://data.dre.pt/eli/dec-lei/22/2025/11/05/p/dre">Decreto-Lei n.º 22/2025, de 5 de novembro</ref>, que passam a ter a seguinte redação:</p>
     </intro>
     <quotedStructure>
       <article eId="quoted__art_3">
@@ -209,8 +209,8 @@ Quando uma alínea precisa de subdivisões, o `<point>` da alínea contém uma
   <meta>
     <identification source="#dapl">
       <FRBRWork>
-        <FRBRthis value="https://data.dre.pt/eli/dlr/3/2026/03/15/!main"/>
-        <FRBRuri value="https://data.dre.pt/eli/dlr/3/2026/03/15"/>
+        <FRBRthis value="https://data.dre.pt/eli/declegreg/3/2026/03/15/a/dre/!main"/>
+        <FRBRuri value="https://data.dre.pt/eli/declegreg/3/2026/03/15/a/dre"/>
         <FRBRdate date="2026-03-15" name="adoption"/>
         <FRBRauthor href="#alra"/>
         <!-- Sem segmento de jurisdição na URI canónica; a região fica no FRBRcountry -->

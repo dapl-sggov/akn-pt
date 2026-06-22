@@ -1,6 +1,6 @@
 # ADR-0009 — Domínio ELI-PT: placeholder até coordenação INCM
 
-- **Estado:** Proposed — **revisto 2026-06-22 (ver "Revisão" no fim)**
+- **Estado:** Accepted — **superada pela [ADR-0012](0012-eli-pt-incm-real-template.md)** (adoção do template real INCM, 2026-06-22)
 - **Data:** 2026-05-19
 
 ## Contexto
