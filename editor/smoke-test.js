@@ -375,7 +375,8 @@ try {
   // Validar manualmente: deve conter pelo menos uma <ref ...> resolvida
   if (!xml.includes('<ref href="')) throw new Error('Nenhuma ref resolvida no XML.');
   if (!xml.includes('data.europa.eu/eli/dir/2019/1937')) throw new Error('Diretiva UE não resolvida.');
-  if (!xml.includes('eli.gov.pt/eli/pt/dec-lei/2023/21')) throw new Error('DL externo não resolvido.');
+  // DL 21/2023 está no DreMock (data 2023-03-27) → resolve à forma canónica data.dre.pt.
+  if (!xml.includes('data.dre.pt/eli/dec-lei/21/2023/03/27')) throw new Error('DL externo não resolvido na forma canónica data.dre.pt.');
   if (!xml.includes('href="#art_1"')) throw new Error('Ref interna ao art_1 não resolvida.');
   fs.writeFileSync(path.join(OUT, 'dec-lei-with-refs.akn.xml'), xml);
   console.log(`  OK   dec-lei-with-refs.akn.xml  (${xml.length} bytes; refs internas+PT+UE resolvidas)`);
@@ -1551,10 +1552,14 @@ try {
     ['date_publication', ld['eli:is_realized_by']['eli:date_publication']['@value'] === '2016-12-16'],
     ['2 manifestações (xml+html)', ld['eli:is_realized_by']['eli:is_embodied_by'].length === 2],
     ['passed_by Governo', ld['eli:passed_by']['skos:prefLabel']['@value'].includes('Governo')],
-    // URI scheme akn-pt (nossa proposta): ano+número
-    ['URI akn-pt ano+número', cmp.aknPt.work === 'https://eli.gov.pt/eli/pt/dec-lei/2016/83/pt'],
-    // URI scheme incm (produção): data completa
-    ['URI incm data completa', cmp.incm.work === 'https://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre/pt'],
+    // Canónico (data.dre.pt) — Work sem /p/dre/pt; Expression com; Manifestation com formato-segmento
+    ['canonical Work data.dre.pt', cmp.canonical.work === 'https://data.dre.pt/eli/dec-lei/83/2016/12/16'],
+    ['canonical Expression /p/dre/pt', cmp.canonical.expression === 'https://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre/pt'],
+    ['canonical Manifestation /xml (segmento)', cmp.canonical.manifestation === 'https://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre/pt/xml'],
+    // Proposed (forma DAPL anterior): ano+número, eli.gov.pt
+    ['proposed Work eli.gov.pt ano+número', cmp.proposed.work === 'https://eli.gov.pt/eli/pt/dec-lei/2016/83/pt'],
+    // JSON-LD @id deve ser o Work canónico data.dre.pt
+    ['JSON-LD @id = Work canónico', ld['@id'] === 'https://data.dre.pt/eli/dec-lei/83/2016/12/16'],
     // JSON-LD válido (parseável)
     ['JSON-LD parseável', (() => { try { JSON.parse(global.EliMetadata.toJsonLdString(doc)); return true; } catch { return false; } })()],
     ['RDFa tem typeof LegalResource', rdfa.includes('typeof="eli:LegalResource"')],

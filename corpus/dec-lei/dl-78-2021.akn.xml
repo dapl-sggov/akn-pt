@@ -14,8 +14,8 @@
     <meta>
       <identification source="#dapl">
         <FRBRWork>
-          <FRBRthis value="https://eli.gov.pt/eli/pt/dec-lei/2021/78/pt/!main"/>
-          <FRBRuri value="https://eli.gov.pt/eli/pt/dec-lei/2021/78/pt"/>
+          <FRBRthis value="https://data.dre.pt/eli/dec-lei/78/2021/09/20/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/dec-lei/78/2021/09/20"/>
           <FRBRdate date="2021-09-15" name="adoption"/>
           <FRBRauthor href="#governo"/>
           <FRBRcountry value="pt"/>
@@ -23,16 +23,16 @@
           <FRBRnumber value="78"/>
         </FRBRWork>
         <FRBRExpression>
-          <FRBRthis value="https://eli.gov.pt/eli/pt/dec-lei/2021/78/pt/2021-09-20/!main"/>
-          <FRBRuri value="https://eli.gov.pt/eli/pt/dec-lei/2021/78/pt/2021-09-20"/>
+          <FRBRthis value="https://data.dre.pt/eli/dec-lei/78/2021/09/20/p/dre/pt/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/dec-lei/78/2021/09/20/p/dre/pt"/>
           <FRBRdate date="2021-09-20" name="publication"/>
           <FRBRauthor href="#governo"/>
           <FRBRlanguage language="por"/>
           <FRBRversionNumber value="1"/>
         </FRBRExpression>
         <FRBRManifestation>
-          <FRBRthis value="https://eli.gov.pt/eli/pt/dec-lei/2021/78/pt/2021-09-20.xml/!main"/>
-          <FRBRuri value="https://eli.gov.pt/eli/pt/dec-lei/2021/78/pt/2021-09-20.xml"/>
+          <FRBRthis value="https://data.dre.pt/eli/dec-lei/78/2021/09/20/p/dre/pt/xml/!main"/>
+          <FRBRuri value="https://data.dre.pt/eli/dec-lei/78/2021/09/20/p/dre/pt/xml"/>
           <FRBRdate date="2021-09-20" name="publication"/>
           <FRBRauthor href="#dre"/>
           <FRBRformat value="application/akn+xml; profile=akn-pt-1.0"/>

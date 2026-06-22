@@ -1131,12 +1131,13 @@ const Editor = (() => {
       el('span', { class: 'muted small', style: 'display:inline-block;min-width:170px' }, label),
       el('code', { style: 'font-size:0.8em;word-break:break-all' }, uri));
     body.appendChild(el('div', { style: 'background:var(--color-bg-soft,#f5f3ee);padding:8px 10px;border-radius:6px' },
-      el('div', { style: 'font-weight:600;font-size:0.85em;margin-bottom:2px' }, cmp.aknPt.scheme),
-      mk('Work', cmp.aknPt.work),
-      mk('Expression', cmp.aknPt.expression),
-      mk('Manifestation', cmp.aknPt.manifestation),
-      el('div', { style: 'font-weight:600;font-size:0.85em;margin:8px 0 2px' }, cmp.incm.scheme),
-      mk('Work', cmp.incm.work),
+      el('div', { style: 'font-weight:600;font-size:0.85em;margin-bottom:2px' }, cmp.canonical.scheme),
+      mk('Work', cmp.canonical.work),
+      mk('Expression', cmp.canonical.expression),
+      mk('Manifestation', cmp.canonical.manifestation),
+      el('div', { style: 'font-weight:600;font-size:0.85em;margin:8px 0 2px' }, cmp.proposed.scheme),
+      mk('Work', cmp.proposed.work),
+      mk('Expression', cmp.proposed.expression),
     ));
 
     // JSON-LD

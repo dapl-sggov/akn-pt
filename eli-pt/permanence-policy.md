@@ -51,7 +51,7 @@ Sob esta política, são permitidas as seguintes operações que afectam URIs:
 | Operação | Permitida? | Tratamento |
 |---|---|---|
 | Reatribuir Work URI a outro ato | Não | Proibido |
-| Mover Work URI para outro domínio (e.g. de `eli.gov.pt` para `data.dre.pt`) | Sim, uma vez | HTTP 301 permanente; mapeamento publicado |
+| Mover Work URI para outro domínio (canónico = `data.dre.pt`; qualquer migração futura) | Sim, uma vez | HTTP 301 permanente; mapeamento publicado |
 | Adicionar novas Expressions (consolidações) | Sim | Novos URIs; antigas mantêm-se válidas |
 | Adicionar novas Manifestations (e.g. formato JSON antes inexistente) | Sim | Novos URIs |
 | Regenerar Manifestation existente | Sim, com cuidado | HTTP 301 do antigo para o novo |

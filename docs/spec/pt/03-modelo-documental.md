@@ -23,8 +23,8 @@ Cada documento AKN-PT contém os três elementos FRBR em `<meta>/<identification
 ```xml
 <identification source="#dapl">
   <FRBRWork>
-    <FRBRthis    value="https://eli.gov.pt/eli/pt/dec-lei/2026/22/pt/!main"/>
-    <FRBRuri     value="https://eli.gov.pt/eli/pt/dec-lei/2026/22/pt"/>
+    <FRBRthis    value="https://data.dre.pt/eli/dec-lei/22/2026/03/15/!main"/>
+    <FRBRuri     value="https://data.dre.pt/eli/dec-lei/22/2026/03/15"/>
     <FRBRdate    date="2026-03-10" name="adoption"/>
     <FRBRauthor  href="#governo"/>
     <FRBRcountry value="pt"/>
@@ -32,15 +32,15 @@ Cada documento AKN-PT contém os três elementos FRBR em `<meta>/<identification
     <FRBRnumber  value="22"/>
   </FRBRWork>
   <FRBRExpression>
-    <FRBRthis     value="https://eli.gov.pt/eli/pt/dec-lei/2026/22/pt/2026-03-15/!main"/>
-    <FRBRuri      value="https://eli.gov.pt/eli/pt/dec-lei/2026/22/pt/2026-03-15"/>
+    <FRBRthis     value="https://data.dre.pt/eli/dec-lei/22/2026/03/15/p/dre/pt/!main"/>
+    <FRBRuri      value="https://data.dre.pt/eli/dec-lei/22/2026/03/15/p/dre/pt"/>
     <FRBRdate     date="2026-03-15" name="publication"/>
     <FRBRauthor   href="#governo"/>
     <FRBRlanguage language="por"/>
   </FRBRExpression>
   <FRBRManifestation>
-    <FRBRthis   value="https://eli.gov.pt/eli/pt/dec-lei/2026/22/pt/2026-03-15.xml/!main"/>
-    <FRBRuri    value="https://eli.gov.pt/eli/pt/dec-lei/2026/22/pt/2026-03-15.xml"/>
+    <FRBRthis   value="https://data.dre.pt/eli/dec-lei/22/2026/03/15/p/dre/pt/xml/!main"/>
+    <FRBRuri    value="https://data.dre.pt/eli/dec-lei/22/2026/03/15/p/dre/pt/xml"/>
     <FRBRdate   date="2026-03-15" name="publication"/>
     <FRBRauthor href="#dre"/>
     <FRBRformat value="application/akn+xml; profile=akn-pt-1.0"/>
@@ -63,9 +63,9 @@ Cenário: o DL n.º 22/2026 (originário) é alterado pelo DL n.º 80/2026.
 
 | Camada | Antes da alteração | Depois |
 |---|---|---|
-| Work | `eli.gov.pt/eli/pt/dec-lei/2026/22/pt` (único) | Mantém-se. Não muda. |
-| Expression | `…/22/pt/2026-03-15` (originária) | `…/22/pt/2026-03-15` mantém-se; cria-se `…/22/pt/2026-08-20` para a consolidada. |
-| Manifestation | `…/2026-03-15.xml` | Mantém-se; cria-se `…/2026-08-20.xml`. |
+| Work | `data.dre.pt/eli/dec-lei/22/2026/03/15` (único) | Mantém-se. Não muda. |
+| Expression | `…/03/15/p/dre/pt` (originária) | mantém-se; cria-se `…/03/15/2026-08-20/dre/pt` para a consolidada. |
+| Manifestation | `…/p/dre/pt/xml` | Mantém-se; cria-se `…/2026-08-20/dre/pt/xml`. |
 
 Importante:
 

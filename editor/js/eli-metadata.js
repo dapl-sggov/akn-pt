@@ -9,10 +9,9 @@
 // de servir RDFa/JSON-LD. Este módulo produz exactamente a marcação que falta,
 // como activo de demonstração para a reunião INCM e como base de alinhamento.
 //
-// Duas formas de URI são suportadas, para tornar visível a divergência a
-// decidir com a INCM (ver eli-pt/research/eli-pt-gap-analysis.md):
-//   - scheme 'akn-pt' (nossa proposta v0.1.0): /eli/{jur}/{type}/{year}/{number}/pt
-//   - scheme 'incm'   (produção real INCM):     /eli/{type}/{number}/{year}/{mm}/{dd}/p/dre/pt
+// Duas formas de URI são suportadas (ver eli-pt/research/eli-pt-gap-analysis.md):
+//   - scheme 'dre'      (CANÓNICO — produção INCM): /eli/{type}/{number}/{year}/{mm}/{dd}/p/dre/pt
+//   - scheme 'proposed' (forma DAPL anterior, evolução a propor): /eli/{jur}/{type}/{year}/{number}/pt
 //
 // Sem dependências de DOM no núcleo — corre em Node (smoke test) e no browser.
 
@@ -60,44 +59,57 @@ const EliMetadata = (() => {
   }
 
   // ----- URIs -------------------------------------------------------------
+  //
+  // Esquema CANÓNICO = 'dre' (template de produção da INCM, data.dre.pt):
+  //   Work:          /eli/{tipo}/{nº}/{ano}/{mês}/{dia}
+  //   Expression:    Work + /{p|data-consolidação}/dre/pt
+  //   Manifestation: Expression + /{xml|html|pdf}   (formato é SEGMENTO)
+  // Esquema 'proposed' = forma anterior da DAPL (eli.gov.pt, ano+número,
+  // jurisdição-first), mantida só para comparação/registo (evolução a propor).
 
   function workUri(doc, opts = {}) {
-    const scheme = opts.scheme || 'akn-pt';
-    if (scheme === 'incm') {
-      const domain = opts.domain || INCM_DOMAIN;
-      const { y, m, d } = _ymd(doc);
-      // Forma de produção INCM: /eli/{type}/{number}/{year}/{mm}/{dd}/p/dre/pt
-      return `${domain}/eli/${doc.actName}/${_num(doc)}/${y}/${m}/${d}/p/dre/pt`;
+    const scheme = opts.scheme || 'dre';
+    if (scheme === 'proposed') {
+      const domain = opts.domain || PLACEHOLDER_DOMAIN;
+      return `${domain}/eli/${_jur(doc)}/${doc.actName}/${doc.year}/${_num(doc)}/pt`;
     }
-    // Nossa proposta: /eli/{jur}/{type}/{year}/{number}/pt
-    const domain = opts.domain || PLACEHOLDER_DOMAIN;
-    return `${domain}/eli/${_jur(doc)}/${doc.actName}/${doc.year}/${_num(doc)}/pt`;
+    // Canónico (dre): /eli/{tipo}/{nº}/{ano}/{mês}/{dia} — data de publicação.
+    const domain = opts.domain || INCM_DOMAIN;
+    const { y, m, d } = _ymd(doc);
+    return `${domain}/eli/${doc.actName}/${_num(doc)}/${y}/${m}/${d}`;
   }
 
   function expressionUri(doc, opts = {}) {
     const base = workUri(doc, opts);
-    // INCM já inclui ponto-no-tempo no path do Work (não acrescentamos).
-    if ((opts.scheme || 'akn-pt') === 'incm') return base;
-    // Nossa forma: originária = Work URI; consolidada acrescenta /{pit}.
-    return _isConsolidated(doc) ? `${base}/${doc._consolidatedAt}` : base;
+    if ((opts.scheme || 'dre') === 'proposed') {
+      return _isConsolidated(doc) ? `${base}/${doc._consolidatedAt}` : base;
+    }
+    // Canónico: Work + /{p|data}/dre/pt
+    const versionSeg = _isConsolidated(doc) ? doc._consolidatedAt : 'p';
+    return `${base}/${versionSeg}/dre/pt`;
   }
 
   function manifestationUri(doc, opts = {}, fmt = 'xml') {
-    return `${expressionUri(doc, opts)}.${fmt}`;
+    const expr = expressionUri(doc, opts);
+    // Canónico: formato como SEGMENTO (/xml). 'proposed': extensão (.xml).
+    if ((opts.scheme || 'dre') === 'proposed') return `${expr}.${fmt}`;
+    return `${expr}/${fmt}`;
   }
 
   // Comparação das duas formas — para a UI e a reunião INCM.
   function uriComparison(doc) {
     return {
-      aknPt: {
-        scheme: 'akn-pt (proposta v0.1.0)',
-        work: workUri(doc, { scheme: 'akn-pt' }),
-        expression: expressionUri(doc, { scheme: 'akn-pt' }),
-        manifestation: manifestationUri(doc, { scheme: 'akn-pt' }, 'xml'),
+      canonical: {
+        scheme: 'data.dre.pt (INCM — produção, canónico)',
+        work: workUri(doc, { scheme: 'dre' }),
+        expression: expressionUri(doc, { scheme: 'dre' }),
+        manifestation: manifestationUri(doc, { scheme: 'dre' }, 'xml'),
       },
-      incm: {
-        scheme: 'incm (data.dre.pt em produção)',
-        work: workUri(doc, { scheme: 'incm' }),
+      proposed: {
+        scheme: 'eli.gov.pt (forma DAPL anterior — evolução a propor)',
+        work: workUri(doc, { scheme: 'proposed' }),
+        expression: expressionUri(doc, { scheme: 'proposed' }),
+        manifestation: manifestationUri(doc, { scheme: 'proposed' }, 'xml'),
       },
     };
   }
@@ -107,7 +119,7 @@ const EliMetadata = (() => {
   function buildJsonLd(doc, opts = {}) {
     const work = workUri(doc, opts);
     const expr = expressionUri(doc, opts);
-    const domain = opts.domain || (((opts.scheme || 'akn-pt') === 'incm') ? INCM_DOMAIN : PLACEHOLDER_DOMAIN);
+    const domain = opts.domain || (((opts.scheme || 'dre') === 'proposed') ? PLACEHOLDER_DOMAIN : INCM_DOMAIN);
     const author = AUTHOR[doc.actName] || AUTHOR['dec-lei'];
     const title = doc.shortTitle
       || `${TYPE_LABEL[doc.actName] || doc.actName} n.º ${_num(doc)}/${doc.year}`;

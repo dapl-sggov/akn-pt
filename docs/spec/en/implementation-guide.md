@@ -170,11 +170,11 @@ The act type slug in the ELI-PT URI must be the canonical slug, not the
 human-friendly name:
 
 ```xml
-<!-- WRONG -->
-<FRBRuri value="https://eli.gov.pt/eli/pt/decreto-lei/2026/22/pt"/>
+<!-- WRONG (full PT type slug) -->
+<FRBRuri value="https://data.dre.pt/eli/decreto-lei/22/2026/03/15"/>
 
-<!-- CORRECT -->
-<FRBRuri value="https://eli.gov.pt/eli/pt/dec-lei/2026/22/pt"/>
+<!-- CORRECT (ELI slug) -->
+<FRBRuri value="https://data.dre.pt/eli/dec-lei/22/2026/03/15"/>
 ```
 
 The slug catalogue is in §5 of the ELI-PT specification.

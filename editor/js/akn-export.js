@@ -45,36 +45,48 @@ const AknExport = (() => {
       .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'unnamed';
   }
 
+  // Constrói as URIs FRBR no template ELI-PT canónico = template de produção
+  // da INCM (data.dre.pt), confirmado em 2026-06-22:
+  //   Work:          https://data.dre.pt/eli/{tipo}/{nº}/{ano}/{mês}/{dia}
+  //   Expression:    Work + /{p|data-consolidação}/dre/pt
+  //   Manifestation: Expression + /{xml|html|pdf}   (formato é SEGMENTO)
+  // A data no Work é a data de PUBLICAÇÃO (ex.: dec-lei/83/2016/12/16).
+  // Língua no URI = 'pt' (2 letras, convenção INCM); o <FRBRlanguage> mantém
+  // 'por' (ISO 639-2, convenção AKN). Sem segmento de jurisdição (decisão
+  // 2026-06-22: data.dre.pt para todos os actos, incl. regionais); a
+  // jurisdição permanece em <FRBRcountry>.
   function buildFrbr(doc) {
     const actor = ACTOR_FOR_TYPE[doc.actName] || 'governo';
-    const uriBase = `https://eli.gov.pt/eli/${doc.country}/${doc.actName}/${doc.year}/${doc.number || 'X'}/pt`;
+    const num = doc.number || 'X';
+    const pub = doc.publicationDate || doc.adoptionDate || `${doc.year}-01-01`;
+    const [py, pm, pd] = pub.split('-');
 
-    // Modo consolidação/retificação: o Expression URI tem {point-in-time}
-    // igual à data de consolidação/retificação, e a versão FRBR incrementa.
-    // Flags em doc._consolidatedAt (ISO date) + doc._consolidationKind
-    // ('consolidation' | 'rectification'). Sentinela '9999-12-31' do
-    // applyAll é tratada como ausência de consolidação (significa "estado
-    // actual incluindo tudo no futuro").
+    // Work: type/number/year/month/day (data de publicação original).
+    const workUri = `https://data.dre.pt/eli/${doc.actName}/${num}/${py}/${pm}/${pd}`;
+
+    // Consolidação/retificação: o segmento de versão ('p' = como publicado)
+    // passa a ser a data de consolidação; a versão FRBR incrementa.
+    // Sentinela '9999-12-31' do applyAll = sem consolidação.
     const isConsol = doc._consolidatedAt && doc._consolidatedAt !== '9999-12-31';
     const consolKind = doc._consolidationKind || 'consolidation';
-    const exprDate = isConsol ? doc._consolidatedAt : (doc.publicationDate || doc.adoptionDate);
-    const expr = `${uriBase}/${exprDate}`;
-    const manif = `${expr}.xml`;
+    const versionSeg = isConsol ? doc._consolidatedAt : 'p';
+    const exprUri = `${workUri}/${versionSeg}/dre/pt`;
+    const manifUri = `${exprUri}/xml`;
     const version = isConsol ? (doc._consolidationVersion || 2) : 1;
 
     return `      <identification source="#dapl">
         <FRBRWork>
-          <FRBRthis value="${uriBase}/!main"/>
-          <FRBRuri value="${uriBase}"/>
+          <FRBRthis value="${workUri}/!main"/>
+          <FRBRuri value="${workUri}"/>
           <FRBRdate date="${doc.adoptionDate}" name="adoption"/>
           <FRBRauthor href="#${actor}"/>
           <FRBRcountry value="${doc.country}"/>
           <FRBRsubtype value="${doc.subtype}"/>
-          <FRBRnumber value="${escapeXml(doc.number || 'X')}"/>
+          <FRBRnumber value="${escapeXml(num)}"/>
         </FRBRWork>
         <FRBRExpression>
-          <FRBRthis value="${expr}/!main"/>
-          <FRBRuri value="${expr}"/>
+          <FRBRthis value="${exprUri}/!main"/>
+          <FRBRuri value="${exprUri}"/>
           <FRBRdate date="${doc.publicationDate}" name="publication"/>${isConsol ? `
           <FRBRdate date="${doc._consolidatedAt}" name="${consolKind}"/>` : ''}
           <FRBRauthor href="#${actor}"/>
@@ -82,8 +94,8 @@ const AknExport = (() => {
           <FRBRversionNumber value="${version}"/>
         </FRBRExpression>
         <FRBRManifestation>
-          <FRBRthis value="${manif}/!main"/>
-          <FRBRuri value="${manif}"/>
+          <FRBRthis value="${manifUri}/!main"/>
+          <FRBRuri value="${manifUri}"/>
           <FRBRdate date="${doc.publicationDate}" name="publication"/>
           <FRBRauthor href="#dre"/>
           <FRBRformat value="application/akn+xml; profile=akn-pt-1.0"/>

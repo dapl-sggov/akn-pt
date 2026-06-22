@@ -108,7 +108,7 @@ For each act type, the schema specifies invariants validated in two layers:
 | Layer | Identifies | Example |
 |---|---|---|
 | `eId` | Internal fragments | `art_5__para_1__lit_a` |
-| FRBR URI | Work / Expression / Manifestation | `https://eli.gov.pt/eli/pt/dec-lei/2026/22/pt[/2027-01-15][.xml]` |
+| FRBR URI | Work / Expression / Manifestation | `https://data.dre.pt/eli/dec-lei/22/2026/03/15[/p/dre/pt[/xml]]` |
 | ELI-PT | Institutional identifier (subset of FRBR URI following the canonical template) | (same form) |
 
 ELI-PT follows the European Legislation Identifier template:

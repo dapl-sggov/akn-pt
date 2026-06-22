@@ -144,7 +144,7 @@ const References = (() => {
       const slug = _slugForType(m[1]);
       const num = m[2].replace(/\s/g, '');
       const year = m[3];
-      const href = `https://eli.gov.pt/eli/pt/${slug}/${year}/${num}/pt`;
+      const href = _eliForExternal(slug, num, year);
       matches.push({
         kind: 'external-pt', raw: m[0], start: m.index, end: m.index + m[0].length,
         href, label: m[0],
@@ -192,6 +192,22 @@ const References = (() => {
       });
     }
     return set;
+  }
+
+  // URI ELI para uma citação externa (tipo+número+ano).
+  // CANÓNICO = data.dre.pt, mas esse template exige a data de publicação
+  // (mês/dia) — que uma citação NÃO fornece. Por isso:
+  //   - se o diploma for conhecido (DreMock tem a data) → forma canónica data.dre.pt;
+  //   - senão → forma construível eli.gov.pt (ano+número), assinalando que a
+  //     resolução para o URI canónico exige um lookup ao DRE.
+  // Esta limitação do template INCM é um ponto a levar à reunião.
+  function _eliForExternal(slug, num, year) {
+    if (typeof DreMock !== 'undefined' && DreMock.all) {
+      const needle = `/eli/${slug}/${num}/${year}/`;
+      const hit = DreMock.all().find(e => e.eli && e.eli.includes(needle));
+      if (hit) return hit.eli;
+    }
+    return `https://eli.gov.pt/eli/pt/${slug}/${year}/${num}/pt`;
   }
 
   function _slugForType(raw) {

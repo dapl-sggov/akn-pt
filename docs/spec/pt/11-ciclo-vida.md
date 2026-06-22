@@ -69,7 +69,7 @@ Quando o ato A altera o ato B:
   <heading>Alteração ao Decreto-Lei n.º 22/2025, de 5 de novembro</heading>
   <paragraph eId="art_2__para_1">
     <intro>
-      <p>São alterados os artigos 3.º e 5.º do <ref href="https://eli.gov.pt/eli/pt/dec-lei/2025/22/pt">Decreto-Lei n.º 22/2025, de 5 de novembro</ref>, que passam a ter a seguinte redação:</p>
+      <p>São alterados os artigos 3.º e 5.º do <ref href="https://data.dre.pt/eli/dec-lei/22/2025/11/05">Decreto-Lei n.º 22/2025, de 5 de novembro</ref>, que passam a ter a seguinte redação:</p>
     </intro>
     <quotedStructure>
       <article eId="quoted__art_3">
