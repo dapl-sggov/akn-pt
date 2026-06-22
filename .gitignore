@@ -78,3 +78,10 @@ release/v*/
 .playwright-mcp/
 # screenshots soltos na raiz gerados em sessões de teste visual
 /*.png
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
