@@ -55,9 +55,10 @@ setTimeout(() => {
   // 3. Masthead com cmd-k trigger
   checks.push(['cmdk trigger no masthead', $('#btn-cmdk') !== null]);
 
-  // 4. Painel esquerdo é pilha (não TOC)
-  checks.push(['pilha presente', $('#stack-list') !== null]);
-  checks.push(['pilha tem o doc activo', $$('#stack-list .stack-item.active').length === 1]);
+  // 4. Painel esquerdo é o Índice do diploma (a Pilha foi removida)
+  checks.push(['índice presente', $('#toc-nav') !== null]);
+  checks.push(['índice lista artigos', $$('#toc-nav .toc-item').length >= 1]);
+  checks.push(['pilha removida', $('#stack-list') === null]);
 
   // 5. Breadcrumb no canvas
   checks.push(['breadcrumb no canvas', $('#breadcrumb') !== null && $$('#breadcrumb > *').length > 0]);
@@ -125,12 +126,12 @@ setTimeout(() => {
   const dre = window.DreMock.suggest('decreto-lei 21 2023', 3);
   checks.push(['DRE-mock funciona', dre.length > 0]);
 
-  // 20. Pilha cresce com novo doc — voltar à landing, escolher outro
+  // 20. Novo doc pela landing actualiza o Índice (a Pilha foi removida)
   window.history.pushState({}, '', '/');
   // Simular click no card "Lei" (sem fechar editor)
   $$('.type-card').find(c => c.textContent.includes('Lei') && !c.textContent.includes('Decreto'))?.click();
-  const stackAfter = $$('#stack-list .stack-item').length;
-  checks.push(['pilha cresce ao criar novo doc', stackAfter >= 2]);
+  checks.push(['índice actualiza ao criar novo doc',
+    $('#toc-nav') !== null && $$('#toc-nav .toc-item').length >= 1]);
 
   // 21. Identidade e pegada estão no canvas (não em tab)
   checks.push(['identidade no canvas', $('.canvas-card.identity-card') !== null]);

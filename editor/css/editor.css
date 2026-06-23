@@ -1680,6 +1680,8 @@ textarea.point-content:focus {
   box-shadow: var(--shadow-md, 0 8px 24px rgba(28,29,34,0.12));
   min-width: 280px;
   max-width: 340px;
+  max-height: calc(100vh - var(--topbar-h) - 16px);
+  overflow-y: auto;
   z-index: 500;
   padding: 6px;
   display: none;
@@ -3330,4 +3332,27 @@ body::before {
   background: var(--color-amber);
 }
 .toc-section-title::before { width: 10px; }
+
+/* Índice do diploma (painel esquerdo) — modificadores v3.2. */
+.toc-nav { flex: 1; overflow-y: auto; }
+.toc-item-container {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--color-navy);
+  margin-top: var(--sp-2);
+}
+.toc-depth-1 { padding-left: 20px; }
+.toc-depth-2 { padding-left: 30px; }
+.toc-depth-3 { padding-left: 40px; }
+.toc-item-meta { color: var(--color-faint); font-style: italic; cursor: default; }
+.toc-item-meta:hover { background: transparent; color: var(--color-faint); border-left-color: transparent; }
+.toc-empty {
+  padding: var(--sp-4) var(--sp-3);
+  margin: 0;
+  color: var(--color-faint);
+  font-family: var(--font-text);
+  font-style: italic;
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
 
