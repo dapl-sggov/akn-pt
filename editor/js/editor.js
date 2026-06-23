@@ -152,10 +152,7 @@ const Editor = (() => {
     const doc = State.get();
     if (!doc) return;
     renderTopbar(doc);
-    // Pilha multi-doc (substitui o TOC sidebar antigo)
-    if ($('#stack-list')) renderStack();
-    // TOC continua acessível via $('#toc-nav') para back-compat; só renderiza
-    // se o elemento ainda existir (vai sair quando o redesign for total).
+    // Índice navegável do diploma no painel esquerdo (scroll-spy + clique-salta).
     if ($('#toc-nav')) renderToc(doc);
     // Breadcrumb no topo do canvas (substitui o TOC sidebar como navegação)
     if ($('#breadcrumb')) renderBreadcrumb(doc);
@@ -204,52 +201,112 @@ const Editor = (() => {
     badge.textContent = b.text;
   }
 
+  let _tocObserver = null;
+
   function renderToc(doc) {
     const nav = $('#toc-nav');
+    if (!nav) return;
     nav.innerHTML = '';
 
+    // Liga um item do índice a um bloco do documento (eId): clique = scroll suave;
+    // data-toc-eid alimenta o scroll-spy.
+    const item = (eId, label, mods = '') => {
+      const attrs = { class: 'toc-item' + mods };
+      if (eId) {
+        attrs.href = '#' + eId;
+        attrs['data-toc-eid'] = eId;
+        attrs.on = { click: (e) => {
+          e.preventDefault();
+          const t = document.getElementById(eId);
+          if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } };
+      }
+      return el('a', attrs, label);
+    };
+
     const sections = [];
+
     if (doc.recitals.length) {
-      const items = doc.recitals.map((r, i) =>
-        el('a', { class: 'toc-item', href: '#' + r.id }, `Considerando ${i + 1}`)
-      );
-      sections.push(['Preâmbulo', items]);
+      sections.push(['Preâmbulo', doc.recitals.map((r, i) => item(r.id, `Considerando ${i + 1}`))]);
     }
 
     if (doc.body.kind === 'articles') {
-      const items = doc.body.items.map(a =>
-        el('a', { class: 'toc-item', href: '#' + a.id },
-          a.num + (a.heading ? ' — ' + a.heading : ''))
-      );
+      sections.push(['Articulado', doc.body.items.map(a =>
+        item(a.id, a.num + (a.heading ? ' — ' + a.heading : '')))]);
+    } else if (doc.body.kind === 'hierarchic') {
+      const CONT = new Set(['book', 'part', 'title', 'chapter', 'section', 'subsection']);
+      const items = [];
+      const walk = (list, depth) => (list || []).forEach(it => {
+        if (it && CONT.has(it.containerType)) {
+          const label = ((it.num ? it.num + ' ' : '') + (it.heading || '')).trim() || it.containerType;
+          items.push(item(it.id, label, ' toc-item-container toc-depth-' + Math.min(depth, 3)));
+          walk(it.items, depth + 1);
+        } else if (it) {
+          items.push(item(it.id, it.num + (it.heading ? ' — ' + it.heading : ''),
+            ' toc-depth-' + Math.min(depth + 1, 3)));
+        }
+      });
+      walk(doc.body.items, 0);
       sections.push(['Articulado', items]);
     } else {
-      const items = doc.body.items.map(p =>
-        el('a', { class: 'toc-item', href: '#' + p.id },
-          `Ponto ${p.num.replace(/[^0-9]/g, '')}`)
-      );
-      sections.push(['Pontos resolutivos', items]);
+      sections.push(['Pontos resolutivos', doc.body.items.map(p =>
+        item(p.id, `Ponto ${String(p.num).replace(/[^0-9]/g, '')}`))]);
     }
 
     if (doc.attachments.length) {
-      const items = doc.attachments.map(a =>
-        el('a', { class: 'toc-item', href: '#' + a.id }, a.heading)
-      );
-      sections.push(['Anexos', items]);
+      sections.push(['Anexos', doc.attachments.map(a => item(a.id, a.heading || 'Anexo'))]);
     }
 
-    if (doc.workflow.length) {
-      const items = [el('span', { class: 'toc-item' },
-        `${doc.workflow.length} step(s) registado(s)`)];
-      sections.push(['Pegada legislativa', items]);
+    if (doc.workflow && doc.workflow.length) {
+      sections.push(['Pegada legislativa',
+        [el('span', { class: 'toc-item toc-item-meta' }, `${doc.workflow.length} passo(s) registado(s)`)]]);
+    }
+
+    if (!sections.length) {
+      nav.appendChild(el('p', { class: 'toc-empty' }, 'Documento vazio — comece a redigir.'));
+      return;
     }
 
     sections.forEach(([title, items]) => {
-      const sec = el('div', { class: 'toc-section' },
-        el('h4', { class: 'toc-section-title' }, title),
-        ...items
-      );
-      nav.appendChild(sec);
+      nav.appendChild(el('div', { class: 'toc-section' },
+        el('h4', { class: 'toc-section-title' }, title), ...items));
     });
+
+    // O scroll-spy precisa que os blocos do canvas já existam; o renderBody
+    // corre depois do renderToc no mesmo refresh, por isso adiamos um frame.
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => _setupTocScrollSpy());
+    else _setupTocScrollSpy();
+  }
+
+  // Scroll-spy: destaca no índice o bloco actualmente visível no canvas.
+  function _setupTocScrollSpy() {
+    if (_tocObserver) { _tocObserver.disconnect(); _tocObserver = null; }
+    const nav = $('#toc-nav');
+    if (!nav || typeof IntersectionObserver === 'undefined') return;
+    const links = [...nav.querySelectorAll('.toc-item[data-toc-eid]')];
+    if (!links.length) return;
+    const byId = new Map(links.map(l => [l.getAttribute('data-toc-eid'), l]));
+    const targets = links.map(l => document.getElementById(l.getAttribute('data-toc-eid'))).filter(Boolean);
+    if (!targets.length) return;
+    // Contentor de scroll real do canvas (detetado; não há .panel-center).
+    let root = $('#document-body');
+    while (root && root !== document.body) {
+      const oy = getComputedStyle(root).overflowY;
+      if ((oy === 'auto' || oy === 'scroll') && root.scrollHeight > root.clientHeight + 2) break;
+      root = root.parentElement;
+    }
+    if (!root || root === document.body) root = null;
+    const visible = new Set();
+    _tocObserver = new IntersectionObserver((entries) => {
+      entries.forEach(en => { if (en.isIntersecting) visible.add(en.target.id); else visible.delete(en.target.id); });
+      const top = targets.find(t => visible.has(t.id));
+      if (top) {
+        nav.querySelectorAll('.toc-item.active').forEach(x => x.classList.remove('active'));
+        const active = byId.get(top.id);
+        if (active) { active.classList.add('active'); active.scrollIntoView({ block: 'nearest' }); }
+      }
+    }, { root, threshold: 0.1 });
+    targets.forEach(t => _tocObserver.observe(t));
   }
 
   function renderBody(doc) {
@@ -1934,65 +1991,12 @@ const Editor = (() => {
   // =========================================================================
 
   // ---------- Pilha (substitui o TOC sidebar antigo) ----------------------
-  function renderStack() {
-    const ul = $('#stack-list');
-    if (!ul) return;
-    ul.innerHTML = '';
-    const entries = Stack.list();
-    const activeId = Stack.activeId();
+  // A "Pilha" (lista de rascunhos no painel esquerdo) foi removida — o painel
+  // esquerdo passou a ser o Índice do diploma (renderToc). A persistência de
+  // rascunhos (módulo Stack) mantém-se: o rascunho activo é gravado/restaurado;
+  // novos rascunhos criam-se pela landing (botão ← / escolha de tipo).
 
-    if (!entries.length) {
-      ul.appendChild(el('li', { class: 'stack-empty' },
-        'Sem rascunhos. Comece um abaixo ou regresse à escolha de tipo.'));
-      return;
-    }
-
-    entries.forEach(e => {
-      const t = (typeof ACT_TYPES !== 'undefined') ? ACT_TYPES.find(x => x.id === e.actName) : null;
-      const isActive = e.id === activeId;
-      const item = el('li', {
-        class: 'stack-item' + (isActive ? ' active' : '') + (e.kind === 'amender' ? ' amender' : ''),
-        role: 'option',
-        'aria-selected': isActive ? 'true' : 'false',
-        on: { click: () => switchToStackEntry(e.id) },
-      },
-        el('div', { class: 'stack-item-marker' }, isActive ? '▣' : '▢'),
-        el('div', { class: 'stack-item-body' },
-          el('div', { class: 'stack-item-title' },
-            t ? t.name : (e.actName || 'rascunho'),
-            e.number ? el('span', { class: 'stack-item-num' }, ` n.º ${e.number}/${e.year}`) : null,
-          ),
-          e.shortTitle
-            ? el('div', { class: 'stack-item-ementa' }, e.shortTitle)
-            : el('div', { class: 'stack-item-ementa muted' }, 'sem ementa'),
-          el('div', { class: 'stack-item-meta' }, _relativeTime(e.lastModified)),
-        ),
-        el('button', {
-          class: 'stack-item-close',
-          title: 'Remover este rascunho', 'aria-label': 'Remover rascunho',
-          on: { click: (ev) => {
-            ev.stopPropagation();
-            if (!confirm(`Apagar rascunho "${(e.shortTitle || e.actName).slice(0, 60)}"?`)) return;
-            Stack.remove(e.id);
-            // se era o activo, voltar à landing
-            if (isActive) showScreen('landing');
-            else renderStack();
-          }}
-        }, '×'),
-      );
-      ul.appendChild(item);
-    });
-  }
-
-  function switchToStackEntry(id) {
-    // grava o doc actual no seu slot, carrega o novo, refresca
-    const doc = Stack.activate(id);
-    if (!doc) { toast('Rascunho indisponível.', 'error'); return; }
-    State.init(doc);
-    refresh();
-  }
-
-  // ---------- Breadcrumb (substitui o TOC sidebar como navegação) ---------
+  // ---------- Breadcrumb (navegação horizontal no topo do canvas) ---------
   function renderBreadcrumb(doc) {
     const bc = $('#breadcrumb');
     if (!bc) return;
@@ -2628,8 +2632,11 @@ const Editor = (() => {
     // Cmd-K trigger no masthead
     $('#btn-cmdk')?.addEventListener('click', () => CmdK.open());
 
-    // Botão "+ novo rascunho" da pilha → volta à landing
-    $('#stack-new')?.addEventListener('click', () => showScreen('landing'));
+    // Atalho mostrado: ⌘K em macOS, "Ctrl K" no resto (o Cmd-K liga
+    // ctrlKey||metaKey, logo funciona em ambos).
+    const _isMac = /Mac|iPhone|iPad|iPod/.test((navigator.platform || '') + ' ' + (navigator.userAgent || ''));
+    const _kbdEl = $('#cmdk-kbd');
+    if (_kbdEl) _kbdEl.textContent = _isMac ? '⌘K' : 'Ctrl K';
 
     // Export menu items
     $$('[data-export]').forEach(b => {

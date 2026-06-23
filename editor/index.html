@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AKN-PT Editor — v0.1.0 demo</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230f2747'/%3E%3Crect x='3' y='3' width='26' height='2' fill='%23a87832'/%3E%3Ctext x='16' y='24' font-family='Georgia,serif' font-size='21' font-weight='700' fill='%23fdfaf2' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="css/editor.css?v=v032">
+  <link rel="stylesheet" href="css/editor.css?v=v033">
 </head>
 <body>
 
@@ -64,9 +64,9 @@
         <span id="validation-badge" class="badge badge-pending" title="Estado da validação">●</span>
 
         <!-- Cmd-K trigger -->
-        <button class="cmdk-trigger" id="btn-cmdk" title="Pesquisar acções (Ctrl/⌘+K)">
+        <button class="cmdk-trigger" id="btn-cmdk" title="Pesquisar acções (Ctrl+K)">
           <span>Acções</span>
-          <kbd>⌘K</kbd>
+          <kbd id="cmdk-kbd">Ctrl K</kbd>
         </button>
 
         <button class="btn-ghost" id="btn-validate" title="Verificar consistência">Validar</button>
@@ -76,7 +76,7 @@
           <button class="btn-primary menu-trigger" data-menu-trigger>
             Exportar <span class="caret">▾</span>
           </button>
-          <div class="menu-panel" data-menu-panel>
+          <div class="menu-panel menu-panel-right" data-menu-panel>
             <button class="menu-item" data-export="xml">
               <span class="menu-icon">⤓</span>
               <span class="menu-label">AKN-PT XML <span class="menu-shortcut">recomendado</span></span>
@@ -122,15 +122,12 @@
     <!-- ====== 3 PAINÉIS — PILHA | CANVAS | RÉGUA DE ACTIVIDADE ====== -->
     <div class="layout">
 
-      <!-- PILHA: rascunhos abertos no browser; substitui o TOC sidebar antigo. -->
-      <aside class="panel-left" id="stack-panel">
+      <!-- ÍNDICE: estrutura navegável do diploma em edição (scroll-spy). -->
+      <aside class="panel-left" id="index-panel">
         <div class="panel-header">
-          <h2>Pilha</h2>
+          <h2>Índice</h2>
         </div>
-        <ul id="stack-list" class="stack-list" role="listbox" aria-label="Rascunhos abertos"></ul>
-        <div class="panel-actions">
-          <button class="btn-small btn-stack-new" id="stack-new">+ Novo rascunho</button>
-        </div>
+        <nav id="toc-nav" class="toc-nav" aria-label="Índice do diploma"></nav>
       </aside>
 
       <!-- CANVAS: documento com breadcrumb sticky no topo (substitui o TOC). -->
@@ -449,6 +446,6 @@
   <script src="js/bluebell-pt.js"></script>
   <script src="js/collab.js"></script>
   <script src="js/import-parser.js"></script>
-  <script src="js/editor.js?v=v012"></script>
+  <script src="js/editor.js?v=v034"></script>
 </body>
 </html>
