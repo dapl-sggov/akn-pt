@@ -47,6 +47,7 @@ loadFile('js/loda-inline.js');
 loadFile('js/suggestions.js');
 loadFile('js/bluebell-pt.js');
 loadFile('js/eli-metadata.js');
+loadFile('js/subject-vocab.js');
 loadFile('js/import-parser.js');
 
 // State precisa de localStorage (shim) e ignora Editor.refresh (guard typeof).
@@ -1563,6 +1564,27 @@ try {
         && emb.some(e => e['@id'].endsWith('/pdf'));
     })()],
     ['responsibility_of_agent (órgão que aprovou)', ld['eli:responsibility_of_agent']['@id'] === 'https://data.dre.pt/eli/authority/corporate-body/governo'],
+    // ---- Assuntos (SubjectVocab): área que não tinha qualquer cobertura ----
+    ['SubjectVocab: pesquisa ignora diacríticos e caixa', (() => {
+      global.SubjectVocab.setData([['1', 'Água'], ['2', 'Contratação Pública']],
+        [{ code: '1', eurovoc: 'http://eurovoc.europa.eu/1', euLabel: 'água' }]);
+      const a = global.SubjectVocab.search('agua');
+      const b = global.SubjectVocab.search('AGUA');
+      return a.length === 1 && a[0].code === '1' && b.length === 1;
+    })()],
+    ['SubjectVocab: pesquisa por código resolve o descritor',
+      global.SubjectVocab.search('2').some(x => x.code === '2')],
+    ['SubjectVocab: crosswalkReady reflecte os dados carregados',
+      global.SubjectVocab.crosswalkReady === true],
+    ['SubjectVocab: uri canónico da autoridade INCM',
+      global.SubjectVocab.uri('1') === 'http://data.dre.pt/eli/authority/legal-subject/1'],
+    ['is_about descarta assuntos sem código (contrato do validation.js)', (() => {
+      const d3 = Object.assign({}, doc, { subjects: [{ label: 'Sem codigo' }, { code: '1', label: 'Água' }] });
+      const l3 = global.EliMetadata.buildJsonLd(d3);
+      const ids = (l3['eli:is_about'] || []).map(x => x['@id']);
+      return !ids.some(u => /undefined|legal-subject\/$/.test(u))
+        && ids.includes('http://data.dre.pt/eli/authority/legal-subject/1');
+    })()],
     ['passed_by Governo', ld['eli:passed_by']['skos:prefLabel']['@value'].includes('Governo')],
     // Canónico (forma real INCM) — Work termina em /{terr}/dre; Expression +/pt; Manifestation +/fmt
     ['canonical Work .../p/dre', cmp.canonical.work === 'https://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre'],

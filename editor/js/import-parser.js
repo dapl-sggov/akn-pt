@@ -178,7 +178,7 @@ const ImportParser = (() => {
   const EM_DATE_RE = /^Em\s+\d{1,2}\s+de\s+\w+\s+de\s+\d{4}\.?\s*$/i;
 
   // Data inline "de DD de MMMM (de YYYY)?" — partilhada entre parse() e parseBody()
-  const DATE_INLINE_RE = /de\s+(\d{1,2})\s+de\s+(\w+)(?:\s+de\s+(\d{4}))?/i;
+  const DATE_INLINE_RE = /de\s+(\d{1,2})\s+de\s+([A-Za-zçÇáéíóúâêôãõ]+)(?:\s+de\s+(\d{4}))?/i;
 
   // Meses PT → número. Usado para construir a data do URI canónico data.dre.pt
   // a partir da data presente na citação legística completa do habilitante.
@@ -274,7 +274,21 @@ const ImportParser = (() => {
       julho: 7, agosto: 8, setembro: 9, outubro: 10, novembro: 11, dezembro: 12,
     };
     const dateRe = DATE_INLINE_RE;
-    const dm = fullText.match(dateRe);
+    // A data do diploma está no CABEÇALHO. Procurar em todo o texto fazia
+    // apanhar a data de um diploma CITADO no preâmbulo ("ao abrigo do
+    // Decreto-Lei n.º 43-B/2024, de 2 de julho"), envenenando o {mês}/{dia} do
+    // URI canónico sem qualquer aviso. Procura-se primeiro na janela do
+    // cabeçalho; só se lá não houver data é que se recorre ao texto todo.
+    let dm = null;
+    if (typeMatch) {
+      const hdr = fullText.search(typeMatch.re);
+      if (hdr >= 0) dm = fullText.slice(hdr, hdr + 220).match(dateRe);
+    }
+    if (!dm) {
+      dm = fullText.match(dateRe);
+      if (dm) (result.warnings = result.warnings || []).push(
+        'Data do diploma obtida fora do cabeçalho — confirme que não é a data de um diploma citado.');
+    }
     if (dm) {
       const day = String(dm[1]).padStart(2, '0');
       const mo = months[dm[2].toLowerCase().replace('ç', 'c')];
@@ -672,7 +686,11 @@ const ImportParser = (() => {
     const cd = _citationDate(choice.dateText, choice.year);
     if (cd) {
       // Work canónico INCM: .../{ano}/{mês}/{dia}/p/dre (número em minúsculas).
-      href = `https://data.dre.pt/eli/${ACT_TO_SLUG[choice.type] || choice.type}/${String(choice.number).toLowerCase()}/${cd.yyyy}/${cd.mm}/${cd.dd}/p/dre`;
+      // Território do habilitante: nacional por defeito; um habilitante
+      // regional herda o território do diploma que o invoca.
+      const terrHab = (choice.type === 'dlr' || choice.type === 'drr')
+        ? (COUNTRY_TO_TERR[r.country] || 'p') : 'p';
+      href = `https://data.dre.pt/eli/${ACT_TO_SLUG[choice.type] || choice.type}/${String(choice.number).toLowerCase()}/${cd.yyyy}/${cd.mm}/${cd.dd}/${terrHab}/dre`;
     } else if (typeof DreMock !== 'undefined' && DreMock.all) {
       const needle = `/eli/${ACT_TO_SLUG[choice.type] || choice.type}/${String(choice.number).toLowerCase()}/${choice.year}/`;
       const hit = DreMock.all().find(e => e.eli && e.eli.includes(needle));
@@ -1014,6 +1032,8 @@ const ImportParser = (() => {
     if (parsed._consolidatedAt) {
       doc._consolidatedAt = parsed._consolidatedAt;
       doc._consolidationVersion = parsed._consolidationVersion || 2;
+      // Sem isto, uma rectificação importada degradava para 'consolidation'.
+      if (parsed._consolidationKind) doc._consolidationKind = parsed._consolidationKind;
     }
     doc.signatures = parsed.signatures.length ? parsed.signatures : doc.signatures;
     doc.attachments = parsed.attachments;
@@ -1166,7 +1186,10 @@ const ImportParser = (() => {
     if (work) {
       const uriEl = qq('FRBRuri', work);
       const p2 = uriEl ? parseEliUri(uriEl.getAttribute('value')) : null;
-      if (p2 && p2.country && result.country && p2.country !== result.country) {
+      // Sem <FRBRcountry> explícito, o território do URI PREENCHE (não diverge).
+      const temCountryEl = !!qq('FRBRcountry', work);
+      if (p2 && p2.country && !temCountryEl) result.country = p2.country;
+      if (p2 && p2.country && temCountryEl && result.country && p2.country !== result.country) {
         (result.warnings = result.warnings || []).push(
           `FRBRcountry (${result.country}) diverge do território do URI (${p2.country}) — prevaleceu o FRBRcountry.`);
       }

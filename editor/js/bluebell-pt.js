@@ -280,7 +280,9 @@ const BluebellPt = (() => {
     }
     if (doc.body && doc.body.kind === 'articles') {
       (doc.body.items || []).forEach(a => {
-        const numClean = (a.num || '').replace(/^Artigo\s+/, '').replace(/\.[ºo°]?$/, '');
+        // Remove o '.º' onde quer que esteja, preservando o sufixo: "Artigo
+        // 5.º-A" -> "5-A" (antes perdia-se o -A nos artigos aditados).
+        const numClean = (a.num || '').replace(/^Artigo\s+/, '').replace(/\.[ºo°]/g, '').trim();
         const head = a.heading ? ` — ${a.heading}` : '';
         lines.push(`ARTIGO ${numClean}.º${head}`);
         (a.paragraphs || []).forEach(p => {

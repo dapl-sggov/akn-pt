@@ -227,6 +227,12 @@ const Amendment = (() => {
 
   function applyAtDate(amender, isoDate) {
     if (!amender.target) throw new Error('Sem diploma alvo.');
+    // Consolidação só é suportada para articulado: com outro tipo de corpo o
+    // motor não aplica nada e o XML declararia alterações que nunca ocorreram.
+    const kindAlvo = ((amender.target.state || {}).body || {}).kind;
+    if (kindAlvo && kindAlvo !== 'articles') {
+      throw new Error('Consolidação só suportada para diplomas com articulado (body.kind=articles).');
+    }
     // Não se consolida um diploma numa data anterior à sua publicação.
     const pubAlvo = amender.target.state && amender.target.state.publicationDate;
     if (pubAlvo && isoDate < pubAlvo && isoDate !== '9999-12-31') {
@@ -504,14 +510,19 @@ ${qsContent}
 
   // Texto com remissões materializadas em <ref>, como faz o akn-export.js. Sem
   // isto, as remissões dentro do texto ALTERADO perdiam-se na exportação.
-  function _xmlText(s, doc) {
+  function _xmlText(s, doc, qprefix) {
     if (typeof References !== 'undefined' && References.toXmlEscaped) {
-      return References.toXmlEscaped(s, doc);
+      const out = References.toXmlEscaped(s, doc);
+      // Dentro de <quotedStructure> todos os eId levam o prefixo `quoted__`;
+      // sem reescrever os href internos, as remissões apontavam para
+      // identificadores que não existem no diploma alterador.
+      return qprefix ? out.replaceAll('<ref href="#', `<ref href="#${qprefix}`) : out;
     }
     return _esc(s);
   }
 
   function _articleToAknXml(article, eId, doc) {
+    const QP = 'quoted__';
     // Mini-render só para o conteúdo do <quotedStructure>. Todos os eIds
     // têm prefixo `quoted__` por convenção (cf. corpus dl-78-2021) para
     // garantir unicidade dentro do documento alterador.
@@ -523,10 +534,10 @@ ${qsContent}
       const qpId = `${qeId}__para_${pi + 1}`;
       const numTag = p.num ? `\n              <num>${_esc(p.num)}</num>` : '';
       if (p.subPoints && p.subPoints.length) {
-        const intro = p.content ? `\n              <intro><p>${_xmlText(p.content, doc)}</p></intro>` : '';
+        const intro = p.content ? `\n              <intro><p>${_xmlText(p.content, doc, QP)}</p></intro>` : '';
         const pts = p.subPoints.map((sp, spi) => {
           const letter = sp.num.replace(/[^a-z]/gi,'').toLowerCase() || String.fromCharCode(97 + spi);
-          return `                <point eId="${qpId}__lit_${letter}"><num>${_esc(sp.num)}</num><content><p>${_xmlText(sp.content, doc)}</p></content></point>`;
+          return `                <point eId="${qpId}__lit_${letter}"><num>${_esc(sp.num)}</num><content><p>${_xmlText(sp.content, doc, QP)}</p></content></point>`;
         }).join('\n');
         return `            <paragraph eId="${qpId}">${numTag}${intro}
               <list>
@@ -535,7 +546,7 @@ ${pts}
             </paragraph>`;
       }
       return `            <paragraph eId="${qpId}">${numTag}
-              <content><p>${_xmlText(p.content || '', doc)}</p></content>
+              <content><p>${_xmlText(p.content || '', doc, QP)}</p></content>
             </paragraph>`;
     }).join('\n');
 

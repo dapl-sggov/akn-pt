@@ -33,7 +33,7 @@ const ActIndex = (() => {
   // Dobra diacríticos e ruído de citação ('n.º', pontos) dos dois lados.
   const _norm = (s) => String(s == null ? '' : s)
     .normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .toLowerCase().replace(/n\.?[ºo°]\s*/g, ' ').replace(/[.,]/g, ' ')
+    .toLowerCase().replace(/n\.\s*[ºo°]\s*|n\s*[º°]\s*/g, ' ').replace(/[.,]/g, ' ')
     .replace(/\s+/g, ' ').trim();
 
   function search(q, limit = 6) {
@@ -42,7 +42,10 @@ const ActIndex = (() => {
     if (!termos.length) return [];
     const out = [];
     for (const a of _items) {
-      const hay = _norm(`${a.titulo || ''} ${a.tipo} ${a.numero}/${a.ano} ${a.eli || ''}`);
+      // Só a parte identificadora do ELI entra: o prefixo invariante fazia
+      // qualquer token genérico corresponder a todo o índice.
+      const hay = _norm(`${a.titulo || ''} ${a.tipo} ${a.numero}/${a.ano} `
+        + String(a.eli || '').replace('https://data.dre.pt/eli/', ''));
       if (termos.every(t => hay.includes(t))) out.push(a);
       if (out.length >= limit) break;
     }

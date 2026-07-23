@@ -1024,10 +1024,10 @@ const Editor = (() => {
       References.findAll(text, doc).forEach(r => {
         const cls = r.kind.startsWith('external-pt') ? 'external'
           : r.kind === 'external-ue' ? 'external'
-          : r.href.startsWith('#') ? '' : '';
+          : (r.href || '').startsWith('#') ? '' : '';
         // ref interna sem target detectado → broken
         let isBroken = false;
-        if (r.href.startsWith('#')) {
+        if ((r.href || '').startsWith('#')) {
           const target = r.href.slice(1);
           isBroken = !_existsEid(doc, target);
         }
@@ -1936,7 +1936,13 @@ const Editor = (() => {
     }).length;
   }
   function _openConsolidatedPreview(doc, isoDate) {
-    const consolidated = Amendment.applyAtDate(doc, isoDate);
+    let consolidated;
+    try {
+      consolidated = Amendment.applyAtDate(doc, isoDate);
+    } catch (e) {
+      toast('Não é possível consolidar nessa data: ' + e.message, 'error');
+      return;
+    }
     const body = $('#preview-body');
     if (!body) return;
     body.innerHTML = '';
@@ -2266,7 +2272,7 @@ const Editor = (() => {
     const filters = el('div', { class: 'refs-detail-filters' });
     const counts = {
       all: all.length,
-      internal: all.filter(r => r.href.startsWith('#') && !r.broken).length,
+      internal: all.filter(r => (r.href || '').startsWith('#') && !r.broken).length,
       broken: broken,
       'external-pt': all.filter(r => r.kind === 'external-pt').length,
       'external-ue': all.filter(r => r.kind === 'external-ue').length,
@@ -2279,7 +2285,7 @@ const Editor = (() => {
     let activeFilter = 'all';
     function matches(r, f) {
       if (f === 'all') return true;
-      if (f === 'internal') return r.href.startsWith('#') && !r.broken;
+      if (f === 'internal') return (r.href || '').startsWith('#') && !r.broken;
       if (f === 'broken') return r.broken;
       return r.kind === f;
     }
@@ -2291,7 +2297,7 @@ const Editor = (() => {
         return;
       }
       visible.forEach(r => {
-        const isInternal = r.href.startsWith('#');
+        const isInternal = (r.href || '').startsWith('#');
         const cls = 'ref-row'
           + (r.broken ? ' broken' : '')
           + (isInternal ? ' kind-internal' : ` kind-${r.kind}`);
