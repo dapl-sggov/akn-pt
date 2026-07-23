@@ -165,25 +165,26 @@ const Validation = (() => {
     // (tipo, número, ano, data de publicação, território) tem de ser coerente,
     // sob pena de se emitir um identificador com aparência canónica e conteúdo
     // errado. Ver eli-pt/incm-eli-reference.md e ADR-0012.
-    const ELI_SLUGS = {
-      'dec-lei': 'dec-lei', 'lei': 'lei', 'portaria': 'port', 'res-cm': 'resolconsmin',
-      'res-ar': 'resolassrep', 'despacho-normativo': 'despnorm', 'dlr': 'declegreg',
-      'drr': 'decregulreg', 'decreto-ar': 'dec',
-    };
+    // Fonte única do vocabulário de slugs: eli-metadata.js. O mapa duplicado
+    // contrariava a regra que o próprio projecto impôs no Lote 2.
+    const _slugConhecido = (n) => (typeof EliMetadata !== 'undefined' && EliMetadata.hasSlug)
+      ? EliMetadata.hasSlug(n)
+      : ['dec-lei', 'lei', 'portaria', 'res-cm', 'res-ar', 'despacho-normativo', 'dlr', 'drr', 'decreto-ar'].includes(n);
     const REGIONAIS = new Set(['dlr', 'drr']);
     const PAISES = new Set(['pt', 'pt-20', 'pt-30']);
     const EXIGEM_HABILITANTE = new Set(['portaria', 'despacho-normativo', 'drr']);
+    const SUBTIPOS_EXIGEM_HABILITANTE = new Set(['dec-lei-autorizado', 'dec-lei-transposicao', 'dlr-autorizado']);
 
     if (doc.subtype === 'lei-organica') {
       issues.push({ level: 'warn', msg: 'Lei Orgânica: o vocabulário da INCM usa o slug "leiorg"; confirme o URI antes de exportar.' });
     }
-    if (doc.actName && !ELI_SLUGS[doc.actName]) {
+    if (doc.actName && !_slugConhecido(doc.actName)) {
       issues.push({ level: 'warn', msg: `Tipo "${doc.actName}" não consta do vocabulário de slugs ELI da INCM — o URI usará o nome do acto.` });
     }
     if (doc.country && !PAISES.has(doc.country)) {
       issues.push({ level: 'error', msg: `FRBRcountry "${doc.country}" inválido (esperado pt, pt-20 ou pt-30).` });
     }
-    if (REGIONAIS.has(doc.actName) && doc.country === 'pt') {
+    if (REGIONAIS.has(doc.actName) && doc.country !== 'pt-20' && doc.country !== 'pt-30') {
       issues.push({ level: 'error', msg: 'Acto regional (DLR/DRR) exige FRBRcountry pt-20 (Açores) ou pt-30 (Madeira) — o URI ficaria com o território /p.' });
     }
     if (!REGIONAIS.has(doc.actName) && (doc.country === 'pt-20' || doc.country === 'pt-30')) {
@@ -197,6 +198,14 @@ const Validation = (() => {
         issues.push({ level: 'error', msg: `Data de ${label} fora do formato ISO (AAAA-MM-DD).` });
       }
     });
+    if (!/^\d{4}$/.test(String(doc.year || ''))) {
+      issues.push({ level: 'error', msg: 'Ano do diploma em falta ou inválido (AAAA) — é o segmento {ano} do URI ELI.' });
+    }
+    if (doc._consolidatedAt && doc._consolidatedAt !== '9999-12-31'
+        && !/^\d{4}-\d{2}-\d{2}$/.test(String(doc._consolidatedAt))) {
+      issues.push({ level: 'error', msg: 'Data de consolidação inválida — entra no URI como /cons/{AAAAMMDD}.' });
+    }
+    (doc._importWarnings || []).forEach((w) => issues.push({ level: 'warn', msg: 'Importação: ' + w }));
     if (doc._publicationDateInferida) {
       issues.push({ level: 'warn', msg: 'Data de publicação inferida na importação — o URI ELI é provisório até ser confirmada.' });
     }
@@ -206,7 +215,7 @@ const Validation = (() => {
         issues.push({ level: 'warn', msg: `Ano do diploma (${doc.year}) difere do ano da publicação (${anoPub}) — o URI usa o ano do diploma; confirme.` });
       }
     }
-    if (EXIGEM_HABILITANTE.has(doc.actName) && !doc.habilitante) {
+    if ((EXIGEM_HABILITANTE.has(doc.actName) || SUBTIPOS_EXIGEM_HABILITANTE.has(doc.subtype)) && !doc.habilitante) {
       issues.push({ level: 'error', msg: 'Diploma regulamentar sem lei habilitante (eli:based_on) — exigido pelo princípio da legalidade.' });
     }
     if (doc.habilitante && !/^https?:\/\/data\.dre\.pt\/eli\//.test(String(doc.habilitante))) {

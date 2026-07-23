@@ -770,6 +770,11 @@ const Editor = (() => {
         placeholder: 'URI ELI (INCM), ex. https://data.dre.pt/eli/dec-lei/22/2025/03/14/p/dre',
         on: { input: e => State.update({ habilitante: e.target.value }) }
       }),
+      el('label', null, 'Directiva transposta (opcional)'),
+      el('input', { type: 'text', value: doc.transposesUri || '',
+        placeholder: 'URI ELI da directiva, ex. http://data.europa.eu/eli/dir/2019/1024/oj',
+        on: { input: e => State.update({ transposesUri: e.target.value }) }
+      }),
       el('input', { type: 'text', value: doc.habilitanteLabel || '',
         placeholder: 'texto humano, e.g. Decreto-Lei n.º 22/2025, de 5 de novembro',
         style: 'margin-top:4px',
@@ -2631,6 +2636,9 @@ const Editor = (() => {
     // Setup menus + modais + Cmd-K + filtros da régua
     _setupMenus();
     _setupModals();
+    // Índice real de atos: carregar cedo para o findAct/byUri estarem
+    // disponíveis à resolução de citações (não só ao abrir a pesquisa).
+    if (typeof ActIndex !== 'undefined' && ActIndex.load) ActIndex.load();
     _setupCmdK();
     _setupActivityFilters();
     _setupFeatureFlags();

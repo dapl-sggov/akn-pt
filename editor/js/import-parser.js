@@ -1025,6 +1025,9 @@ const ImportParser = (() => {
     doc.habilitanteLabel = parsed.habilitanteLabel || '';
     // Directiva transposta (eli:transposes) detectada no preâmbulo.
     doc.transposesUri = parsed.transposesUri || '';
+    if (Array.isArray(parsed.subjects) && parsed.subjects.length) doc.subjects = parsed.subjects;
+    // Avisos do parser seguem no doc para a UI os poder mostrar.
+    if (Array.isArray(parsed.warnings) && parsed.warnings.length) doc._importWarnings = parsed.warnings.slice();
     // Marcas de proveniência: datas inferidas (o URI ELI fica provisório) e
     // consolidação lida do URI de um XML importado.
     if (parsed._publicationDateInferida) doc._publicationDateInferida = true;
@@ -1162,6 +1165,15 @@ const ImportParser = (() => {
           }
         }
       }
+    }
+
+    // Assuntos: TLCConcept em <references> → doc.subjects (o round-trip era
+    // assimétrico: exportavam-se mas nunca se reimportavam).
+    for (const c of q('TLCConcept')) {
+      const href = c.getAttribute('href') || '';
+      const m = href.match(/\/concept\/pt\/(\d+)$/);
+      if (!m) continue;
+      (result.subjects = result.subjects || []).push({ code: m[1], label: c.getAttribute('showAs') || m[1] });
     }
 
     // FRBR Expression: data de publicação, consolidação e versão.

@@ -3344,6 +3344,18 @@ body::before {
 .toc-depth-1 { padding-left: 20px; }
 .toc-depth-2 { padding-left: 30px; }
 .toc-depth-3 { padding-left: 40px; }
+/* Remissões que não geram hiperligação: distinguem-se visualmente em vez de
+   passarem por texto normal. */
+.ref-unresolved {
+  border-bottom: 1px dotted var(--color-amber);
+  cursor: help;
+}
+.ref-broken {
+  border-bottom: 1px dotted var(--color-accent);
+  color: var(--color-accent);
+  cursor: help;
+}
+
 .toc-item-meta { color: var(--color-faint); font-style: italic; cursor: default; }
 .toc-item-meta:hover { background: transparent; color: var(--color-faint); border-left-color: transparent; }
 .toc-empty {

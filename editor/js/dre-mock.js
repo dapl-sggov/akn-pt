@@ -73,8 +73,16 @@ const DreMock = (() => {
     return search(query).slice(0, limit);
   }
 
+  const _normUri = (u) => String(u || '').trim().toLowerCase()
+    .replace(/^http:/, 'https:')
+    .replace(/\/pt(\/(xml|html|pdf))?$/, '');
+
   function byUri(uri) {
-    return CORPUS.find(d => d.eli === uri) || null;
+    // Resolve também Expression e Manifestation, http:// e diferenças de caixa —
+    // a igualdade estrita só acertava no Work exacto.
+    const alvo = _normUri(uri);
+    if (!alvo) return null;
+    return CORPUS.find(d => d.eli && (d.eli === uri || _normUri(d.eli) === alvo)) || null;
   }
 
   function _norm(s) {

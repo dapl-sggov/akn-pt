@@ -48,6 +48,7 @@ loadFile('js/suggestions.js');
 loadFile('js/bluebell-pt.js');
 loadFile('js/eli-metadata.js');
 loadFile('js/subject-vocab.js');
+loadFile('js/act-index.js');
 loadFile('js/import-parser.js');
 
 // State precisa de localStorage (shim) e ignora Editor.refresh (guard typeof).
@@ -1576,14 +1577,25 @@ try {
       global.SubjectVocab.search('2').some(x => x.code === '2')],
     ['SubjectVocab: crosswalkReady reflecte os dados carregados',
       global.SubjectVocab.crosswalkReady === true],
+    ['ActIndex: findAct, byUri e pesquisa normalizada', (() => {
+      global.ActIndex.setData([{ eli: 'https://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre',
+        tipo: 'dec-lei', numero: '83', ano: '2016', data: '2016-12-16', titulo: 'Acesso à informação' }]);
+      const exacto = global.ActIndex.findAct('83', '2016', 'dec-lei');
+      // byUri tem de resolver a Expression e a Manifestation, não só o Work
+      const porExpr = global.ActIndex.byUri('https://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre/pt');
+      const porManif = global.ActIndex.byUri('https://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre/pt/xml');
+      // 'no' não pode ser destruído pela normalização do 'n.º'
+      const semRuido = global.ActIndex.search('informacao');
+      return !!exacto && !!porExpr && !!porManif && semRuido.length === 1;
+    })()],
     ['SubjectVocab: uri canónico da autoridade INCM',
-      global.SubjectVocab.uri('1') === 'http://data.dre.pt/eli/authority/legal-subject/1'],
+      global.SubjectVocab.uri('1') === 'https://data.dre.pt/eli/authority/legal-subject/1'],
     ['is_about descarta assuntos sem código (contrato do validation.js)', (() => {
       const d3 = Object.assign({}, doc, { subjects: [{ label: 'Sem codigo' }, { code: '1', label: 'Água' }] });
       const l3 = global.EliMetadata.buildJsonLd(d3);
       const ids = (l3['eli:is_about'] || []).map(x => x['@id']);
       return !ids.some(u => /undefined|legal-subject\/$/.test(u))
-        && ids.includes('http://data.dre.pt/eli/authority/legal-subject/1');
+        && ids.includes('https://data.dre.pt/eli/authority/legal-subject/1');
     })()],
     ['passed_by Governo', ld['eli:passed_by']['skos:prefLabel']['@value'].includes('Governo')],
     // Canónico (forma real INCM) — Work termina em /{terr}/dre; Expression +/pt; Manifestation +/fmt
@@ -1615,7 +1627,7 @@ try {
       const d2 = Object.assign({}, doc, { subjects: [{ code: '29923275', label: 'Abandono de Funções' }] });
       const l2 = global.EliMetadata.buildJsonLd(d2);
       return Array.isArray(l2['eli:is_about'])
-        && l2['eli:is_about'][0]['@id'] === 'http://data.dre.pt/eli/authority/legal-subject/29923275'
+        && l2['eli:is_about'][0]['@id'] === 'https://data.dre.pt/eli/authority/legal-subject/29923275'
         && l2['eli:is_about'][0]['skos:prefLabel']['@value'] === 'Abandono de Funções';
     })()],
   ];

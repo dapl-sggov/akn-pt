@@ -28,6 +28,13 @@ const EliMetadata = (() => {
   // Formatos que o editor produz de facto (ver exporters.js): segmento do URI
   // de Manifestation → concept da autoridade de tipos de ficheiro da UE.
   const MANIFEST_FORMATS = [['xml', 'XML'], ['html', 'HTML'], ['pdf', 'PDF']];
+  // Fonte ÚNICA do URI de assunto (evita a base triplicada entre JSON-LD,
+  // RDFa e akn-export). Delega no SubjectVocab quando disponível.
+  function _subjectUri(code) {
+    return (typeof SubjectVocab !== 'undefined' && SubjectVocab.uri)
+      ? SubjectVocab.uri(code)
+      : `${AUTH}/legal-subject/${encodeURIComponent(code)}`;
+  }
 
   const TYPE_LABEL = {
     'dec-lei': 'Decreto-Lei',
@@ -141,10 +148,10 @@ const EliMetadata = (() => {
   // Base do nome de ficheiro derivada do próprio identificador — evita nomes
   // divergentes do ELI (ex. resolconsmin-82-e-2024-12-31-p).
   function fileBase(doc) {
-    const { m, d } = _ymd(doc);
-    const ano = String(doc.year || _ymd(doc).y);
+    const { y, m, d } = _ymd(doc);
+    const ano = String(doc.year || y);
     if (_isConsolidated(doc)) {
-      return `${_slug(doc)}-${_numUri(doc)}-${ano}-${_terr(doc)}-cons-${doc._consolidatedAt}`;
+      return `${_slug(doc)}-${_numUri(doc)}-${ano}-${_terr(doc)}-cons-${doc._consolidatedAt.replace(/-/g, '')}`;
     }
     return `${_slug(doc)}-${_numUri(doc)}-${ano}-${m}-${d}-${_terr(doc)}`;
   }
@@ -264,9 +271,7 @@ const EliMetadata = (() => {
         if (!code) return [];
         const lbl = (s && typeof s === 'object') ? s.label : null;
         const out = [];
-        const nat = { '@id': (typeof SubjectVocab !== 'undefined' && SubjectVocab.uri)
-          ? SubjectVocab.uri(code)
-          : `http://data.dre.pt/eli/authority/legal-subject/${code}` };
+        const nat = { '@id': _subjectUri(code) };
         if (lbl) nat['skos:prefLabel'] = { '@value': lbl, '@language': 'pt' };
         out.push(nat);
         if (s && typeof s === 'object' && s.eurovoc) {
@@ -328,7 +333,7 @@ const EliMetadata = (() => {
     if (Array.isArray(doc.subjects)) {
       for (const s of doc.subjects) {
         const code = typeof s === 'string' ? s : s && s.code;
-        if (code) rows.push(`  <span property="eli:is_about" resource="http://data.dre.pt/eli/authority/legal-subject/${esc(code)}"></span>`);
+        if (code) rows.push(`  <span property="eli:is_about" resource="${esc(_subjectUri(code))}"></span>`);
         if (typeof s === 'object' && s && s.eurovoc) rows.push(`  <span property="eli:is_about" resource="${esc(s.eurovoc)}"></span>`);
       }
     }
@@ -353,6 +358,7 @@ const EliMetadata = (() => {
 
   return {
     workUri, expressionUri, manifestationUri, uriComparison, fileBase,
+    hasSlug: (n) => !!ELI_SLUG[n],
     buildJsonLd, toJsonLdString, toScriptTag, toRdfa,
     PLACEHOLDER_DOMAIN, INCM_DOMAIN,
   };

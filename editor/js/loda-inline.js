@@ -101,7 +101,9 @@ const LodaInline = (() => {
         if (p) p.content = newContent;
       });
       // verificar se já existe um amendment para este artigo (evita duplicar)
-      const existing = (amender.amendments || []).find(a => a.op === 'replace' && a.articleId === artId);
+      // Só se sobrepõe a uma alteração criada PELA edição inline; uma
+      // alteração manual concorrente não deve ser silenciosamente destruída.
+      const existing = (amender.amendments || []).find(a => a.op === 'replace' && a.articleId === artId && a.fromInline);
       if (existing) {
         existing.payload.article = newArt;
         existing.fromInline = true;
