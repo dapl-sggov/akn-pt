@@ -96,9 +96,17 @@ const References = (() => {
   // legística ", de {dia} de {mês} [de {ano}]". Grupos:
   //   m[1]=tipo  m[2]=número  m[3]=ano  m[4]=dia  m[5]=mês-extenso  m[6]=ano-na-data
   const RE_EXT_PT = new RegExp(
-    `\\b(Decreto-Lei|Decreto\\u00a0Lei|Lei\\s+Org[\\u00e2a]nica|Lei|Portaria|Resolu[\\u00e7c][\\u00e3a]o\\s+do\\s+Conselho\\s+de\\s+Ministros|RCM|Resolu[\\u00e7c][\\u00e3a]o\\s+da\\s+Assembleia\\s+da\\s+Rep[\\u00fau]blica|Despacho\\s+normativo|Decreto\\s+da\\s+Assembleia\\s+da\\s+Rep[\\u00fau]blica|Decreto\\s+Legislativo\\s+Regional|Decreto\\s+Regulamentar\\s+Regional)\\s+n\\.?[\\u00ba\\u00b0o]?\\s*(\\d+(?:\\s*-\\s*[A-Za-z0-9]+)?)\\/(\\d{4})(?:,?\\s+de\\s+(\\d{1,2})\\s+de\\s+([A-Za-z\\u00e7\\u00c7]+)(?:\\s+de\\s+(\\d{4}))?)?`,
+    `\\b(Decreto-Lei|Decreto\\u00a0Lei|Lei\\s+Org[\\u00e2a]nica|Lei|Portaria|Resolu[\\u00e7c][\\u00e3a]o\\s+do\\s+Conselho\\s+de\\s+Ministros|RCM|Resolu[\\u00e7c][\\u00e3a]o\\s+da\\s+Assembleia\\s+da\\s+Rep[\\u00fau]blica|Despacho\\s+normativo|Decreto\\s+da\\s+Assembleia\\s+da\\s+Rep[\\u00fau]blica|Decreto\\s+Legislativo\\s+Regional|Decreto\\s+Regulamentar\\s+Regional)\\s+n\\.?[\\u00ba\\u00b0o]?\\s*(\\d+(?:\\s*-\\s*[A-Za-z0-9]+)?)\\/(\\d{2,4})(?:,?\\s+de\\s+(\\d{1,2})\\s+de\\s+([A-Za-z\\u00e7\\u00c7]+)(?:\\s+de\\s+(\\d{4}))?)?`,
     'gi'
   );
+
+  // Citações anteriores a 2000 usam o ano com dois dígitos ("Decreto-Lei
+  // n.º 442-A/88"). Normaliza-se para o século XX — a forma de quatro dígitos é
+  // a única usada de 2000 em diante, pelo que não há ambiguidade real.
+  function _normYear(y) {
+    const s = String(y || '').trim();
+    return s.length <= 2 ? String(1900 + parseInt(s, 10)) : s;
+  }
 
   // Meses PT → número (para construir a data no URI canónico data.dre.pt).
   const MONTHS = {
@@ -110,8 +118,9 @@ const References = (() => {
     return m ? String(m).padStart(2, '0') : '';
   }
 
-  // Directivas UE — mantém URI ELI europeu se referida
-  const RE_EXT_UE = /\bDiretiva\s+\(UE\)\s+(\d{4})\/(\d+)/gi;
+  // Directivas UE — mantém URI ELI europeu se referida. Aceita as duas formas
+  // correntes: "Diretiva (UE) 2019/1024" e "Diretiva 2014/24/UE" (estilo antigo).
+  const RE_EXT_UE = /\bDiretiva\s+(?:\(UE\)\s+(\d{4})\/(\d+)|(\d{4})\/(\d+)\/(?:UE|CE))/gi;
 
   // ----- Find -------------------------------------------------------------
 
@@ -157,7 +166,7 @@ const References = (() => {
       if (_overlaps(matches, m.index, m.index + m[0].length)) continue;
       const slug = _slugForType(m[1]);
       const num = m[2].replace(/\s/g, '');
-      const year = m[3];
+      const year = _normYear(m[3]);
       const href = _eliForExternal(slug, num, year, m[4], m[5], m[6]);
       matches.push({
         kind: 'external-pt', raw: m[0], start: m.index, end: m.index + m[0].length,
@@ -169,7 +178,7 @@ const References = (() => {
     RE_EXT_UE.lastIndex = 0;
     while ((m = RE_EXT_UE.exec(text)) !== null) {
       if (_overlaps(matches, m.index, m.index + m[0].length)) continue;
-      const year = m[1], num = m[2];
+      const year = m[1] || m[3], num = m[2] || m[4];
       const href = `http://data.europa.eu/eli/dir/${year}/${num}/oj`;
       matches.push({
         kind: 'external-ue', raw: m[0], start: m.index, end: m.index + m[0].length,

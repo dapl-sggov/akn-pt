@@ -71,19 +71,32 @@ const ImportParser = (() => {
     return null;
   }
 
+  // Directiva transposta: aceita "Diretiva (UE) 2019/1024" e o estilo antigo
+  // "Diretiva 2014/24/UE". O URI é o ELI europeu, que alimenta o eli:transposes.
+  const RE_DIRETIVA = /\bDiretiva\s+(?:\(UE\)\s+(\d{4})\/(\d+)|(\d{4})\/(\d+)\/(?:UE|CE))/i;
+  function detectTransposicao(result, fullText) {
+    if (!result || result.transposesUri) return;
+    const m = String(fullText || '').match(RE_DIRETIVA);
+    if (!m) return;
+    const year = m[1] || m[3];
+    const num = m[2] || m[4];
+    if (!year || !num) return;
+    result.transposesUri = `http://data.europa.eu/eli/dir/${year}/${num}/oj`;
+  }
+
   // -----------------------------------------------------------------------
   // Type detection
   // -----------------------------------------------------------------------
   const TYPE_PATTERNS = [
-    { re: /^\s*Decreto[- ]Lei\s+n\.?[ºo°]?\s*(\d+(?:-[A-Z])?)\s*\/\s*(\d{4})/im, type: 'dec-lei' },
-    { re: /^\s*Lei\s+(?:Org[âa]nica\s+)?n\.?[ºo°]?\s*(\d+(?:-[A-Z])?)\s*\/\s*(\d{4})/im, type: 'lei' },
-    { re: /^\s*Decreto\s+da\s+Assembleia.*?n\.?[ºo°]?\s*(\d+(?:-[A-Z])?)\s*\/\s*(\d{4})/im, type: 'decreto-ar' },
-    { re: /^\s*Resolu[çc][ãa]o\s+da\s+Assembleia.*?n\.?[ºo°]?\s*(\d+(?:-[A-Z])?)\s*\/\s*(\d{4})/im, type: 'res-ar' },
-    { re: /^\s*Portaria\s+n\.?[ºo°]?\s*(\d+(?:-[A-Z])?)\s*\/\s*(\d{4})/im, type: 'portaria' },
-    { re: /^\s*Resolu[çc][ãa]o\s+do\s+Conselho\s+de\s+Ministros\s+n\.?[ºo°]?\s*(\d+(?:-[A-Z])?)\s*\/\s*(\d{4})/im, type: 'res-cm' },
-    { re: /^\s*Despacho\s+(?:normativo\s+)?n\.?[ºo°]?\s*(\d+(?:-[A-Z])?)\s*\/\s*(\d{4})/im, type: 'despacho-normativo' },
-    { re: /^\s*Decreto\s+Legislativo\s+Regional\s+n\.?[ºo°]?\s*(\d+(?:-[A-Z])?)\s*\/\s*(\d{4})(?:\/([AM]))?/im, type: 'dlr' },
-    { re: /^\s*Decreto\s+Regulamentar\s+Regional\s+n\.?[ºo°]?\s*(\d+(?:-[A-Z])?)\s*\/\s*(\d{4})(?:\/([AM]))?/im, type: 'drr' },
+    { re: /^\s*Decreto[- ]Lei\s+n\.?[ºo°]?\s*(\d+(?:-[A-Z])?)\s*\/\s*(\d{2,4})/im, type: 'dec-lei' },
+    { re: /^\s*Lei\s+(?:Org[âa]nica\s+)?n\.?[ºo°]?\s*(\d+(?:-[A-Z])?)\s*\/\s*(\d{2,4})/im, type: 'lei' },
+    { re: /^\s*Decreto\s+da\s+Assembleia.*?n\.?[ºo°]?\s*(\d+(?:-[A-Z])?)\s*\/\s*(\d{2,4})/im, type: 'decreto-ar' },
+    { re: /^\s*Resolu[çc][ãa]o\s+da\s+Assembleia.*?n\.?[ºo°]?\s*(\d+(?:-[A-Z])?)\s*\/\s*(\d{2,4})/im, type: 'res-ar' },
+    { re: /^\s*Portaria\s+n\.?[ºo°]?\s*(\d+(?:-[A-Z])?)\s*\/\s*(\d{2,4})/im, type: 'portaria' },
+    { re: /^\s*Resolu[çc][ãa]o\s+do\s+Conselho\s+de\s+Ministros\s+n\.?[ºo°]?\s*(\d+(?:-[A-Z])?)\s*\/\s*(\d{2,4})/im, type: 'res-cm' },
+    { re: /^\s*Despacho\s+(?:normativo\s+)?n\.?[ºo°]?\s*(\d+(?:-[A-Z])?)\s*\/\s*(\d{2,4})/im, type: 'despacho-normativo' },
+    { re: /^\s*Decreto\s+Legislativo\s+Regional\s+n\.?[ºo°]?\s*(\d+(?:-[A-Z])?)\s*\/\s*(\d{2,4})(?:\/([AM]))?/im, type: 'dlr' },
+    { re: /^\s*Decreto\s+Regulamentar\s+Regional\s+n\.?[ºo°]?\s*(\d+(?:-[A-Z])?)\s*\/\s*(\d{2,4})(?:\/([AM]))?/im, type: 'drr' },
   ];
 
   // Subtype heuristics from preamble text
@@ -215,7 +228,9 @@ const ImportParser = (() => {
       if (m) {
         result.actType = tp.type;
         result.number = m[1];
-        result.year = parseInt(m[2], 10);
+        // Diplomas anteriores a 2000 citam o ano com dois dígitos
+        // ("Decreto-Lei n.º 442-A/88") — normaliza-se para o século XX.
+        result.year = m[2].length <= 2 ? 1900 + parseInt(m[2], 10) : parseInt(m[2], 10);
         if (m[3] === 'A') result.country = 'pt-20';
         else if (m[3] === 'M') result.country = 'pt-30';
         typeMatch = tp;
@@ -332,6 +347,9 @@ const ImportParser = (() => {
 
     // Step 6: detect habilitante from preamble (ref to "Decreto-Lei n.º X/Y" not the act itself)
     detectHabilitante(result);
+
+    // Step 6b: directiva transposta → alimenta o eli:transposes.
+    detectTransposicao(result, fullText);
 
     // Step 7: detect signatures from conclusion section (heuristic — last lines)
     detectSignatures(lines, result);
@@ -613,7 +631,7 @@ const ImportParser = (() => {
       : r.recitals.map(rc => rc.text);
 
     // Pattern global — captura "tipo n.º N/YYYY" + opcional ", de DD de mês"
-    const habGlobalRe = /(Decreto[- ]Lei|Lei(?:\s+Org[âa]nica)?)\s+n\.?[ºo°]?\s*(\d+(?:-[A-Z])?)\s*\/\s*(\d{4})(?:,?\s+de\s+(\d{1,2}\s+de\s+\w+(?:\s+de\s+\d{4})?))?/gi;
+    const habGlobalRe = /(Decreto[- ]Lei|Lei(?:\s+Org[âa]nica)?)\s+n\.?[ºo°]?\s*(\d+(?:-[A-Z])?)\s*\/\s*(\d{2,4})(?:,?\s+de\s+(\d{1,2}\s+de\s+\w+(?:\s+de\s+\d{4})?))?/gi;
 
     const candidates = [];
     sources.forEach(src => {
@@ -979,6 +997,16 @@ const ImportParser = (() => {
     doc.formula = parsed.formula || FORMULAS[doc.subtype] || '';
     doc.habilitante = parsed.habilitante || '';
     doc.habilitanteLabel = parsed.habilitanteLabel || '';
+    // Directiva transposta (eli:transposes) detectada no preâmbulo.
+    doc.transposesUri = parsed.transposesUri || '';
+    // Marcas de proveniência: datas inferidas (o URI ELI fica provisório) e
+    // consolidação lida do URI de um XML importado.
+    if (parsed._publicationDateInferida) doc._publicationDateInferida = true;
+    if (parsed._adoptionDateInferida) doc._adoptionDateInferida = true;
+    if (parsed._consolidatedAt) {
+      doc._consolidatedAt = parsed._consolidatedAt;
+      doc._consolidationVersion = parsed._consolidationVersion || 2;
+    }
     doc.signatures = parsed.signatures.length ? parsed.signatures : doc.signatures;
     doc.attachments = parsed.attachments;
 
