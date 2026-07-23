@@ -98,7 +98,16 @@ const Preview = (() => {
     // artefacto HTML/PDF exportado. É exactamente a marcação que o portal da
     // INCM deixou de servir após a migração para OutSystems.
     if (typeof EliMetadata !== 'undefined') {
-      try { out.push(EliMetadata.toScriptTag(doc)); } catch (e) { /* não bloquear preview */ }
+      try {
+        out.push(EliMetadata.toScriptTag(doc));
+      } catch (e) {
+        // Não bloquear a pré-visualização, mas também não falhar em silêncio:
+        // sem estes metadados o artefacto perde a identidade ELI.
+        if (typeof console !== 'undefined' && console.warn) {
+          console.warn('[AKN-PT] metadados ELI não emitidos na pré-visualização:', e && e.message);
+        }
+        out.push('<!-- AKN-PT: metadados ELI não emitidos (ver consola) -->');
+      }
     }
 
     return out.join('\n');

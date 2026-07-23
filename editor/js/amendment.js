@@ -70,8 +70,16 @@ const Amendment = (() => {
     };
   }
 
+  // URI Expression canónico do diploma (fonte única: EliMetadata). Serve de base
+  // ao eli:consolidates e ao <destination> dos textualMod. Nunca se constrói
+  // aqui a gramática do ELI — ver eli-metadata.js.
   function _frbrUri(doc) {
-    return `https://eli.gov.pt/eli/${doc.country || 'pt'}/${doc.actName}/${doc.year}/${doc.number || 'X'}/pt`;
+    if (typeof EliMetadata !== 'undefined') {
+      // A referência é ao acto tal como PUBLICADO (não à versão consolidada).
+      const pub = Object.assign({}, doc, { _consolidatedAt: null });
+      return EliMetadata.expressionUri(pub);
+    }
+    return null;
   }
 
   function _humanLabel(doc) {
@@ -239,8 +247,15 @@ const Amendment = (() => {
     // 3. Aplicar.
     ordered.forEach(am => _applyOne(items, am));
 
-    // marcar como nova expressão (FRBR — point in time)
-    consolidated.publicationDate = amender.publicationDate || consolidated.publicationDate;
+    // Marcar como nova Expression (FRBR — point in time).
+    //
+    // A data de publicação NÃO é substituída pela do diploma alterador: a
+    // Expression consolidada pertence ao MESMO Work (o acto originário), pelo
+    // que conserva a data de publicação original. A data da consolidação vive
+    // em _consolidatedAt e a do alterador é registada à parte, para o
+    // <source> das passiveModifications.
+    consolidated._originalPublicationDate = consolidated.publicationDate;
+    consolidated._amenderPublicationDate = amender.publicationDate || null;
     consolidated._consolidatedFrom = amender.target.uri;
     consolidated._consolidatedAt = isoDate;
     return consolidated;
@@ -310,7 +325,18 @@ const Amendment = (() => {
       if (eff === null) return true;
       return eff <= isoDate;
     });
-    const sourceUri = amender.uri || `https://eli.gov.pt/eli/${amender.country || 'pt'}/${amender.actName || 'dec-lei'}/${amender.year || '????'}/${amender.number || 'X'}/pt`;
+    // <source> de cada textualMod = o diploma ALTERADOR, no ELI canónico da
+    // INCM (fonte única: EliMetadata). Sem URI explícito nem dados suficientes
+    // para o construir, fica null e o exportador omite o atributo — melhor do
+    // que apontar para um URI inventado.
+    const sourceUri = amender.uri || _frbrUri({
+      actName: amender.actName || 'dec-lei',
+      number: amender.number,
+      year: amender.year,
+      country: amender.country || 'pt',
+      publicationDate: amender.publicationDate,
+      adoptionDate: amender.adoptionDate,
+    });
     const passive = inForce.map((am, idx) => {
       // type AKN: "substitution" (replace), "repeal" (revoke), "insertion" (add-*),
       // "rectification" para qualquer op num diploma com kind='rectification'.

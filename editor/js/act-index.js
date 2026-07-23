@@ -43,7 +43,22 @@ const ActIndex = (() => {
     return out;
   }
 
-  return { load, setData, search, get size() { return _items ? _items.length : 0; } };
+  // Procura EXACTA por número + ano, opcionalmente restrita ao slug ELI da
+  // INCM presente no URI. Serve a resolução de citações (references.js), que
+  // precisa do ELI canónico real e não de uma correspondência aproximada.
+  // Síncrona por desenho: devolve null se o índice ainda não foi carregado.
+  function findAct(numero, ano, slug) {
+    if (!_items || numero == null || ano == null) return null;
+    const n = String(numero).toLowerCase();
+    const y = String(ano);
+    return _items.find((a) =>
+      String(a.numero).toLowerCase() === n &&
+      String(a.ano) === y &&
+      (!slug || String(a.eli || '').includes(`/eli/${slug}/`))
+    ) || null;
+  }
+
+  return { load, setData, search, findAct, get size() { return _items ? _items.length : 0; } };
 })();
 
 if (typeof window !== 'undefined') window.ActIndex = ActIndex;

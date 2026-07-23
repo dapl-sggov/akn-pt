@@ -767,7 +767,7 @@ const Editor = (() => {
     pane.appendChild(el('div', { class: 'field-group' },
       el('label', null, needsHabilitante ? 'Lei habilitante (obrigatório)' : 'Lei habilitante (opcional)'),
       el('input', { type: 'text', value: doc.habilitante || '',
-        placeholder: 'URI ELI-PT, e.g. https://eli.gov.pt/eli/pt/dec-lei/2025/22/pt',
+        placeholder: 'URI ELI (INCM), ex. https://data.dre.pt/eli/dec-lei/22/2025/03/14/p/dre',
         on: { input: e => State.update({ habilitante: e.target.value }) }
       }),
       el('input', { type: 'text', value: doc.habilitanteLabel || '',

@@ -54,11 +54,42 @@ const Exporters = (() => {
     .pv-footprint h3 { font-size: 12pt; color: #2a3a6b; margin: 0 0 6pt; }
     a { color: #2a3a6b; text-decoration: none; }
     a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.85em; color: #6b6e78; }
+    /* Identificador ELI visível: nas saídas para papel os metadados embutidos
+       perdem-se, pelo que o identificador tem de ficar no próprio texto. */
+    .eli-uri { margin-top: 2em; padding-top: 0.6em; border-top: 1px solid #c9c9c9;
+               font-size: 0.8em; color: #55585f; word-break: break-all; }
   `;
 
-  function exportPdf(doc) {
+  // Em modo alterador o doc é um invólucro sem articulado próprio (o texto vive
+  // no alvo). O que faz sentido imprimir/exportar é a versão CONSOLIDADA.
+  function _docParaRender(doc) {
+    if (doc && doc.kind === 'amender' && typeof Amendment !== 'undefined') {
+      try { return Amendment.applyAll(doc); } catch (e) { /* cai no doc original */ }
+    }
+    return doc;
+  }
+
+  // Título com o sufixo territorial (/A Açores, /M Madeira), como a INCM o cita.
+  function _titulo(doc) {
+    const suf = doc.country === 'pt-20' ? '/A' : doc.country === 'pt-30' ? '/M' : '';
+    return `${displayActType(doc.actName)} n.º ${doc.number || 'X'}/${doc.year}${suf}`;
+  }
+
+  // Linha VISÍVEL com o identificador ELI — nas saídas para papel/Word os
+  // metadados embutidos perdem-se, pelo que o identificador tem de ficar no
+  // próprio texto. Falha em silêncio nunca: se não houver ELI, nada se imprime.
+  function _eliLinha(doc) {
+    if (typeof EliMetadata === 'undefined') return '';
+    try {
+      const uri = EliMetadata.workUri(doc);
+      return uri ? `<p class="eli-uri">ELI: ${escapeHtml(uri)}</p>` : '';
+    } catch (e) { return ''; }
+  }
+
+  function exportPdf(docIn) {
+    const doc = _docParaRender(docIn);
     const html = Preview.render(doc);
-    const title = `${displayActType(doc.actName)} n.º ${doc.number || 'X'}/${doc.year}`;
+    const title = _titulo(doc);
     const w = window.open('', '_blank', 'width=900,height=1200');
     if (!w) throw new Error('Popup bloqueado — autorize popups para gerar PDF.');
     w.document.open();
@@ -71,6 +102,7 @@ const Exporters = (() => {
 </head>
 <body>
   ${html}
+  ${_eliLinha(doc)}
   <script>
     window.addEventListener('load', () => {
       setTimeout(() => window.print(), 400);
@@ -90,9 +122,10 @@ const Exporters = (() => {
   // O ficheiro resultante mantém estilo razoável (tipografia, indentação,
   // bullets) e é editável como qualquer documento.
 
-  function exportDocx(doc) {
-    const previewHtml = Preview.render(doc);
-    const title = `${displayActType(doc.actName)} n.º ${doc.number || 'X'}/${doc.year}`;
+  function exportDocx(docIn) {
+    const doc = _docParaRender(docIn);
+    const previewHtml = Preview.render(doc) + _eliLinha(doc);
+    const title = _titulo(doc);
 
     const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office"
       xmlns:w="urn:schemas-microsoft-com:office:word"
