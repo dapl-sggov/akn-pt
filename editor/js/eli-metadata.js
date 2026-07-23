@@ -245,7 +245,9 @@ const EliMetadata = (() => {
         return out;
       });
     }
-    if (doc.subtype === 'dec-lei-transposicao' && doc.transposesUri) {
+    // A transposição emite-se sempre que houver directiva identificada — não só
+    // no subtipo 'dec-lei-transposicao': qualquer acto pode transpor.
+    if (doc.transposesUri) {
       obj['eli:transposes'] = { '@id': doc.transposesUri };
     }
     return obj;
