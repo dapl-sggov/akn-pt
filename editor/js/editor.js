@@ -1811,7 +1811,10 @@ const Editor = (() => {
       el('span', { class: 'muted small' }, LodaInline.summary(doc)),
     ));
     (doc.target.state.body.items || []).forEach(a => {
-      main.appendChild(el('div', { class: 'article-block doc-block', style: 'opacity:0.95' },
+      // NÃO reutilizar .article-block aqui: essa classe é uma grelha "8em 1fr"
+      // pensada para número|texto do editor normal. Com os filhos deste modo, o
+      // conteúdo caía na coluna de 8em e as caixas ficavam com ~50px.
+      main.appendChild(el('div', { class: 'amend-inline-block doc-block', style: 'opacity:0.95' },
         el('div', { class: 'block-header' },
           el('span', { class: 'block-label' }, a.id),
           el('div', { class: 'block-actions' },
