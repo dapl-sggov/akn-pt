@@ -255,10 +255,31 @@ ${items}
       buildReferences(doc),
       buildLifecycle(doc),
     ];
+    const cls = buildClassification(doc);
+    if (cls) blocks.push(cls);
     const wf = buildWorkflow(doc);
     if (wf) blocks.push(wf);
     blocks.push(buildAnalysis(doc));
     return `    <meta>\n${blocks.join('\n')}\n    </meta>`;
+  }
+
+  // Assuntos (descritores da INCM) no XML AKN. Sem este bloco, a classificação
+  // temática só existia no JSON-LD e perdia-se no artefacto XML — que é o que
+  // se entrega. Os href apontam para a tabela de autoridade da INCM, os mesmos
+  // URIs que alimentam o eli:is_about.
+  const SUBJECT_AUTHORITY = 'http://data.dre.pt/eli/authority/legal-subject/';
+  function buildClassification(doc) {
+    const subs = Array.isArray(doc && doc.subjects) ? doc.subjects : [];
+    if (!subs.length) return '';
+    const kws = subs.map((s) => {
+      const code = typeof s === 'string' ? s : (s && s.code);
+      if (!code) return '';
+      const label = (typeof s === 'object' && s && s.label) || code;
+      return `        <keyword value="${escapeXml(code)}" showAs="${escapeXml(label)}"`
+        + ` dictionary="#descritores-incm" href="${escapeXml(SUBJECT_AUTHORITY + code)}"/>`;
+    }).filter(Boolean).join('\n');
+    if (!kws) return '';
+    return `      <classification source="#dapl">\n${kws}\n      </classification>`;
   }
 
   function buildPreface(doc) {

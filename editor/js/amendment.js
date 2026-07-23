@@ -227,6 +227,11 @@ const Amendment = (() => {
 
   function applyAtDate(amender, isoDate) {
     if (!amender.target) throw new Error('Sem diploma alvo.');
+    // Não se consolida um diploma numa data anterior à sua publicação.
+    const pubAlvo = amender.target.state && amender.target.state.publicationDate;
+    if (pubAlvo && isoDate < pubAlvo && isoDate !== '9999-12-31') {
+      throw new Error('Data de consolidação anterior à publicação do diploma.');
+    }
     const consolidated = JSON.parse(JSON.stringify(amender.target.state));
     if (consolidated.body.kind !== 'articles') {
       // Para RCMs / Resoluções a v0.1 não suporta alterações.
@@ -306,7 +311,10 @@ const Amendment = (() => {
   function toAknXmlConsolidated(amender, isoDate, opts) {
     opts = opts || {};
     const kind = opts.kind === 'rectification' ? 'rectification' : 'consolidation';
-    const version = opts.version || 2;
+    // Versão da Expression: nunca inferior a 2 numa consolidação, e derivada
+    // do número de marcos temporais já aplicados quando não for indicada.
+    const auto = 1 + timeline(amender).filter(d => d <= isoDate).length;
+    const version = Math.max(2, opts.version || auto);
     if (!amender.target) throw new Error('Sem diploma alvo.');
     if (!isoDate || !/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) {
       throw new Error('isoDate inválida (esperado YYYY-MM-DD).');
@@ -439,7 +447,7 @@ const Amendment = (() => {
       if (am.op === 'replace') {
         const orig = target.body.items.find(a => a.id === am.articleId);
         content = `O ${orig ? orig.num : am.articleId} do ${targetLabel} passa a ter a seguinte redação:`;
-        qsContent = _articleToAknXml(am.payload.article, am.articleId);
+        qsContent = _articleToAknXml(am.payload.article, am.articleId, target);
       } else if (am.op === 'revoke') {
         const orig = target.body.items.find(a => a.id === am.articleId);
         content = `É revogado o ${orig ? orig.num : am.articleId} do ${targetLabel}.`;
@@ -447,7 +455,7 @@ const Amendment = (() => {
         const orig = target.body.items.find(a => a.id === am.articleId);
         const where = am.op === 'add-after' ? 'após' : 'antes do';
         content = `É aditado, ${where} ${orig ? orig.num : am.articleId} do ${targetLabel}, o artigo seguinte:`;
-        qsContent = _articleToAknXml(am.payload.article, am.payload.article.id || 'novo');
+        qsContent = _articleToAknXml(am.payload.article, am.payload.article.id || 'novo', target);
       }
 
       const para = { id: `art_2__para_${idx + 1}`, num, content, subPoints: [] };
@@ -494,7 +502,16 @@ ${qsContent}
     return doc;
   }
 
-  function _articleToAknXml(article, eId) {
+  // Texto com remissões materializadas em <ref>, como faz o akn-export.js. Sem
+  // isto, as remissões dentro do texto ALTERADO perdiam-se na exportação.
+  function _xmlText(s, doc) {
+    if (typeof References !== 'undefined' && References.toXmlEscaped) {
+      return References.toXmlEscaped(s, doc);
+    }
+    return _esc(s);
+  }
+
+  function _articleToAknXml(article, eId, doc) {
     // Mini-render só para o conteúdo do <quotedStructure>. Todos os eIds
     // têm prefixo `quoted__` por convenção (cf. corpus dl-78-2021) para
     // garantir unicidade dentro do documento alterador.
@@ -506,10 +523,10 @@ ${qsContent}
       const qpId = `${qeId}__para_${pi + 1}`;
       const numTag = p.num ? `\n              <num>${_esc(p.num)}</num>` : '';
       if (p.subPoints && p.subPoints.length) {
-        const intro = p.content ? `\n              <intro><p>${_esc(p.content)}</p></intro>` : '';
+        const intro = p.content ? `\n              <intro><p>${_xmlText(p.content, doc)}</p></intro>` : '';
         const pts = p.subPoints.map((sp, spi) => {
           const letter = sp.num.replace(/[^a-z]/gi,'').toLowerCase() || String.fromCharCode(97 + spi);
-          return `                <point eId="${qpId}__lit_${letter}"><num>${_esc(sp.num)}</num><content><p>${_esc(sp.content)}</p></content></point>`;
+          return `                <point eId="${qpId}__lit_${letter}"><num>${_esc(sp.num)}</num><content><p>${_xmlText(sp.content, doc)}</p></content></point>`;
         }).join('\n');
         return `            <paragraph eId="${qpId}">${numTag}${intro}
               <list>
@@ -518,7 +535,7 @@ ${pts}
             </paragraph>`;
       }
       return `            <paragraph eId="${qpId}">${numTag}
-              <content><p>${_esc(p.content || '')}</p></content>
+              <content><p>${_xmlText(p.content || '', doc)}</p></content>
             </paragraph>`;
     }).join('\n');
 

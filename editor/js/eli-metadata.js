@@ -25,6 +25,9 @@ const EliMetadata = (() => {
   const ELI_ONTOLOGY = 'http://data.europa.eu/eli/ontology#';
   const LANG_AUTHORITY = 'http://publications.europa.eu/resource/authority/language/';
   const FILETYPE_AUTHORITY = 'http://publications.europa.eu/resource/authority/file-type/';
+  // Formatos que o editor produz de facto (ver exporters.js): segmento do URI
+  // de Manifestation → concept da autoridade de tipos de ficheiro da UE.
+  const MANIFEST_FORMATS = [['xml', 'XML'], ['html', 'HTML'], ['pdf', 'PDF']];
 
   const TYPE_LABEL = {
     'dec-lei': 'Decreto-Lei',
@@ -136,6 +139,17 @@ const EliMetadata = (() => {
     return `${expr}/${fmt}`;
   }
 
+  // Base do nome de ficheiro derivada do próprio identificador — evita nomes
+  // divergentes do ELI (ex. resolconsmin-82-e-2024-12-31-p).
+  function fileBase(doc) {
+    const { m, d } = _ymd(doc);
+    const ano = String(doc.year || _ymd(doc).y);
+    if (_isConsolidated(doc)) {
+      return `${_slug(doc)}-${_numUri(doc)}-${ano}-${_terr(doc)}-cons-${doc._consolidatedAt}`;
+    }
+    return `${_slug(doc)}-${_numUri(doc)}-${ano}-${m}-${d}-${_terr(doc)}`;
+  }
+
   // Comparação das duas formas — para a UI e a reunião INCM.
   function uriComparison(doc) {
     return {
@@ -168,12 +182,12 @@ const EliMetadata = (() => {
       '@type': 'eli:LegalExpression',
       'eli:language': { '@id': `${LANG_AUTHORITY}PRT` },
       'eli:title': { '@value': title, '@language': 'pt' },
-      'eli:is_embodied_by': [
-        { '@id': manifestationUri(doc, opts, 'xml'), '@type': 'eli:Format',
-          'eli:format': { '@id': `${FILETYPE_AUTHORITY}XML` } },
-        { '@id': manifestationUri(doc, opts, 'html'), '@type': 'eli:Format',
-          'eli:format': { '@id': `${FILETYPE_AUTHORITY}HTML` } },
-      ],
+      // Manifestações declaradas = formatos que o editor sabe produzir
+      // (XML, HTML e PDF pela impressão) — ver exporters.js.
+      'eli:is_embodied_by': MANIFEST_FORMATS.map(([fmt, key]) => ({
+        '@id': manifestationUri(doc, opts, fmt), '@type': 'eli:Format',
+        'eli:format': { '@id': `${FILETYPE_AUTHORITY}${key}` },
+      })),
     };
     if (doc.publicationDate) {
       expression['eli:date_publication'] = { '@value': doc.publicationDate, '@type': 'xsd:date' };
@@ -212,6 +226,8 @@ const EliMetadata = (() => {
       'eli:publisher': { '@value': 'INCM' },
       'eli:publisher_agent': { '@id': `${AUTH}/legal-institution/incm` },
       'eli:rightsholder_agent': { '@id': `${AUTH}/legal-institution/incm` },
+      // Órgão responsável pelo acto — o mesmo que o aprovou.
+      'eli:responsibility_of_agent': { '@id': `${AUTH}/corporate-body/${author.slug}` },
       'eli:legal_value': { '@id': `${ELI_ONTOLOGY}LegalValue-unofficial` },
       'eli:is_realized_by': expression,
     };
@@ -220,6 +236,14 @@ const EliMetadata = (() => {
     }
     if (doc.entryIntoForceDate) {
       obj['eli:first_date_entry_in_force'] = { '@value': doc.entryIntoForceDate, '@type': 'xsd:date' };
+      // Vigência: só se afirma quando é DETERMINÁVEL a partir da data de entrada
+      // em vigor. Sem essa data, nada se declara — é preferível ao silêncio
+      // afirmativo de dar tudo como estando em vigor.
+      if (/^\d{4}-\d{2}-\d{2}$/.test(String(doc.entryIntoForceDate))) {
+        const hoje = new Date().toISOString().slice(0, 10);
+        const estado = String(doc.entryIntoForceDate) <= hoje ? 'inForce' : 'notInForce';
+        obj['eli:in_force'] = { '@id': `${ELI_ONTOLOGY}InForce-${estado}` };
+      }
     }
     // Relação habilitante → based_on (INCM); transposição de directiva → transposes.
     if (doc.habilitante) {
@@ -234,7 +258,9 @@ const EliMetadata = (() => {
         const code = typeof s === 'string' ? s : s.code;
         const lbl = typeof s === 'object' ? s.label : null;
         const out = [];
-        const nat = { '@id': `http://data.dre.pt/eli/authority/legal-subject/${code}` };
+        const nat = { '@id': (typeof SubjectVocab !== 'undefined' && SubjectVocab.uri)
+          ? SubjectVocab.uri(code)
+          : `http://data.dre.pt/eli/authority/legal-subject/${code}` };
         if (lbl) nat['skos:prefLabel'] = { '@value': lbl, '@language': 'pt' };
         out.push(nat);
         if (typeof s === 'object' && s.eurovoc) {
@@ -278,14 +304,19 @@ const EliMetadata = (() => {
     rows.push(`  <span property="eli:type_document" resource="${AUTH}/resource-type/${esc(_slug(doc))}"></span>`);
     rows.push(`  <span property="eli:title" lang="pt">${esc(title)}</span>`);
     if (doc.adoptionDate) rows.push(`  <span property="eli:date_document" content="${esc(doc.adoptionDate)}" datatype="xsd:date"></span>`);
-    if (doc.entryIntoForceDate) rows.push(`  <span property="eli:first_date_entry_in_force" content="${esc(doc.entryIntoForceDate)}" datatype="xsd:date"></span>`);
     rows.push(`  <span property="eli:passed_by" resource="${AUTH}/corporate-body/${esc(author.slug)}">${esc(author.label)}</span>`);
     // Paridade com a INCM (as mesmas constantes emitidas no JSON-LD).
     rows.push(`  <span property="eli:uri_schema" resource="https://dre.pt/identificador-europeu-legislacao"></span>`);
     rows.push(`  <span property="eli:publisher" content="INCM"></span>`);
     rows.push(`  <span property="eli:publisher_agent" resource="${AUTH}/legal-institution/incm"></span>`);
     rows.push(`  <span property="eli:rightsholder_agent" resource="${AUTH}/legal-institution/incm"></span>`);
+    rows.push(`  <span property="eli:responsibility_of_agent" resource="${AUTH}/corporate-body/${esc(author.slug)}"></span>`);
     rows.push(`  <span property="eli:legal_value" resource="${ELI_ONTOLOGY}LegalValue-unofficial"></span>`);
+    if (doc.entryIntoForceDate && /^\d{4}-\d{2}-\d{2}$/.test(String(doc.entryIntoForceDate))) {
+      rows.push(`  <span property="eli:first_date_entry_in_force" content="${esc(doc.entryIntoForceDate)}" datatype="xsd:date"></span>`);
+      const estado = String(doc.entryIntoForceDate) <= new Date().toISOString().slice(0, 10) ? 'inForce' : 'notInForce';
+      rows.push(`  <span property="eli:in_force" resource="${ELI_ONTOLOGY}InForce-${estado}"></span>`);
+    }
     if (doc.habilitante) rows.push(`  <span property="eli:based_on" resource="${esc(doc.habilitante)}"></span>`);
     if (doc.transposesUri) rows.push(`  <span property="eli:transposes" resource="${esc(doc.transposesUri)}"></span>`);
     if (Array.isArray(doc.subjects)) {
@@ -304,7 +335,7 @@ const EliMetadata = (() => {
       const pubDoc = Object.assign({}, doc, { _consolidatedAt: null });
       rows.push(`    <span property="eli:consolidates" resource="${esc(expressionUri(pubDoc, opts))}"></span>`);
     }
-    for (const [fmt, key] of [['xml', 'XML'], ['html', 'HTML']]) {
+    for (const [fmt, key] of MANIFEST_FORMATS) {
       rows.push(`    <div property="eli:is_embodied_by" resource="${esc(manifestationUri(doc, opts, fmt))}" typeof="eli:Format">`);
       rows.push(`      <span property="eli:format" resource="${FILETYPE_AUTHORITY}${key}"></span>`);
       rows.push(`    </div>`);
@@ -315,7 +346,7 @@ const EliMetadata = (() => {
   }
 
   return {
-    workUri, expressionUri, manifestationUri, uriComparison,
+    workUri, expressionUri, manifestationUri, uriComparison, fileBase,
     buildJsonLd, toJsonLdString, toScriptTag, toRdfa,
     PLACEHOLDER_DOMAIN, INCM_DOMAIN,
   };

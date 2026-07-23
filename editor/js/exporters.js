@@ -78,12 +78,24 @@ const Exporters = (() => {
   // Linha VISÍVEL com o identificador ELI — nas saídas para papel/Word os
   // metadados embutidos perdem-se, pelo que o identificador tem de ficar no
   // próprio texto. Falha em silêncio nunca: se não houver ELI, nada se imprime.
-  function _eliLinha(doc) {
+  function _eliLinha(doc, fmt) {
     if (typeof EliMetadata === 'undefined') return '';
     try {
-      const uri = EliMetadata.workUri(doc);
+      // Identifica-se a MANIFESTAÇÃO do formato que está a ser produzido, não o
+      // Work: é esse o artefacto que o leitor tem em mãos.
+      const uri = fmt ? EliMetadata.manifestationUri(doc, {}, fmt) : EliMetadata.workUri(doc);
       return uri ? `<p class="eli-uri">ELI: ${escapeHtml(uri)}</p>` : '';
     } catch (e) { return ''; }
+  }
+
+  // Nome de ficheiro derivado do identificador ELI (ver EliMetadata.fileBase).
+  function _nomeFicheiro(doc, ext) {
+    try {
+      if (typeof EliMetadata !== 'undefined' && EliMetadata.fileBase) {
+        return `${EliMetadata.fileBase(doc)}.${ext}`;
+      }
+    } catch (e) { /* cai no nome genérico */ }
+    return `${doc.actName || 'documento'}-${doc.number || 'X'}-${doc.year}.${ext}`;
   }
 
   function exportPdf(docIn) {
@@ -102,7 +114,7 @@ const Exporters = (() => {
 </head>
 <body>
   ${html}
-  ${_eliLinha(doc)}
+  ${_eliLinha(doc, 'pdf')}
   <script>
     window.addEventListener('load', () => {
       setTimeout(() => window.print(), 400);
@@ -124,7 +136,10 @@ const Exporters = (() => {
 
   function exportDocx(docIn) {
     const doc = _docParaRender(docIn);
-    const previewHtml = Preview.render(doc) + _eliLinha(doc);
+    // O Word descarta <script>, pelo que o JSON-LD embutido não sobrevive:
+    // remove-se e o identificador vai em texto e num <meta>.
+    const previewHtml = Preview.render(doc).replace(/<script[\s\S]*?<\/script>/g, '')
+      + _eliLinha(doc, 'html');
     const title = _titulo(doc);
 
     const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office"
@@ -133,6 +148,7 @@ const Exporters = (() => {
 <head>
 <meta charset="UTF-8">
 <title>${escapeHtml(title)}</title>
+<meta name="ELI" content="${escapeHtml((typeof EliMetadata !== 'undefined' && EliMetadata.expressionUri(doc)) || '')}">
 <!--[if gte mso 9]>
 <xml>
   <w:WordDocument>
@@ -168,7 +184,7 @@ ${previewHtml}
 </body>
 </html>`;
 
-    const filename = `${doc.actName}-${doc.number || 'X'}-${doc.year}.doc`;
+    const filename = _nomeFicheiro(doc, 'doc');
     download(html, filename, 'application/msword;charset=utf-8');
   }
 
