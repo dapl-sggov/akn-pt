@@ -1567,7 +1567,17 @@ try {
     ['toScriptTag application/ld+json', global.EliMetadata.toScriptTag(doc).includes('application/ld+json')],
     // Paridade INCM: constantes + is_about (descritores nacionais)
     ['legal_value unofficial', ld['eli:legal_value']['@id'].endsWith('LegalValue-unofficial')],
-    ['publisher_agent INCM', ld['eli:publisher_agent']['@id'].includes('legal-institution/incm')],
+    // Autoridades INCM: igualdade ESTRITA (o .includes() anterior deixava
+    // passar URIs sem o segmento /eli/, que não resolvem no grafo da INCM).
+    ['publisher_agent INCM (/eli/authority)', ld['eli:publisher_agent']['@id'] === 'https://data.dre.pt/eli/authority/legal-institution/incm'],
+    ['rightsholder_agent INCM (/eli/authority)', ld['eli:rightsholder_agent']['@id'] === 'https://data.dre.pt/eli/authority/legal-institution/incm'],
+    ['type_document (/eli/authority/resource-type/{slug})', ld['eli:type_document']['@id'] === 'https://data.dre.pt/eli/authority/resource-type/dec-lei'],
+    ['passed_by (/eli/authority/corporate-body/{orgão})', ld['eli:passed_by']['@id'] === 'https://data.dre.pt/eli/authority/corporate-body/governo'],
+    // RDFa: língua PRT (não POR) e sem URIs relativos de autoridade.
+    ['RDFa língua PRT', rdfa.includes('authority/language/PRT') && !rdfa.includes('authority/language/POR')],
+    ['RDFa autoridades absolutas com /eli/', !rdfa.includes('resource="/authority/') && rdfa.includes('https://data.dre.pt/eli/authority/corporate-body/')],
+    // id_local com sufixo regional (Açores → /A)
+    ['id_local sufixo regional /A', global.EliMetadata.buildJsonLd(Object.assign({}, doc, { actName: 'dlr', country: 'pt-20', number: '5', year: 2024 }))['eli:id_local'] === '5/2024/A'],
     ['is_about (subjects → eli:is_about com URI INCM)', (() => {
       const d2 = Object.assign({}, doc, { subjects: [{ code: '29923275', label: 'Abandono de Funções' }] });
       const l2 = global.EliMetadata.buildJsonLd(d2);

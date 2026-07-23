@@ -243,7 +243,16 @@ const References = (() => {
       const hit = DreMock.all().find(e => e.eli && e.eli.includes(needle));
       if (hit) return hit.eli;
     }
-    return `https://eli.gov.pt/eli/pt/${slug}/${year}/${num}/pt`;
+    // Índice real de atos (Atom feed da INCM), quando já carregado.
+    if (typeof ActIndex !== 'undefined' && ActIndex.findAct) {
+      const hit = ActIndex.findAct(numL, year, incm);
+      if (hit && hit.eli) return hit.eli;
+    }
+    // Sem dia/mês e sem correspondência, o Work canónico da INCM NÃO é
+    // construível. Devolve-se null em vez de inventar um URI não-canónico: os
+    // consumidores rendem a citação como texto simples (ver toXmlEscaped), para
+    // que nunca entre no XML exportado um href que não resolve.
+    return null;
   }
 
   function _slugForType(raw) {
@@ -262,7 +271,11 @@ const References = (() => {
     let out = '', last = 0;
     refs.forEach(r => {
       if (r.start > last) out += _esc(text.slice(last, r.start));
-      out += `<ref href="${_escAttr(r.href)}">${_esc(r.raw)}</ref>`;
+      // Sem href resolvido, a citação sai como texto simples — nunca se emite
+      // um <ref> com URI inventado (ver _eliForExternal).
+      out += r.href
+        ? `<ref href="${_escAttr(r.href)}">${_esc(r.raw)}</ref>`
+        : _esc(r.raw);
       last = r.end;
     });
     if (last < text.length) out += _esc(text.slice(last));
@@ -285,9 +298,15 @@ const References = (() => {
     let out = '', last = 0;
     refs.forEach(r => {
       if (r.start > last) out += _escHtml(text.slice(last, r.start));
-      const isInternal = r.href.startsWith('#');
-      const cls = isInternal ? 'ref ref-internal' : 'ref ref-external';
-      out += `<a class="${cls}" href="${_escHtml(r.href)}" title="${_escHtml(r.href)}">${_escHtml(r.raw)}</a>`;
+      if (!r.href) {
+        // Citação detectada mas não resolúvel para ELI canónico: mostra-se
+        // assinalada, sem hiperligação inventada.
+        out += `<span class="ref ref-unresolved" title="Sem ELI canónico — falta a data completa da citação">${_escHtml(r.raw)}</span>`;
+      } else {
+        const isInternal = r.href.startsWith('#');
+        const cls = isInternal ? 'ref ref-internal' : 'ref ref-external';
+        out += `<a class="${cls}" href="${_escHtml(r.href)}" title="${_escHtml(r.href)}">${_escHtml(r.raw)}</a>`;
+      }
       last = r.end;
     });
     if (last < text.length) out += _escHtml(text.slice(last));

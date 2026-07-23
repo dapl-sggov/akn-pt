@@ -17,20 +17,9 @@ const AknExport = (() => {
     'drr': 'gov-regional-acores',
   };
 
-  // AKN-PT <act name> → slug ELI REAL da INCM (ver eli-pt/incm-eli-reference.md).
-  // O <act name> legível mantém-se; o slug INCM é usado SÓ no URI ELI.
-  const ELI_SLUG = {
-    'dec-lei': 'dec-lei',
-    'lei': 'lei',
-    'portaria': 'port',
-    'res-cm': 'resolconsmin',
-    'res-ar': 'resolassrep',
-    'despacho-normativo': 'despnorm',
-    'dlr': 'declegreg',
-    'drr': 'decregulreg',
-    'decreto-ar': 'dec',        // Decreto da AR → 'dec' (confirmado)
-  };
-  function eliSlug(actName) { return ELI_SLUG[actName] || actName; }
+  // NOTA: o mapa <act name> → slug ELI da INCM vive SÓ em eli-metadata.js.
+  // Este módulo consome os URIs já construídos (ver buildFrbr) para que a
+  // gramática do ELI tenha uma única fonte de verdade.
 
   function escapeXml(s) {
     if (s == null) return '';
@@ -70,56 +59,52 @@ const AknExport = (() => {
   // p (nacional), a (Açores, FRBRcountry pt-20), m (Madeira, pt-30). Língua
   // no URI = 'pt'; o <FRBRlanguage> mantém 'por' (ISO 639-2, convenção AKN).
   function buildFrbr(doc) {
+    if (typeof EliMetadata === 'undefined') {
+      throw new Error('akn-export: o módulo EliMetadata é obrigatório (fonte única dos URIs ELI).');
+    }
     const actor = ACTOR_FOR_TYPE[doc.actName] || 'governo';
     const num = doc.number || 'X';
-    const pub = doc.publicationDate || doc.adoptionDate || `${doc.year}-01-01`;
-    const [py, pm, pd] = pub.split('-');
-
-    // Work: {slug-INCM}/{nº}/{ano}/{mês}/{dia}. Slug = vocabulário real da INCM
-    // (port, resolconsmin, …); sufixo do número em minúsculas (ex. 442-a).
-    const slug = eliSlug(doc.actName);
-    const numUri = String(num).toLowerCase();
-    // Marcador de território INCM (slot do 'p'): pt→p, pt-20 (Açores)→a,
-    // pt-30 (Madeira)→m. Agente sempre 'dre'.
-    const terr = doc.country === 'pt-20' ? 'a' : doc.country === 'pt-30' ? 'm' : 'p';
     // Sentinela '9999-12-31' do applyAll = sem consolidação.
     const isConsol = doc._consolidatedAt && doc._consolidatedAt !== '9999-12-31';
     const consolKind = doc._consolidationKind || 'consolidation';
     const version = isConsol ? (doc._consolidationVersion || 2) : 1;
 
-    // Forma real INCM (ver eli-pt/incm-eli-reference.md):
-    //   Work publicada:    {slug}/{nº}/{ano}/{mês}/{dia}/{terr}/dre
-    //   Work consolidada:  {slug}/{nº}/{ano}/{terr}/cons/{AAAAMMDD}   (só ano)
-    //   Expression = Work + /pt ; Manifestation = Expression + /{fmt}.
-    const workUri = isConsol
-      ? `https://data.dre.pt/eli/${slug}/${numUri}/${py}/${terr}/cons/${doc._consolidatedAt.replace(/-/g, '')}`
-      : `https://data.dre.pt/eli/${slug}/${numUri}/${py}/${pm}/${pd}/${terr}/dre`;
-    const exprUri = `${workUri}/pt`;
-    const manifUri = `${exprUri}/xml`;
+    // FONTE ÚNICA dos URIs canónicos: EliMetadata. A gramática do ELI (slug,
+    // território, {ano}/{mês}/{dia}, /cons, língua e formato como segmentos)
+    // vive só lá — duplicá-la aqui era a origem da deriva entre módulos.
+    const workUri = EliMetadata.workUri(doc);
+    const exprUri = EliMetadata.expressionUri(doc);
+    const manifUri = EliMetadata.manifestationUri(doc, {}, 'xml');
+
+    // Numa consolidação, a data de publicação da Expression continua a ser a do
+    // acto ORIGINÁRIO — a do diploma alterador não a substitui; a data da
+    // consolidação vai no seu próprio FRBRdate.
+    const pubDate = doc._originalPublicationDate || doc.publicationDate;
+
+    // Datas em falta não geram date="undefined": omite-se o elemento, para que
+    // a validação assinale honestamente a falta em vez de a mascarar.
+    const dt = (date, name, pad) =>
+      date ? `\n${pad}<FRBRdate date="${escapeXml(date)}" name="${name}"/>` : '';
 
     return `      <identification source="#dapl">
         <FRBRWork>
-          <FRBRthis value="${workUri}/!main"/>
-          <FRBRuri value="${workUri}"/>
-          <FRBRdate date="${doc.adoptionDate}" name="adoption"/>
+          <FRBRthis value="${escapeXml(workUri)}/!main"/>
+          <FRBRuri value="${escapeXml(workUri)}"/>${dt(doc.adoptionDate, 'adoption', '          ')}
           <FRBRauthor href="#${actor}"/>
-          <FRBRcountry value="${doc.country}"/>
-          <FRBRsubtype value="${doc.subtype}"/>
+          <FRBRcountry value="${escapeXml(doc.country || 'pt')}"/>
+          <FRBRsubtype value="${escapeXml(doc.subtype)}"/>
           <FRBRnumber value="${escapeXml(num)}"/>
         </FRBRWork>
         <FRBRExpression>
-          <FRBRthis value="${exprUri}/!main"/>
-          <FRBRuri value="${exprUri}"/>
-          <FRBRdate date="${doc.publicationDate}" name="publication"/>${isConsol ? `
-          <FRBRdate date="${doc._consolidatedAt}" name="${consolKind}"/>` : ''}
+          <FRBRthis value="${escapeXml(exprUri)}/!main"/>
+          <FRBRuri value="${escapeXml(exprUri)}"/>${dt(pubDate, 'publication', '          ')}${isConsol ? dt(doc._consolidatedAt, consolKind, '          ') : ''}
           <FRBRauthor href="#${actor}"/>
           <FRBRlanguage language="por"/>
           <FRBRversionNumber value="${version}"/>
         </FRBRExpression>
         <FRBRManifestation>
-          <FRBRthis value="${manifUri}/!main"/>
-          <FRBRuri value="${manifUri}"/>
-          <FRBRdate date="${doc.publicationDate}" name="publication"/>
+          <FRBRthis value="${escapeXml(manifUri)}/!main"/>
+          <FRBRuri value="${escapeXml(manifUri)}"/>${dt(pubDate, 'publication', '          ')}
           <FRBRauthor href="#dre"/>
           <FRBRformat value="application/akn+xml; profile=akn-pt-1.0"/>
         </FRBRManifestation>
