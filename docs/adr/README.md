@@ -10,6 +10,7 @@ Cada ADR contém: **Contexto** (o problema e alternativas), **Decisão**
 
 | # | Decisão | Estado |
 |---|---|---|
+| [0000](0000-agenda-decisoes-conjuntas.md) | Agenda de decisões conjuntas SGGov–INCM (meta-ADR: índice sequenciado das 22 decisões) | Accepted |
 | [0001](0001-project-governance.md) | Modelo de governação híbrido (DAPL → Comissão) | Accepted |
 | [0002](0002-license-eupl.md) | Licença EUPL-1.2 | Accepted |
 | [0003](0003-repository-monorepo.md) | Monorepo único no GitHub | Accepted |
