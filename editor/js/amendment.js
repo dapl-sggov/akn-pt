@@ -4,7 +4,8 @@
 // Modelo:
 //   doc.kind = 'amender'
 //   doc.target = {
-//     uri:       URI ELI-PT do diploma a alterar (e.g. .../dec-lei/2023/21/pt)
+//     uri:       URI ELI do diploma a alterar, forma canónica INCM
+//                (e.g. https://data.dre.pt/eli/dec-lei/21/2023/03/27/p/dre/pt)
 //     label:     texto humano (e.g. "Decreto-Lei n.º 21/2023, de 27 de março")
 //     state:     cópia completa do doc state ORIGINAL (alvo) — necessária para
 //                gerar a versão consolidada e para mostrar contexto na UI
@@ -343,14 +344,16 @@ const Amendment = (() => {
     // INCM (fonte única: EliMetadata). Sem URI explícito nem dados suficientes
     // para o construir, fica null e o exportador omite o atributo — melhor do
     // que apontar para um URI inventado.
-    const sourceUri = amender.uri || _frbrUri({
+    // Sem número ou data de publicação do alterador não há URI construível —
+    // melhor omitir o <source> do que fabricar um identificador.
+    const sourceUri = amender.uri || ((amender.number && amender.publicationDate) ? _frbrUri({
       actName: amender.actName || 'dec-lei',
       number: amender.number,
       year: amender.year,
       country: amender.country || 'pt',
       publicationDate: amender.publicationDate,
       adoptionDate: amender.adoptionDate,
-    });
+    }) : null);
     const passive = inForce.map((am, idx) => {
       // type AKN: "substitution" (replace), "repeal" (revoke), "insertion" (add-*),
       // "rectification" para qualquer op num diploma com kind='rectification'.

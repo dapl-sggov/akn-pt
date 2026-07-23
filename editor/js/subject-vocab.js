@@ -16,7 +16,8 @@
 //   SubjectVocab.uri(code)         → string
 
 const SubjectVocab = (() => {
-  const BASE = 'http://data.dre.pt/eli/authority/legal-subject/';
+  // https, como o resto do modelo canónico (AUTH em eli-metadata.js).
+  const BASE = 'https://data.dre.pt/eli/authority/legal-subject/';
   let _items = null;            // [[code, label], ...]
   let _folded = null;           // rótulos com diacríticos dobrados (índice paralelo)
   let _cwOk = false;            // o crosswalk EuroVoc carregou?
@@ -68,6 +69,7 @@ const SubjectVocab = (() => {
       _euByCode = Object.create(null);
       for (const x of cw) _euByCode[x.code] = { eurovoc: x.eurovoc, euLabel: x.euLabel };
     })();
+    _loading = _loading.catch((e) => { _loading = null; throw e; });
     return _loading;
   }
 

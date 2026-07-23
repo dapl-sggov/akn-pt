@@ -13,11 +13,19 @@
 // API
 //   ActIndex.load()           → Promise<void> (lazy, idempotente)
 //   ActIndex.search(q, limit) → [{eli, tipo, numero, ano, data, titulo}]
+//   ActIndex.findAct(numero, ano, slug) → entrada | null   (procura exacta)
+//   ActIndex.byUri(uri)       → entrada | null   (Work, Expression ou Manifestation)
+//   ActIndex.setData(items)   → nº de entradas  (injecção para testes)
+//   ActIndex.size             → nº de entradas carregadas
 
 const ActIndex = (() => {
   let _items = null, _loading = null;
 
-  function setData(items) { _items = items; return _items.length; }
+  function setData(items) {
+    _items = Array.isArray(items) ? items : [];
+    _loading = null;   // invalida um fetch pendente
+    return _items.length;
+  }
 
   async function load() {
     if (_items) return;

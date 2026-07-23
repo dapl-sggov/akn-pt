@@ -351,7 +351,11 @@ const References = (() => {
       if (!r.href) {
         // Citação detectada mas não resolúvel para ELI canónico: mostra-se
         // assinalada, sem hiperligação inventada.
-        out += `<span class="ref ref-unresolved" title="Sem ELI canónico — falta a data completa da citação">${_escHtml(r.raw)}</span>`;
+        const cls = r.broken ? 'ref ref-broken' : 'ref ref-unresolved';
+        const tip = r.broken
+          ? 'Remissão quebrada — o alvo não existe neste diploma'
+          : 'Sem ELI canónico — falta a data completa da citação';
+        out += `<span class="${cls}" title="${_escHtml(tip)}">${_escHtml(r.raw)}</span>`;
       } else {
         const isInternal = (r.href || '').startsWith('#');
         const cls = isInternal ? 'ref ref-internal' : 'ref ref-external';

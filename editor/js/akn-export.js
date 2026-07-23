@@ -115,19 +115,23 @@ const AknExport = (() => {
     const actors = new Set();
     actors.add('dre'); actors.add('dapl');
     actors.add(ACTOR_FOR_TYPE[doc.actName] || 'governo');
+    // Actores usados pelo lifecycle — sem isto o XML referenciava #cm ou #ar
+    // sem os declarar (referência pendente).
+    if (doc.actName === 'dec-lei' || doc.actName === 'res-cm') actors.add('cm');
+    if (['lei', 'decreto-ar', 'res-ar'].includes(doc.actName)) actors.add('ar');
 
     // From signatures — recolher também TÍTULOS específicos quando disponíveis
     // (e.g. "ministro-estado-financas" + showAs="Ministro de Estado e das Finanças")
     const signatureTitles = new Map();  // eId → titulo humano
     doc.signatures.forEach(s => {
-      if (s.as) actors.add(s.as);
-      if (s.as && s.title) signatureTitles.set(s.as, s.title);
+      if (s.as) actors.add(id(s.as));
+      if (s.as && s.title) signatureTitles.set(id(s.as), s.title);
     });
 
     // From footprint
     doc.workflow.forEach(step => {
-      if (step.source) actors.add(step.source);
-      step.inputs.forEach(inp => { if (inp.source) actors.add(inp.source); });
+      if (step.source) actors.add(id(step.source));
+      step.inputs.forEach(inp => { if (inp.source) actors.add(id(inp.source)); });
     });
 
     const isRole = (e) => /^(primeiro-ministro|presidente-republica|presidente-ar|presidente-alra|representante-republica|ministro|secretario|presidente-governo)/.test(e);
@@ -137,7 +141,7 @@ const AknExport = (() => {
       const tipo = tag === 'TLCRole' ? 'role' : 'organization';
       // Privilegiar título específico se foi parsed da signature
       const showAs = signatureTitles.get(eid) || displayName(eid);
-      return `        <${tag} eId="${eid}" href="/akn/ontology/${tipo}/pt/${eid}" showAs="${escapeXml(showAs)}"/>`;
+      return `        <${tag} eId="${escapeXml(eid)}" href="/akn/ontology/${tipo}/pt/${escapeXml(eid)}" showAs="${escapeXml(showAs)}"/>`;
     });
 
     // Persons referenced by signatures
@@ -151,6 +155,15 @@ const AknExport = (() => {
     // references, lifecycle e depois workflow|analysis) — ver ADR a abrir sobre
     // o alargamento do perfil. O código do descritor viaja no href e no eId; o
     // URI completo da autoridade INCM continua no eli:is_about do JSON-LD/RDFa.
+    const temAssuntos = (Array.isArray(doc.subjects) ? doc.subjects : [])
+      .some(s => (typeof s === 'string' ? s : (s && s.code)));
+    if (temAssuntos) {
+      // O dictionary dos TLCConcept aponta para esta referência; sem ela o
+      // atributo remetia para um eId inexistente.
+      items.push('        <TLCReference eId="descritores-incm"'
+        + ' href="/akn/ontology/concept/pt/descritores-incm"'
+        + ' showAs="Lista de Descritores INCM"/>');
+    }
     (Array.isArray(doc.subjects) ? doc.subjects : []).forEach((s) => {
       const code = typeof s === 'string' ? s : (s && s.code);
       if (!code) return;
@@ -204,8 +217,15 @@ ${items.join('\n')}
     }
     events.push({ refers: 'publication', source: 'dre' });
 
+    // Eventos sem data são omitidos: date="undefined" era emitido como texto e
+    // mascarava a falta (a mesma correcção já feita no bloco FRBR).
+    const linhas = events.map((e, i) => {
+      const d = i === 0 ? doc.adoptionDate : doc.publicationDate;
+      if (!d) return null;
+      return `        <eventRef eId="e${i + 1}" date="${escapeXml(d)}" source="#${escapeXml(e.source)}" type="generation" refersTo="#${escapeXml(e.refers)}"/>`;
+    }).filter(Boolean);
     return `      <lifecycle source="#dapl">
-${events.map((e, i) => `        <eventRef eId="e${i + 1}" date="${i === 0 ? doc.adoptionDate : doc.publicationDate}" source="#${e.source}" type="generation" refersTo="#${e.refers}"/>`).join('\n')}
+${linhas.join('\n')}
       </lifecycle>`;
   }
 
