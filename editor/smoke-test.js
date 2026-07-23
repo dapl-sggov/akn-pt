@@ -71,6 +71,10 @@ const cases = [
       d.adoptionDate = '2026-03-10';
       d.publicationDate = '2026-03-15';
       d.docDate = '2026-03-15'; d.docDateText = '15 de marco';
+      // Assuntos (descritores INCM): garante que o XML com TLCConcept é
+      // realmente validado. Sem este cenário, o bloco nunca era exercitado —
+      // foi essa cegueira que deixou passar um <classification> inválido.
+      d.subjects = [{ code: '29923275', label: 'Abandono de Funcoes' }];
       d.body.items[0].heading = 'Objeto';
       d.body.items[0].paragraphs[0].content = 'O presente DL estabelece o regime.';
       d.signatures = [

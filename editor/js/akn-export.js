@@ -146,6 +146,19 @@ const AknExport = (() => {
       items.push(`        <TLCPerson eId="${id(pid)}" href="/akn/ontology/person/pt/${id(pid)}" showAs="${escapeXml(s.name || s.title || displayName(s.as))}"/>`);
     });
 
+    // Assuntos (descritores da INCM) como TLCConcept. O <classification> do AKN
+    // NÃO é aceite no <meta> deste perfil (o XSD só admite identification,
+    // references, lifecycle e depois workflow|analysis) — ver ADR a abrir sobre
+    // o alargamento do perfil. O código do descritor viaja no href e no eId; o
+    // URI completo da autoridade INCM continua no eli:is_about do JSON-LD/RDFa.
+    (Array.isArray(doc.subjects) ? doc.subjects : []).forEach((s) => {
+      const code = typeof s === 'string' ? s : (s && s.code);
+      if (!code) return;
+      const label = (typeof s === 'object' && s && s.label) || String(code);
+      const eid = `assunto-${String(code).toLowerCase().replace(/[^a-z0-9-]/g, '')}`;
+      items.push(`        <TLCConcept eId="${eid}" href="/akn/ontology/concept/pt/${escapeXml(String(code))}" showAs="${escapeXml(label)}"/>`);
+    });
+
     return `      <references source="#dapl">
 ${items.join('\n')}
       </references>`;
@@ -255,32 +268,13 @@ ${items}
       buildReferences(doc),
       buildLifecycle(doc),
     ];
-    const cls = buildClassification(doc);
-    if (cls) blocks.push(cls);
     const wf = buildWorkflow(doc);
     if (wf) blocks.push(wf);
     blocks.push(buildAnalysis(doc));
     return `    <meta>\n${blocks.join('\n')}\n    </meta>`;
   }
 
-  // Assuntos (descritores da INCM) no XML AKN. Sem este bloco, a classificação
-  // temática só existia no JSON-LD e perdia-se no artefacto XML — que é o que
-  // se entrega. Os href apontam para a tabela de autoridade da INCM, os mesmos
-  // URIs que alimentam o eli:is_about.
-  const SUBJECT_AUTHORITY = 'http://data.dre.pt/eli/authority/legal-subject/';
-  function buildClassification(doc) {
-    const subs = Array.isArray(doc && doc.subjects) ? doc.subjects : [];
-    if (!subs.length) return '';
-    const kws = subs.map((s) => {
-      const code = typeof s === 'string' ? s : (s && s.code);
-      if (!code) return '';
-      const label = (typeof s === 'object' && s && s.label) || code;
-      return `        <keyword value="${escapeXml(code)}" showAs="${escapeXml(label)}"`
-        + ` dictionary="#descritores-incm" href="${escapeXml(SUBJECT_AUTHORITY + code)}"/>`;
-    }).filter(Boolean).join('\n');
-    if (!kws) return '';
-    return `      <classification source="#dapl">\n${kws}\n      </classification>`;
-  }
+
 
   function buildPreface(doc) {
     const docType = displayActType(doc.actName);
