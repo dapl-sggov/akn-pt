@@ -643,12 +643,17 @@ const Editor = (() => {
         el('textarea', { class: 'point-content autosize', rows: 1, placeholder: 'Texto da alínea',
           on: { input: e => { State.updateSubPoint(pId, articleId, sp.id, { content: e.target.value }); _autosize(e.target); } }
         }, sp.content || ''),
-        el('button', { class: 'btn-tiny', title: 'Adicionar subalínea i), ii)…',
-          on: { click: () => { State.addSubSubPoint(pId, articleId, sp.id); refresh(); } }
-        }, '+ subalínea'),
-        el('button', { class: 'btn-tiny', 'aria-label': 'Remover subalínea', title: 'Remover',
-          on: { click: () => { State.removeSubPoint(pId, articleId, sp.id); refresh(); } }
-        }, '×')
+        // Acções fora da grelha do texto: partilhavam a linha e roubavam ~120px
+        // de largura a TODAS as alíneas. Passam a sobrepor-se à direita, só no
+        // hover/foco (o mesmo padrão do .insert-here dos blocos).
+        el('div', { class: 'point-actions' },
+          el('button', { class: 'btn-tiny', title: 'Adicionar subalínea i), ii)…',
+            on: { click: () => { State.addSubSubPoint(pId, articleId, sp.id); refresh(); } }
+          }, '+ subalínea'),
+          el('button', { class: 'btn-tiny', 'aria-label': 'Remover subalínea', title: 'Remover',
+            on: { click: () => { State.removeSubPoint(pId, articleId, sp.id); refresh(); } }
+          }, '×')
+        )
       ),
       (sp.subPoints && sp.subPoints.length) ? el('div', { class: 'sublist-block' },
         ...sp.subPoints.map(ssp => el('div', { class: 'point-block subpoint-block', id: ssp.id },
@@ -658,9 +663,11 @@ const Editor = (() => {
           el('textarea', { class: 'point-content autosize', rows: 1, placeholder: 'Texto da subalínea',
             on: { input: e => { State.updateSubSubPoint(pId, articleId, sp.id, ssp.id, { content: e.target.value }); _autosize(e.target); } }
           }, ssp.content || ''),
-          el('button', { class: 'btn-tiny', 'aria-label': 'Remover divisão', title: 'Remover',
-            on: { click: () => { State.removeSubSubPoint(pId, articleId, sp.id, ssp.id); refresh(); } }
-          }, '×')
+          el('div', { class: 'point-actions' },
+            el('button', { class: 'btn-tiny', 'aria-label': 'Remover divisão', title: 'Remover',
+              on: { click: () => { State.removeSubSubPoint(pId, articleId, sp.id, ssp.id); refresh(); } }
+            }, '×')
+          )
         ))
       ) : null,
     );
