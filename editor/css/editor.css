@@ -966,6 +966,22 @@ label {
 .article-block .block-header {
   grid-column: 1 / -1;
 }
+
+/* Rótulos das barras de alteração não devem quebrar palavra a palavra
+   ("Em / vigor / em"). */
+.amend-time-travel label.micro,
+.amend-block-date label.micro { white-space: nowrap; }
+
+/* Bloco do articulado original no MODO ALTERAÇÃO (edição inline). Não é a
+   grelha do artigo: aqui o conteúdo ocupa toda a largura disponível. */
+.amend-inline-block {
+  display: block;
+  padding-top: var(--sp-5);
+  padding-bottom: var(--sp-4);
+}
+.amend-inline-block > div:last-child {
+  margin-top: var(--sp-2);
+}
 .article-block .article-num {
   font-family: var(--font-text);
   font-weight: 700;
