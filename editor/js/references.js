@@ -181,7 +181,10 @@ const References = (() => {
       const slug = _slugForType(m[1]);
       const num = m[2].replace(/\s/g, '');
       const year = _normYear(m[3]);
-      const href = _eliForExternal(slug, num, year, m[4], m[5], m[6], m[0], doc);
+      // O sufixo regional (/A, /M) vem LOGO A SEGUIR ao ano e fica fora do
+      // match; espreita-se o texto seguinte para o território ser inferível.
+      const cauda = text.slice(m.index + m[0].length, m.index + m[0].length + 3);
+      const href = _eliForExternal(slug, num, year, m[4], m[5], m[6], m[0] + cauda, doc);
       matches.push({
         kind: 'external-pt', raw: m[0], start: m.index, end: m.index + m[0].length,
         href, label: m[0],
@@ -192,7 +195,11 @@ const References = (() => {
     RE_EXT_UE.lastIndex = 0;
     while ((m = RE_EXT_UE.exec(text)) !== null) {
       if (_overlaps(matches, m.index, m.index + m[0].length)) continue;
-      const year = m[2], num = m[3];
+      // A ordem difere: Diretivas citam-se {ano}/{nº}, Regulamentos e actos
+      // antigos citam-se {nº}/{ano}. Desambigua-se em vez de se assumir.
+      const _ehAno = (v) => /^\d{4}$/.test(v) && +v >= 1951 && +v <= 2099;
+      let year = m[2], num = m[3];
+      if (!_ehAno(year) || (/n\.?[ºo°]/i.test(m[0]) && _ehAno(num))) { const t = year; year = num; num = t; }
       const href = `http://data.europa.eu/eli/${_ueSegment(m[1])}/${year}/${num}/oj`;
       matches.push({
         kind: 'external-ue', raw: m[0], start: m.index, end: m.index + m[0].length,
@@ -346,7 +353,7 @@ const References = (() => {
         // assinalada, sem hiperligação inventada.
         out += `<span class="ref ref-unresolved" title="Sem ELI canónico — falta a data completa da citação">${_escHtml(r.raw)}</span>`;
       } else {
-        const isInternal = r.href.startsWith('#');
+        const isInternal = (r.href || '').startsWith('#');
         const cls = isInternal ? 'ref ref-internal' : 'ref ref-external';
         out += `<a class="${cls}" href="${_escHtml(r.href)}" title="${_escHtml(r.href)}">${_escHtml(r.raw)}</a>`;
       }
@@ -372,11 +379,13 @@ const References = (() => {
     const collect = (text, where) => {
       if (!text) return;
       findAll(text, doc).forEach(r => {
-        let broken = false;
-        if (r.href.startsWith('#')) {
-          broken = !eIds.has(r.href.slice(1));
+        // O href pode ser null (remissão quebrada ou citação sem ELI canónico).
+        let broken = !!r.broken;
+        const href = r.href || r.brokenHref || null;
+        if (href && href.startsWith('#')) {
+          broken = !eIds.has(href.slice(1));
         }
-        out.push({ kind: r.kind, raw: r.raw, href: r.href, where, broken });
+        out.push({ kind: r.kind, raw: r.raw, href, where, broken });
       });
     };
     (doc.recitals || []).forEach((r, i) => collect(r.text, `Considerando ${i + 1}`));

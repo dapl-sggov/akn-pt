@@ -135,12 +135,17 @@ const Validation = (() => {
       const m = String(id || '').match(re);
       return m ? m[1].replace(/[-_]/g, '') : null;
     };
+    // IMPORTANTE: os eId são POSICIONAIS por desenho (art_3 é o 3.º artigo do
+    // ficheiro, mesmo que se apresente como "Artigo 5.º"). Comparar o valor
+    // numérico gerava erros em documentos válidos e colidia com o renumerador.
+    // Só se compara quando o eId TRAZ sufixo alfabético — aí a letra tem mesmo
+    // de coincidir com a do número apresentado (art_5_a ↔ "Artigo 5.º-A").
     eachArticle(doc, (a) => {
-      const eArt = _normEid(a.id, /^art_(\d+(?:[-_][a-z])?)/i);
+      const eArt = _normEid(a.id, /^art_(\d+[-_][a-z])/i);
       const nArt = _normNum(a.num);
       if (eArt && nArt && eArt !== nArt) numIssues.push(`${a.id} ↔ "${a.num}"`);
       (a.paragraphs || []).forEach((p) => {
-        const eP = _normEid(p.id, /__para_(\d+(?:[-_][a-z])?)/i);
+        const eP = _normEid(p.id, /__para_(\d+[-_][a-z])/i);
         const nP = _normNum(p.num);
         if (eP && nP && eP !== nP) numIssues.push(`${p.id} ↔ "${p.num}"`);
         // Alíneas/subpontos: __lit_x contra "x)".
@@ -169,6 +174,9 @@ const Validation = (() => {
     const PAISES = new Set(['pt', 'pt-20', 'pt-30']);
     const EXIGEM_HABILITANTE = new Set(['portaria', 'despacho-normativo', 'drr']);
 
+    if (doc.subtype === 'lei-organica') {
+      issues.push({ level: 'warn', msg: 'Lei Orgânica: o vocabulário da INCM usa o slug "leiorg"; confirme o URI antes de exportar.' });
+    }
     if (doc.actName && !ELI_SLUGS[doc.actName]) {
       issues.push({ level: 'warn', msg: `Tipo "${doc.actName}" não consta do vocabulário de slugs ELI da INCM — o URI usará o nome do acto.` });
     }

@@ -88,7 +88,6 @@ const EliMetadata = (() => {
       y: y || String(doc.year),
       m: _pad2(m || '01'),
       d: _pad2(d || '01'),
-      provisoria: !doc.publicationDate,
     };
   }
 
@@ -234,7 +233,9 @@ const EliMetadata = (() => {
     if (doc.adoptionDate) {
       obj['eli:date_document'] = { '@value': doc.adoptionDate, '@type': 'xsd:date' };
     }
-    if (doc.entryIntoForceDate) {
+    // Uma guarda só para as duas propriedades: uma data mal formada não deve
+    // entrar como literal xsd:date (o RDFa já era estrito; faltava a paridade).
+    if (doc.entryIntoForceDate && /^\d{4}-\d{2}-\d{2}$/.test(String(doc.entryIntoForceDate))) {
       obj['eli:first_date_entry_in_force'] = { '@value': doc.entryIntoForceDate, '@type': 'xsd:date' };
       // Vigência: só se afirma quando é DETERMINÁVEL a partir da data de entrada
       // em vigor. Sem essa data, nada se declara — é preferível ao silêncio
@@ -255,15 +256,20 @@ const EliMetadata = (() => {
       // Emite o descritor nacional (INCM) e, quando há crosswalk, também o
       // conceito EuroVoc correspondente — ponte para a interoperabilidade UE.
       obj['eli:is_about'] = doc.subjects.flatMap((s) => {
-        const code = typeof s === 'string' ? s : s.code;
-        const lbl = typeof s === 'object' ? s.label : null;
+        // Guarda igual à do RDFa e do akn-export: um assunto sem código não
+        // pode gerar `.../legal-subject/undefined`, e um `null` na lista não
+        // pode derrubar a emissão inteira. É também o que o validation.js
+        // promete ao utilizador.
+        const code = typeof s === 'string' ? s : (s && s.code);
+        if (!code) return [];
+        const lbl = (s && typeof s === 'object') ? s.label : null;
         const out = [];
         const nat = { '@id': (typeof SubjectVocab !== 'undefined' && SubjectVocab.uri)
           ? SubjectVocab.uri(code)
           : `http://data.dre.pt/eli/authority/legal-subject/${code}` };
         if (lbl) nat['skos:prefLabel'] = { '@value': lbl, '@language': 'pt' };
         out.push(nat);
-        if (typeof s === 'object' && s.eurovoc) {
+        if (s && typeof s === 'object' && s.eurovoc) {
           const eu = { '@id': s.eurovoc };
           if (s.euLabel) eu['skos:prefLabel'] = { '@value': s.euLabel, '@language': 'pt' };
           out.push(eu);

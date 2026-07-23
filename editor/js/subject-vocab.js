@@ -44,6 +44,7 @@ const SubjectVocab = (() => {
   // Permite injetar dados (ex.: testes em Node) sem fetch.
   function setData(items, crosswalk) {
     _index(items);
+    _cwOk = Array.isArray(crosswalk) && crosswalk.length > 0;
     _euByCode = Object.create(null);
     for (const x of (crosswalk || [])) _euByCode[x.code] = { eurovoc: x.eurovoc, euLabel: x.euLabel };
     return _items.length;
@@ -51,7 +52,10 @@ const SubjectVocab = (() => {
 
   async function load() {
     if (_items) return;
-    if (typeof fetch === 'undefined') { _items = []; _euByCode = Object.create(null); return; }
+    if (typeof fetch === 'undefined') {
+      _items = []; _folded = []; _byCode = Object.create(null);
+      _euByCode = Object.create(null); _cwOk = false; return;
+    }
     if (_loading) return _loading;
     _loading = (async () => {
       const [si, cw] = await Promise.all([
@@ -76,7 +80,7 @@ const SubjectVocab = (() => {
     const needle = _fold(q).trim();
     if (!needle) return [];
     // Procura directa por código: colar um código da INCM deve resolver.
-    if (/^\d+$/.test(needle) && _byCode[needle]) {
+    if (/^\d+$/.test(needle) && _byCode && _byCode[needle]) {
       return [{ code: needle, label: _byCode[needle] }];
     }
     const pref = [], sub = [];

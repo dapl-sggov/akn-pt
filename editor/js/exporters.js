@@ -64,7 +64,15 @@ const Exporters = (() => {
   // no alvo). O que faz sentido imprimir/exportar é a versão CONSOLIDADA.
   function _docParaRender(doc) {
     if (doc && doc.kind === 'amender' && typeof Amendment !== 'undefined') {
-      try { return Amendment.applyAll(doc); } catch (e) { /* cai no doc original */ }
+      try {
+        // Consolidar a uma data REAL: o applyAll usa a sentinela 9999-12-31, que
+        // não conta como consolidação, e o artefacto saía com o ELI (e o nome de
+        // ficheiro) do acto PUBLICADO apesar de levar o texto consolidado.
+        const hoje = new Date().toISOString().slice(0, 10);
+        const marcos = (Amendment.timeline ? Amendment.timeline(doc) : []).filter(d => d && d <= hoje);
+        const data = marcos.length ? marcos[marcos.length - 1] : hoje;
+        return Amendment.applyAtDate(doc, data);
+      } catch (e) { /* cai no doc original */ }
     }
     return doc;
   }
