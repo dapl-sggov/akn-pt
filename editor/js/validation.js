@@ -139,6 +139,62 @@ const Validation = (() => {
       issues.push({ level: 'error', msg: `eId não corresponde ao número: ${numIssues.slice(0, 5).join('; ')}.` });
     }
 
+    // ----- Invariantes ELI (alinhamento com o modelo da INCM) --------------
+    // Estas regras protegem a identidade do acto: tudo o que entra no URI ELI
+    // (tipo, número, ano, data de publicação, território) tem de ser coerente,
+    // sob pena de se emitir um identificador com aparência canónica e conteúdo
+    // errado. Ver eli-pt/incm-eli-reference.md e ADR-0012.
+    const ELI_SLUGS = {
+      'dec-lei': 'dec-lei', 'lei': 'lei', 'portaria': 'port', 'res-cm': 'resolconsmin',
+      'res-ar': 'resolassrep', 'despacho-normativo': 'despnorm', 'dlr': 'declegreg',
+      'drr': 'decregulreg', 'decreto-ar': 'dec',
+    };
+    const REGIONAIS = new Set(['dlr', 'drr']);
+    const PAISES = new Set(['pt', 'pt-20', 'pt-30']);
+    const EXIGEM_HABILITANTE = new Set(['portaria', 'despacho-normativo', 'drr']);
+
+    if (doc.actName && !ELI_SLUGS[doc.actName]) {
+      issues.push({ level: 'warn', msg: `Tipo "${doc.actName}" não consta do vocabulário de slugs ELI da INCM — o URI usará o nome do acto.` });
+    }
+    if (doc.country && !PAISES.has(doc.country)) {
+      issues.push({ level: 'error', msg: `FRBRcountry "${doc.country}" inválido (esperado pt, pt-20 ou pt-30).` });
+    }
+    if (REGIONAIS.has(doc.actName) && doc.country === 'pt') {
+      issues.push({ level: 'error', msg: 'Acto regional (DLR/DRR) exige FRBRcountry pt-20 (Açores) ou pt-30 (Madeira) — o URI ficaria com o território /p.' });
+    }
+    if (!REGIONAIS.has(doc.actName) && (doc.country === 'pt-20' || doc.country === 'pt-30')) {
+      issues.push({ level: 'error', msg: `Acto nacional com FRBRcountry "${doc.country}" — o território regional só se aplica a DLR/DRR.` });
+    }
+    if (doc.number && !/^\d+(-[A-Za-z])?$/.test(String(doc.number).trim())) {
+      issues.push({ level: 'warn', msg: `Número "${doc.number}" fora da forma habitual (N ou N-L) — confirme o segmento do URI ELI.` });
+    }
+    [['adoptionDate', 'aprovação'], ['publicationDate', 'publicação']].forEach(([k, label]) => {
+      if (doc[k] && !/^\d{4}-\d{2}-\d{2}$/.test(String(doc[k]))) {
+        issues.push({ level: 'error', msg: `Data de ${label} fora do formato ISO (AAAA-MM-DD).` });
+      }
+    });
+    if (doc._publicationDateInferida) {
+      issues.push({ level: 'warn', msg: 'Data de publicação inferida na importação — o URI ELI é provisório até ser confirmada.' });
+    }
+    if (doc.year && /^\d{4}/.test(String(doc.publicationDate || ''))) {
+      const anoPub = parseInt(String(doc.publicationDate).slice(0, 4), 10);
+      if (anoPub !== Number(doc.year)) {
+        issues.push({ level: 'warn', msg: `Ano do diploma (${doc.year}) difere do ano da publicação (${anoPub}) — o URI usa o ano do diploma; confirme.` });
+      }
+    }
+    if (EXIGEM_HABILITANTE.has(doc.actName) && !doc.habilitante) {
+      issues.push({ level: 'error', msg: 'Diploma regulamentar sem lei habilitante (eli:based_on) — exigido pelo princípio da legalidade.' });
+    }
+    if (doc.habilitante && !/^https?:\/\/data\.dre\.pt\/eli\//.test(String(doc.habilitante))) {
+      issues.push({ level: 'warn', msg: 'Lei habilitante fora da forma canónica data.dre.pt/eli/… — o eli:based_on não ligará ao grafo da INCM.' });
+    }
+    if (doc.subtype === 'dec-lei-transposicao' && !doc.transposesUri) {
+      issues.push({ level: 'warn', msg: 'Subtipo de transposição sem URI da directiva — o eli:transposes não será emitido.' });
+    }
+    if (Array.isArray(doc.subjects) && doc.subjects.some(s => !(typeof s === 'string' ? s : s && s.code))) {
+      issues.push({ level: 'warn', msg: 'Há assuntos sem código de descritor da INCM — esses não entram no eli:is_about.' });
+    }
+
     return issues;
   }
 

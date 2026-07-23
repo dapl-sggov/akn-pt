@@ -21,6 +21,57 @@
 const ImportParser = (() => {
 
   // -----------------------------------------------------------------------
+  // Leitura de URIs ELI (inverso do que o eli-metadata.js constrói)
+  // -----------------------------------------------------------------------
+  // Slug ELI da INCM → <act name> AKN-PT.
+  const SLUG_TO_ACT = {
+    'dec-lei': 'dec-lei', 'lei': 'lei', 'port': 'portaria', 'resolconsmin': 'res-cm',
+    'resolassrep': 'res-ar', 'despnorm': 'despacho-normativo', 'declegreg': 'dlr',
+    'decregulreg': 'drr', 'dec': 'decreto-ar',
+  };
+  const TERR_TO_COUNTRY = { p: 'pt', a: 'pt-20', m: 'pt-30' };
+
+  // Extrai a identidade do acto a partir de um URI ELI. Reconhece as duas
+  // formas canónicas da INCM (publicada e consolidada) e, por retrocompat., a
+  // forma proposta anterior (eli.gov.pt, jurisdição-first). Devolve null se não
+  // reconhecer — quem chama não deve inferir nada nesse caso.
+  function parseEliUri(uri) {
+    if (!uri) return null;
+    const s = String(uri);
+    // INCM publicada: /eli/{slug}/{nº}/{ano}/{mm}/{dd}/{p|a|m}/dre
+    let m = s.match(/\/eli\/([a-z-]+)\/([^/]+)\/(\d{4})\/(\d{2})\/(\d{2})\/([pam])\/dre/i);
+    if (m) {
+      return {
+        form: 'incm', slug: m[1].toLowerCase(), actName: SLUG_TO_ACT[m[1].toLowerCase()] || null,
+        number: m[2], year: parseInt(m[3], 10),
+        publicationDate: `${m[3]}-${m[4]}-${m[5]}`,
+        country: TERR_TO_COUNTRY[m[6].toLowerCase()] || 'pt', consolidatedAt: null,
+      };
+    }
+    // INCM consolidada: /eli/{slug}/{nº}/{ano}/{p|a|m}/cons/{AAAAMMDD}
+    m = s.match(/\/eli\/([a-z-]+)\/([^/]+)\/(\d{4})\/([pam])\/cons\/(\d{8})/i);
+    if (m) {
+      const c = m[5];
+      return {
+        form: 'incm-cons', slug: m[1].toLowerCase(), actName: SLUG_TO_ACT[m[1].toLowerCase()] || null,
+        number: m[2], year: parseInt(m[3], 10), publicationDate: null,
+        country: TERR_TO_COUNTRY[m[4].toLowerCase()] || 'pt',
+        consolidatedAt: `${c.slice(0, 4)}-${c.slice(4, 6)}-${c.slice(6, 8)}`,
+      };
+    }
+    // Forma proposta (legada): /eli/{jurisdição}/{actName}/{ano}/{nº}/pt
+    m = s.match(/\/eli\/(pt(?:-\d{2})?)\/([a-z-]+)\/(\d{4})\/([^/]+)/i);
+    if (m) {
+      return {
+        form: 'proposed', slug: null, actName: m[2].toLowerCase(),
+        number: m[4], year: parseInt(m[3], 10), publicationDate: null,
+        country: m[1].toLowerCase(), consolidatedAt: null,
+      };
+    }
+    return null;
+  }
+
+  // -----------------------------------------------------------------------
   // Type detection
   // -----------------------------------------------------------------------
   const TYPE_PATTERNS = [
@@ -262,8 +313,18 @@ const ImportParser = (() => {
         }
       }
     }
-    if (!result.adoptionDate) result.adoptionDate = result.publicationDate || `${result.year}-01-01`;
-    if (!result.publicationDate) result.publicationDate = result.adoptionDate;
+    // As datas em falta são inferidas para o editor poder funcionar, MAS ficam
+    // marcadas: a data de publicação entra no URI ELI e uma data inventada
+    // (ex. {ano}-01-01) produziria um identificador com aparência canónica e
+    // conteúdo errado. O validation.js avisa quando estas marcas estão activas.
+    if (!result.adoptionDate) {
+      result.adoptionDate = result.publicationDate || `${result.year}-01-01`;
+      result._adoptionDateInferida = true;
+    }
+    if (!result.publicationDate) {
+      result.publicationDate = result.adoptionDate;
+      result._publicationDateInferida = true;
+    }
     if (!result.docDate) result.docDate = result.publicationDate;
 
     // Step 5: parse body — walk through lines tracking state
@@ -1028,8 +1089,22 @@ const ImportParser = (() => {
       if (countryElem) result.country = countryElem.getAttribute('value');
       const uri = qq('FRBRuri', work);
       if (uri) {
-        const m = uri.getAttribute('value').match(/\/(\d{4})\/(\d+)\//);
-        if (m) { result.year = parseInt(m[1], 10); }
+        // Lê a identidade completa do URI (slug/tipo, número, ano, território e
+        // consolidação), em vez de adivinhar o ano com uma regex posicional.
+        const p = parseEliUri(uri.getAttribute('value'));
+        if (p) {
+          if (p.year) result.year = p.year;
+          if (p.actName) result.actName = p.actName;
+          if (p.number && !result.number) result.number = p.number;
+          // O <FRBRcountry> lido acima é autoritativo; o território do URI só
+          // preenche a falta (e serve de cruzamento na validação).
+          if (p.country && !result.country) result.country = p.country;
+          if (p.publicationDate && !result.publicationDate) result.publicationDate = p.publicationDate;
+          if (p.consolidatedAt) {
+            result._consolidatedAt = p.consolidatedAt;
+            result._consolidationVersion = result._consolidationVersion || 2;
+          }
+        }
       }
     }
 
@@ -1240,7 +1315,7 @@ const ImportParser = (() => {
     };
   }
 
-  return { parse, parseDocx, parseAknXml, toDocState };
+  return { parse, parseDocx, parseAknXml, toDocState, parseEliUri };
 })();
 
 if (typeof window !== "undefined") window.ImportParser = ImportParser;

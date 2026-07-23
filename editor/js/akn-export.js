@@ -232,11 +232,15 @@ ${steps.join('\n')}
     // URI Work do target a partir do doc._consolidatedFrom (Amendment.fromTarget
     // preenche este campo).
     const targetWorkUri = doc._consolidatedFrom || '';
-    const items = passive.map((m, i) =>
-      `        <textualMod type="${escapeXml(m.type)}" eId="mod_${escapeXml(m.id || String(i + 1))}">
-          <source href="${escapeXml(m.sourceUri)}"/>
-          <destination href="${escapeXml(targetWorkUri)}#${escapeXml(m.eId)}"/>
-        </textualMod>`).join('\n');
+    // Sem URI resolvido, o elemento é omitido em vez de sair com href vazio ou
+    // inventado (TIMP-0004 trata a ausência como aviso, não como erro).
+    const items = passive.map((m, i) => {
+      const src = m.sourceUri ? `\n          <source href="${escapeXml(m.sourceUri)}"/>` : '';
+      const dst = (targetWorkUri && m.eId)
+        ? `\n          <destination href="${escapeXml(targetWorkUri)}#${escapeXml(m.eId)}"/>` : '';
+      return `        <textualMod type="${escapeXml(m.type)}" eId="mod_${escapeXml(m.id || String(i + 1))}">${src}${dst}
+        </textualMod>`;
+    }).join('\n');
     return `      <analysis source="#dapl">
         <activeModifications/>
         <passiveModifications>

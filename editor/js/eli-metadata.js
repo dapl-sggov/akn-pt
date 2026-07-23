@@ -180,8 +180,12 @@ const EliMetadata = (() => {
     }
     if (_isConsolidated(doc)) {
       expression['eli:version'] = { '@value': String(doc._consolidationVersion || 2), '@type': 'xsd:positiveInteger' };
-      // consolidates → Expression ORIGINAL publicada (não a consolidada).
-      const pubDoc = Object.assign({}, doc, { _consolidatedAt: null });
+      // consolidates → Expression ORIGINAL publicada (não a consolidada). Usa a
+      // data de publicação do acto originário, preservada pelo Amendment.
+      const pubDoc = Object.assign({}, doc, {
+        _consolidatedAt: null,
+        publicationDate: doc._originalPublicationDate || doc.publicationDate,
+      });
       expression['eli:consolidates'] = { '@id': expressionUri(pubDoc, opts) };
     }
 
