@@ -30,6 +30,8 @@ const ImportParser = (() => {
     'decregulreg': 'drr', 'dec': 'decreto-ar',
   };
   const TERR_TO_COUNTRY = { p: 'pt', a: 'pt-20', m: 'pt-30' };
+  const ACT_TO_SLUG = Object.fromEntries(Object.entries(SLUG_TO_ACT).map(([s, a]) => [a, s]));
+  const COUNTRY_TO_TERR = { 'pt': 'p', 'pt-20': 'a', 'pt-30': 'm' };
 
   // Extrai a identidade do acto a partir de um URI ELI. Reconhece as duas
   // formas canónicas da INCM (publicada e consolidada) e, por retrocompat., a
@@ -231,8 +233,9 @@ const ImportParser = (() => {
         // Diplomas anteriores a 2000 citam o ano com dois dígitos
         // ("Decreto-Lei n.º 442-A/88") — normaliza-se para o século XX.
         result.year = m[2].length <= 2 ? 1900 + parseInt(m[2], 10) : parseInt(m[2], 10);
-        if (m[3] === 'A') result.country = 'pt-20';
-        else if (m[3] === 'M') result.country = 'pt-30';
+        const terrSufixo = String(m[3] || '').toUpperCase();
+        if (terrSufixo === 'A') result.country = 'pt-20';
+        else if (terrSufixo === 'M') result.country = 'pt-30';
         typeMatch = tp;
         break;
       }
@@ -339,6 +342,7 @@ const ImportParser = (() => {
     if (!result.publicationDate) {
       result.publicationDate = result.adoptionDate;
       result._publicationDateInferida = true;
+      (result.warnings = result.warnings || []).push('Data de publicação não detectada — o URI ELI ficará provisório; confirme antes de exportar.');
     }
     if (!result.docDate) result.docDate = result.publicationDate;
 
@@ -668,14 +672,18 @@ const ImportParser = (() => {
     const cd = _citationDate(choice.dateText, choice.year);
     if (cd) {
       // Work canónico INCM: .../{ano}/{mês}/{dia}/p/dre (número em minúsculas).
-      href = `https://data.dre.pt/eli/${choice.type}/${String(choice.number).toLowerCase()}/${cd.yyyy}/${cd.mm}/${cd.dd}/p/dre`;
+      href = `https://data.dre.pt/eli/${ACT_TO_SLUG[choice.type] || choice.type}/${String(choice.number).toLowerCase()}/${cd.yyyy}/${cd.mm}/${cd.dd}/p/dre`;
     } else if (typeof DreMock !== 'undefined' && DreMock.all) {
-      const needle = `/eli/${choice.type}/${choice.number}/${choice.year}/`;
+      const needle = `/eli/${ACT_TO_SLUG[choice.type] || choice.type}/${String(choice.number).toLowerCase()}/${choice.year}/`;
       const hit = DreMock.all().find(e => e.eli && e.eli.includes(needle));
       if (hit) href = hit.eli;
     }
-    if (!href) href = `https://eli.gov.pt/eli/pt/${choice.type}/${choice.year}/${choice.number}/pt`;
-    r.habilitante = href;
+    // Citação abreviada (sem a data legística) e sem correspondência: NÃO se
+    // inventa um URI. Fica só o rótulo e um aviso para o utilizador completar.
+    if (!href) {
+      (r.warnings = r.warnings || []).push('Habilitante citado de forma abreviada — falta a data ("de {dia} de {mês}") para construir o URI ELI.');
+    }
+    r.habilitante = href || '';
     r.habilitanteLabel = choice.raw;
   }
 
@@ -1136,13 +1144,31 @@ const ImportParser = (() => {
       }
     }
 
-    // FRBR Expression
-    const exprDate = q('FRBRdate');
-    for (const d of exprDate) {
-      if (d.getAttribute('name') === 'publication') {
-        result.publicationDate = d.getAttribute('date');
-        result.docDate = d.getAttribute('date');
-        break;
+    // FRBR Expression: data de publicação, consolidação e versão.
+    for (const d of q('FRBRdate')) {
+      const nome = d.getAttribute('name');
+      if (nome === 'publication') {
+        // O URI Work canónico já pode ter fornecido a data; o docDate tem de ser
+        // preenchido de qualquer forma (alimenta o <date> do preâmbulo).
+        if (!result.publicationDate) result.publicationDate = d.getAttribute('date');
+        if (!result.docDate) result.docDate = d.getAttribute('date');
+      } else if (nome === 'consolidation' || nome === 'rectification') {
+        result._consolidatedAt = d.getAttribute('date');
+        result._consolidationKind = nome;
+      }
+    }
+    const vn = qq('FRBRversionNumber');
+    if (vn) {
+      const v = parseInt(vn.getAttribute('value'), 10);
+      if (v > 1) result._consolidationVersion = v;
+    }
+    // Coerência entre o FRBRcountry declarado e o marcador territorial do URI.
+    if (work) {
+      const uriEl = qq('FRBRuri', work);
+      const p2 = uriEl ? parseEliUri(uriEl.getAttribute('value')) : null;
+      if (p2 && p2.country && result.country && p2.country !== result.country) {
+        (result.warnings = result.warnings || []).push(
+          `FRBRcountry (${result.country}) diverge do território do URI (${p2.country}) — prevaleceu o FRBRcountry.`);
       }
     }
 

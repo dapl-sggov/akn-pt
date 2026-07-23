@@ -18,16 +18,27 @@
 const SubjectVocab = (() => {
   const BASE = 'http://data.dre.pt/eli/authority/legal-subject/';
   let _items = null;            // [[code, label], ...]
+  let _folded = null;           // rótulos com diacríticos dobrados (índice paralelo)
+  let _cwOk = false;            // o crosswalk EuroVoc carregou?
   let _byCode = null;           // { code: label }
   let _euByCode = null;         // { code: {eurovoc, euLabel} }  (crosswalk → EuroVoc)
   let _loading = null;
 
   function uri(code) { return BASE + code; }
 
+  // Dobra diacríticos e caixa: "Água" e "agua" têm de encontrar-se.
+  const _fold = (s) => String(s == null ? '' : s)
+    .normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
   function _index(items) {
     _items = items;
     _byCode = Object.create(null);
-    for (const [c, l] of items) _byCode[c] = l;
+    _folded = new Array(items.length);
+    for (let i = 0; i < items.length; i++) {
+      const [c, l] = items[i];
+      _byCode[c] = l;
+      _folded[i] = _fold(l);   // pré-computado: evita dobrar a cada pesquisa
+    }
   }
 
   // Permite injetar dados (ex.: testes em Node) sem fetch.
@@ -45,7 +56,9 @@ const SubjectVocab = (() => {
     _loading = (async () => {
       const [si, cw] = await Promise.all([
         fetch('data/legal-subjects.json').then(r => { if (!r.ok) throw new Error(`legal-subjects.json: HTTP ${r.status}`); return r.json(); }),
-        fetch('data/subject-eurovoc-crosswalk.json').then(r => r.ok ? r.json() : []).catch(() => []),
+        fetch('data/subject-eurovoc-crosswalk.json')
+          .then(r => { _cwOk = r.ok; return r.ok ? r.json() : []; })
+          .catch(() => { _cwOk = false; return []; }),
       ]);
       _index(si);
       _euByCode = Object.create(null);
@@ -60,19 +73,25 @@ const SubjectVocab = (() => {
 
   function search(q, limit = 20) {
     if (!_items || !q) return [];
-    const needle = String(q).toLowerCase().trim();
+    const needle = _fold(q).trim();
     if (!needle) return [];
+    // Procura directa por código: colar um código da INCM deve resolver.
+    if (/^\d+$/.test(needle) && _byCode[needle]) {
+      return [{ code: needle, label: _byCode[needle] }];
+    }
     const pref = [], sub = [];
-    for (const [code, l] of _items) {
-      const ll = l.toLowerCase();
-      if (ll.startsWith(needle)) pref.push({ code, label: l });
-      else if (ll.includes(needle)) sub.push({ code, label: l });
+    for (let i = 0; i < _items.length; i++) {
+      const ll = _folded[i];
+      if (ll.startsWith(needle)) pref.push({ code: _items[i][0], label: _items[i][1] });
+      else if (ll.includes(needle)) sub.push({ code: _items[i][0], label: _items[i][1] });
       if (pref.length >= limit) break;
     }
     return pref.concat(sub).slice(0, limit);
   }
 
-  return { load, setData, search, label, uri, eurovoc, get size() { return _items ? _items.length : 0; } };
+  return { load, setData, search, label, uri, eurovoc,
+    get crosswalkReady() { return _cwOk; },
+    get size() { return _items ? _items.length : 0; } };
 })();
 
 if (typeof window !== 'undefined') window.SubjectVocab = SubjectVocab;

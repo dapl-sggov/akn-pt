@@ -53,6 +53,8 @@
 const BluebellPt = (() => {
 
   const RE_ARTIGO = /^\s*ARTIGO\s+(\d+(?:[-‑–]\s*[A-Z])?)\.?[ºo°]?\s*(?:[—–-]\s*(.+))?$/i;
+  const RE_META = /^\s*META\s*$/i;
+  const RE_META_CAMPO = /^\s+(ELI|TIPO|NUMERO|ANO)\s+(.+)$/i;
   const RE_PREAMBLE = /^\s*PREAMBLE\s*$/i;
   const RE_FORMULA = /^\s*FORMULA\s*$/i;
   const RE_ANEXO = /^\s*ANEXO\s+([IVXLCDM\d]+)(?:\s*[—–-]\s*(.+))?$/i;
@@ -70,6 +72,7 @@ const BluebellPt = (() => {
       body: { kind: 'articles', items: [] },
       attachments: [],
     };
+    doc.meta = {};
     let mode = 'body';
     let currentArticle = null;
     let currentPara = null;
@@ -89,8 +92,25 @@ const BluebellPt = (() => {
       if (!raw.trim()) continue;
 
       // 1. Marcadores estruturais top-level
+      if (RE_META.test(raw)) { mode = 'meta'; commitArticle(); continue; }
       if (RE_PREAMBLE.test(raw)) { mode = 'preamble'; commitArticle(); continue; }
       if (RE_FORMULA.test(raw)) { mode = 'formula'; commitArticle(); continue; }
+
+      // Bloco META: identidade do acto (ELI, tipo, número, ano). Reconstrói o
+      // que o formato de texto perdia por completo.
+      if (mode === 'meta') {
+        const mm = raw.match(RE_META_CAMPO);
+        if (mm) {
+          const chave = mm[1].toUpperCase();
+          const valor = mm[2].trim();
+          if (chave === 'ELI') doc.meta.eli = valor;
+          else if (chave === 'TIPO') doc.meta.actName = valor;
+          else if (chave === 'NUMERO') doc.meta.number = valor;
+          else if (chave === 'ANO') doc.meta.year = parseInt(valor, 10);
+          continue;
+        }
+        mode = 'body';   // linha que não é campo: o bloco META terminou
+      }
 
       const mArt = raw.match(RE_ARTIGO);
       if (mArt && !raw.startsWith(' ')) {
@@ -233,6 +253,21 @@ const BluebellPt = (() => {
 
   function serialize(doc) {
     const lines = [];
+    // Cabeçalho META: sem ele o formato de texto perdia toda a identidade do
+    // acto (o ELI, o tipo, o número). É lido de volta pelo parse().
+    if (typeof EliMetadata !== 'undefined' && doc && doc.actName) {
+      try {
+        const eli = EliMetadata.expressionUri(doc);
+        if (eli) {
+          lines.push('META');
+          lines.push('  ELI ' + eli);
+          if (doc.actName) lines.push('  TIPO ' + doc.actName);
+          if (doc.number) lines.push('  NUMERO ' + doc.number);
+          if (doc.year) lines.push('  ANO ' + doc.year);
+          lines.push('');
+        }
+      } catch (e) { /* o texto continua válido sem META */ }
+    }
     if (doc.recitals && doc.recitals.length) {
       lines.push('PREAMBLE');
       doc.recitals.forEach(r => lines.push('  ' + r.text));

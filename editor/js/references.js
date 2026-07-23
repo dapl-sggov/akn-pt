@@ -80,7 +80,9 @@ const References = (() => {
     'dec.-lei': 'dec-lei',
     'dl': 'dec-lei',
     'lei': 'lei',
-    'lei orgânica': 'lei',
+    // A Lei Orgânica tem slug próprio no vocabulário da INCM (leiorg).
+    'lei orgânica': 'lei-org',
+    'lei organica': 'lei-org',
     'portaria': 'portaria',
     'resolução do conselho de ministros': 'res-cm',
     'rcm': 'res-cm',
@@ -118,9 +120,18 @@ const References = (() => {
     return m ? String(m).padStart(2, '0') : '';
   }
 
-  // Directivas UE — mantém URI ELI europeu se referida. Aceita as duas formas
-  // correntes: "Diretiva (UE) 2019/1024" e "Diretiva 2014/24/UE" (estilo antigo).
-  const RE_EXT_UE = /\bDiretiva\s+(?:\(UE\)\s+(\d{4})\/(\d+)|(\d{4})\/(\d+)\/(?:UE|CE))/gi;
+  // Actos da UE — mantém o URI ELI europeu. Cobre Diretiva, Regulamento e
+  // Decisão, nas duas formas correntes: "Diretiva (UE) 2019/1024" e
+  // "Diretiva 2014/24/UE" (estilo antigo).
+  const UE_TYPE_SEG = {
+    diretiva: 'dir', directiva: 'dir', regulamento: 'reg', decisao: 'dec',
+  };
+  const RE_EXT_UE = /\b(Diretiva|Directiva|Regulamento|Decis[ãa]o)\s+(?:\((?:UE|CE|CEE)\)\s*)?(?:n\.?[ºo°]?\s*)?(\d{4})\/(\d+)(?:\/(?:UE|CE|CEE))?/gi;
+  function _ueSegment(tipo) {
+    const k = String(tipo || '').toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '');
+    return UE_TYPE_SEG[k] || 'dir';
+  }
 
   // ----- Find -------------------------------------------------------------
 
@@ -150,11 +161,14 @@ const References = (() => {
         if (/^\s*(?:da\s+Constitui[çc][ãa]o|do\s+(?:Decreto-Lei|C[óo]digo|Tratado|Estatuto|Regime|Regulamento|referido\s+diploma)|d[ao]\s+(?:Lei|Portaria|Resolu[çc][ãa]o|Despacho|Decreto)|d[ao]\s+mesmo\s+diploma|d[ao]\s+presente\s+(?:Lei|Decreto-Lei|Portaria|Resolu[çc][ãa]o))/i.test(tail)) {
           continue;
         }
-        // só emitir se o eId alvo realmente existir
-        if (eIds && !eIds.has(href.slice(1))) continue;
+        // A remissão é emitida mesmo quando o eId alvo não existe, marcada como
+        // `broken`: suprimi-la escondia o erro (o exportador omite o href e o
+        // painel de referências mostra o aviso).
+        const broken = !!(eIds && !eIds.has(href.slice(1)));
         matches.push({
           kind: p.kind, raw: m[0], start: m.index, end: m.index + m[0].length,
-          href, label: m[0],
+          href: broken ? null : href, brokenHref: broken ? href : undefined, broken,
+          label: m[0],
         });
       }
     });
@@ -167,7 +181,7 @@ const References = (() => {
       const slug = _slugForType(m[1]);
       const num = m[2].replace(/\s/g, '');
       const year = _normYear(m[3]);
-      const href = _eliForExternal(slug, num, year, m[4], m[5], m[6]);
+      const href = _eliForExternal(slug, num, year, m[4], m[5], m[6], m[0], doc);
       matches.push({
         kind: 'external-pt', raw: m[0], start: m.index, end: m.index + m[0].length,
         href, label: m[0],
@@ -178,8 +192,8 @@ const References = (() => {
     RE_EXT_UE.lastIndex = 0;
     while ((m = RE_EXT_UE.exec(text)) !== null) {
       if (_overlaps(matches, m.index, m.index + m[0].length)) continue;
-      const year = m[1] || m[3], num = m[2] || m[4];
-      const href = `http://data.europa.eu/eli/dir/${year}/${num}/oj`;
+      const year = m[2], num = m[3];
+      const href = `http://data.europa.eu/eli/${_ueSegment(m[1])}/${year}/${num}/oj`;
       matches.push({
         kind: 'external-ue', raw: m[0], start: m.index, end: m.index + m[0].length,
         href, label: m[0],
@@ -232,20 +246,38 @@ const References = (() => {
   // citação abreviada (incompleta por padrão legístico), não uma falha do esquema.
   // slug legística → slug ELI REAL da INCM (ver eli-pt/incm-eli-reference.md).
   const ELI_SLUG = {
-    'dec-lei': 'dec-lei', 'lei': 'lei', 'portaria': 'port', 'res-cm': 'resolconsmin',
-    'res-ar': 'resolassrep', 'despacho-normativo': 'despnorm', 'dlr': 'declegreg',
-    'drr': 'decregulreg', 'decreto-ar': 'dec',
+    'dec-lei': 'dec-lei', 'lei': 'lei', 'lei-org': 'leiorg', 'portaria': 'port',
+    'res-cm': 'resolconsmin', 'res-ar': 'resolassrep', 'despacho-normativo': 'despnorm',
+    'dlr': 'declegreg', 'drr': 'decregulreg', 'decreto-ar': 'dec',
   };
   function _incmSlug(s) { return ELI_SLUG[s] || s; }
 
-  function _eliForExternal(slug, num, year, dia, mesNome, anoData) {
+  // Território do acto CITADO. Para os tipos regionais infere-se do texto da
+  // citação (sufixo /A ou /M, ou menção à região) e, em último caso, do país do
+  // diploma corrente. Um acto nacional é sempre /p.
+  const REGIONAL_SLUGS = new Set(['declegreg', 'decregulreg']);
+  function _terrForRef(incmSlug, contexto, doc) {
+    if (!REGIONAL_SLUGS.has(incmSlug)) return 'p';
+    const t = String(contexto || '');
+    if (/\/\s*A\b/.test(t) || /A[çc]ores/i.test(t)) return 'a';
+    if (/\/\s*M\b/.test(t) || /Madeira/i.test(t)) return 'm';
+    if (doc && doc.country === 'pt-20') return 'a';
+    if (doc && doc.country === 'pt-30') return 'm';
+    return null;   // indeterminável → não se constrói URI
+  }
+
+  function _eliForExternal(slug, num, year, dia, mesNome, anoData, contexto, doc) {
+    // Tipo de acto não reconhecido: não se assume nenhum (assumir "lei" produzia
+    // um URI plausível e errado).
+    if (!slug) return null;
     const incm = _incmSlug(slug);
+    const terr = _terrForRef(incm, contexto, doc);
+    if (!terr) return null;   // acto regional sem região determinável
     const numL = String(num).toLowerCase();
     const mm = _monthToMM(mesNome);
     if (dia && mm) {
       const yyyy = anoData || year;
-      // Work canónico INCM termina em /p/dre (nacional; território p por defeito).
-      return `https://data.dre.pt/eli/${incm}/${numL}/${yyyy}/${mm}/${String(dia).padStart(2, '0')}/p/dre`;
+      return `https://data.dre.pt/eli/${incm}/${numL}/${yyyy}/${mm}/${String(dia).padStart(2, '0')}/${terr}/dre`;
     }
     if (typeof DreMock !== 'undefined' && DreMock.all) {
       const needle = `/eli/${incm}/${numL}/${year}/`;
@@ -266,7 +298,9 @@ const References = (() => {
 
   function _slugForType(raw) {
     const key = raw.toLowerCase().replace(/ /g, ' ').trim();
-    return ACT_TYPE_TO_SLUG[key] || ACT_TYPE_TO_SLUG[key.replace(/\s+/g, ' ')] || 'lei';
+    // null quando o tipo não é reconhecido — antes caía em 'lei', o que produzia
+    // um identificador com aparência correcta e acto errado.
+    return ACT_TYPE_TO_SLUG[key] || ACT_TYPE_TO_SLUG[key.replace(/\s+/g, ' ')] || null;
   }
 
   // ----- Render para XML --------------------------------------------------

@@ -45,7 +45,16 @@ const Preview = (() => {
         out.push(`<p class="pv-recital">${textRich(r.text, doc)}</p>`);
       });
       if (doc.formula) out.push(`<p class="pv-formula">${textRich(doc.formula, doc)}</p>`);
-      out.push(`</div>`);
+      // Identificador ELI VISÍVEL: os metadados embutidos não sobrevivem à
+    // impressão nem ao Word, pelo que o identificador tem de estar no texto.
+    if (typeof EliMetadata !== 'undefined') {
+      try {
+        const u = EliMetadata.expressionUri(doc);
+        if (u) out.push(`  <p class="pv-eli">ELI: <a href="${u}">${u}</a></p>`);
+      } catch (e) { /* o bloco machine-readable abaixo já sinaliza a falha */ }
+    }
+
+    out.push(`</div>`);
     }
 
     if (doc.body.kind === 'articles') {

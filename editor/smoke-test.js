@@ -1551,7 +1551,14 @@ try {
     ['is_realized_by Expression', ld['eli:is_realized_by']['@type'] === 'eli:LegalExpression'],
     ['language PRT', ld['eli:is_realized_by']['eli:language']['@id'].endsWith('/PRT')],
     ['date_publication', ld['eli:is_realized_by']['eli:date_publication']['@value'] === '2016-12-16'],
-    ['2 manifestações (xml+html)', ld['eli:is_realized_by']['eli:is_embodied_by'].length === 2],
+    // Manifestações = formatos que o editor produz de facto (XML, HTML e PDF).
+    ['3 manifestações (xml+html+pdf)', (() => {
+      const emb = ld['eli:is_realized_by']['eli:is_embodied_by'];
+      return emb.length === 3
+        && emb.every(e => /\/(xml|html|pdf)$/.test(e['@id']))
+        && emb.some(e => e['@id'].endsWith('/pdf'));
+    })()],
+    ['responsibility_of_agent (órgão que aprovou)', ld['eli:responsibility_of_agent']['@id'] === 'https://data.dre.pt/eli/authority/corporate-body/governo'],
     ['passed_by Governo', ld['eli:passed_by']['skos:prefLabel']['@value'].includes('Governo')],
     // Canónico (forma real INCM) — Work termina em /{terr}/dre; Expression +/pt; Manifestation +/fmt
     ['canonical Work .../p/dre', cmp.canonical.work === 'https://data.dre.pt/eli/dec-lei/83/2016/12/16/p/dre'],

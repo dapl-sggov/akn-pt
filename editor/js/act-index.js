@@ -30,17 +30,33 @@ const ActIndex = (() => {
     return _loading;
   }
 
+  // Dobra diacríticos e ruído de citação ('n.º', pontos) dos dois lados.
+  const _norm = (s) => String(s == null ? '' : s)
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().replace(/n\.?[ºo°]\s*/g, ' ').replace(/[.,]/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+
   function search(q, limit = 6) {
     if (!_items || !q) return [];
-    const n = String(q).toLowerCase().trim();
-    if (!n) return [];
+    const termos = _norm(q).split(' ').filter(Boolean);
+    if (!termos.length) return [];
     const out = [];
     for (const a of _items) {
-      const hay = `${a.titulo || ''} ${a.tipo} ${a.numero}/${a.ano}`.toLowerCase();
-      if (hay.includes(n)) out.push(a);
+      const hay = _norm(`${a.titulo || ''} ${a.tipo} ${a.numero}/${a.ano} ${a.eli || ''}`);
+      if (termos.every(t => hay.includes(t))) out.push(a);
       if (out.length >= limit) break;
     }
     return out;
+  }
+
+  // Resolve um URI ELI (Work, Expression ou Manifestation) para a entrada do
+  // índice, truncando ao Work e normalizando esquema e caixa do número.
+  function byUri(uri) {
+    if (!_items || !uri) return null;
+    const work = String(uri).trim().toLowerCase()
+      .replace(/^http:/, 'https:')
+      .replace(/\/(pt)(\/(xml|html|pdf))?$/, '');
+    return _items.find(a => String(a.eli || '').toLowerCase().replace(/^http:/, 'https:') === work) || null;
   }
 
   // Procura EXACTA por número + ano, opcionalmente restrita ao slug ELI da
@@ -58,7 +74,7 @@ const ActIndex = (() => {
     ) || null;
   }
 
-  return { load, setData, search, findAct, get size() { return _items ? _items.length : 0; } };
+  return { load, setData, search, findAct, byUri, get size() { return _items ? _items.length : 0; } };
 })();
 
 if (typeof window !== 'undefined') window.ActIndex = ActIndex;

@@ -125,14 +125,30 @@ const Validation = (() => {
     // deve corresponder ao número visível. (A coerência das URIs FRBR é garantida
     // por construção no buildFrbr, logo não há nada a verificar do estado.)
     const numIssues = [];
+    // Normalização que inclui o SUFIXO ALFABÉTICO: "Artigo 5.º-A" → "5a" e
+    // "art_5_a" → "5a". Sem isto, um artigo 5.º-A com eId art_5 passava.
+    const _normNum = (s) => String(s || '').toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/^\s*artigo\s*/, '')
+      .replace(/[º°.\s)\-_]/g, '');
+    const _normEid = (id, re) => {
+      const m = String(id || '').match(re);
+      return m ? m[1].replace(/[-_]/g, '') : null;
+    };
     eachArticle(doc, (a) => {
-      const eArt = (String(a.id).match(/^art_(\d+)/) || [])[1];
-      const nArt = (String(a.num || '').match(/(\d+)/) || [])[1];
+      const eArt = _normEid(a.id, /^art_(\d+(?:[-_][a-z])?)/i);
+      const nArt = _normNum(a.num);
       if (eArt && nArt && eArt !== nArt) numIssues.push(`${a.id} ↔ "${a.num}"`);
       (a.paragraphs || []).forEach((p) => {
-        const eP = (String(p.id).match(/__para_(\d+)/) || [])[1];
-        const nP = (String(p.num || '').match(/(\d+)/) || [])[1];
+        const eP = _normEid(p.id, /__para_(\d+(?:[-_][a-z])?)/i);
+        const nP = _normNum(p.num);
         if (eP && nP && eP !== nP) numIssues.push(`${p.id} ↔ "${p.num}"`);
+        // Alíneas/subpontos: __lit_x contra "x)".
+        (p.subPoints || []).forEach((sp) => {
+          const eL = _normEid(sp.id, /__lit_([a-z0-9]+)/i);
+          const nL = _normNum(sp.num);
+          if (eL && nL && eL.toLowerCase() !== nL) numIssues.push(`${sp.id} ↔ "${sp.num}"`);
+        });
       });
     });
     if (numIssues.length) {
@@ -189,7 +205,10 @@ const Validation = (() => {
       issues.push({ level: 'warn', msg: 'Lei habilitante fora da forma canónica data.dre.pt/eli/… — o eli:based_on não ligará ao grafo da INCM.' });
     }
     if (doc.subtype === 'dec-lei-transposicao' && !doc.transposesUri) {
-      issues.push({ level: 'warn', msg: 'Subtipo de transposição sem URI da directiva — o eli:transposes não será emitido.' });
+      issues.push({ level: 'error', msg: 'Subtipo de transposição sem URI da directiva (eli:transposes).' });
+    }
+    if (doc.transposesUri && !/^https?:\/\/data\.europa\.eu\/eli\//.test(String(doc.transposesUri))) {
+      issues.push({ level: 'warn', msg: 'URI da directiva fora da forma ELI europeia (data.europa.eu/eli/…).' });
     }
     if (Array.isArray(doc.subjects) && doc.subjects.some(s => !(typeof s === 'string' ? s : s && s.code))) {
       issues.push({ level: 'warn', msg: 'Há assuntos sem código de descritor da INCM — esses não entram no eli:is_about.' });
