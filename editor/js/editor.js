@@ -685,6 +685,10 @@ const Editor = (() => {
     else setTimeout(fn, 0);
   }
 
+  // Estado do picker de assuntos: sequência (anti-corrida) e query a repor.
+  let _subjSeq = 0;
+  let _subjQuery = '';
+
   // ----- Metadata tab ------------------------------------------------------
   function renderMetadataTab(doc) {
     const pane = $('[data-section="meta"]');
@@ -807,12 +811,21 @@ const Editor = (() => {
     sgroup.appendChild(chips);
     const sInput = el('input', { type: 'search', placeholder: 'Pesquisar descritor (ex. "ambiente", "contratação pública")…' });
     const sResults = el('div', { style: 'margin-top:6px;display:flex;flex-direction:column;gap:4px' });
+    // A pesquisa é assíncrona (o vocabulário carrega-se à primeira). Sem um
+    // contador de sequência, a resposta de uma query antiga podia chegar depois
+    // e concatenar-se aos resultados da nova.
     sInput.addEventListener('input', async () => {
       const q = sInput.value.trim();
+      const seq = ++_subjSeq;
       sResults.innerHTML = '';
       if (q.length < 2) return;
       try { await SubjectVocab.load(); }
-      catch { sResults.appendChild(el('div', { class: 'muted small' }, 'Vocabulário indisponível.')); return; }
+      catch { if (seq === _subjSeq) sResults.appendChild(el('div', { class: 'muted small' }, 'Vocabulário indisponível.')); return; }
+      if (seq !== _subjSeq) return;   // chegou tarde: já há query mais recente
+      sResults.innerHTML = '';
+      if (!SubjectVocab.crosswalkReady) {
+        sResults.appendChild(el('div', { class: 'muted small' }, 'Ponte EuroVoc indisponível — só descritores nacionais.'));
+      }
       const hits = SubjectVocab.search(q, 8);
       if (!hits.length) { sResults.appendChild(el('div', { class: 'muted small' }, 'Sem resultados.')); return; }
       hits.forEach((h) => {
@@ -823,6 +836,9 @@ const Editor = (() => {
             if (subjects.some((x) => x.code === h.code)) { toast('Assunto já adicionado', 'info'); return; }
             const entry = { code: h.code, label: h.label };
             if (eu) { entry.eurovoc = eu.eurovoc; entry.euLabel = eu.euLabel; }
+            // Guarda a query: o re-render destruía o campo de pesquisa e a
+            // lista, obrigando a reescrever tudo para adicionar o 2.º assunto.
+            _subjQuery = sInput.value;
             State.update({ subjects: subjects.concat([entry]) });
           } } },
           el('span', null, h.label),
@@ -833,6 +849,12 @@ const Editor = (() => {
     sgroup.appendChild(sInput);
     sgroup.appendChild(sResults);
     pane.appendChild(sgroup);
+    // Repõe a pesquisa anterior depois do re-render (ver acima).
+    if (_subjQuery) {
+      sInput.value = _subjQuery;
+      _subjQuery = '';
+      sInput.dispatchEvent(new Event('input'));
+    }
   }
 
   // ----- Footprint tab ------------------------------------------------------

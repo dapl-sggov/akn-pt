@@ -31,6 +31,7 @@ const ImportParser = (() => {
   };
   const TERR_TO_COUNTRY = { p: 'pt', a: 'pt-20', m: 'pt-30' };
   const ACT_TO_SLUG = Object.fromEntries(Object.entries(SLUG_TO_ACT).map(([s, a]) => [a, s]));
+  ACT_TO_SLUG['lei-organica'] = 'leiorg';   // slug próprio no vocabulário INCM
   const COUNTRY_TO_TERR = { 'pt': 'p', 'pt-20': 'a', 'pt-30': 'm' };
 
   // Extrai a identidade do acto a partir de um URI ELI. Reconhece as duas
@@ -649,18 +650,34 @@ const ImportParser = (() => {
       : r.recitals.map(rc => rc.text);
 
     // Pattern global — captura "tipo n.º N/YYYY" + opcional ", de DD de mês"
-    const habGlobalRe = /(Decreto[- ]Lei|Lei(?:\s+Org[âa]nica)?)\s+n\.?[ºo°]?\s*(\d+(?:-[A-Z])?)\s*\/\s*(\d{2,4})(?:,?\s+de\s+(\d{1,2}\s+de\s+\w+(?:\s+de\s+\d{4})?))?/gi;
+    // Cobre os 9 tipos do escopo (antes só DL e Lei, o que deixava sem
+    // habilitante as Portarias que citam RCM, e os DRR que citam DLR).
+    // O mês aceita cedilha e acentos: \w+ não casa "março".
+    const habGlobalRe = /(Decreto[- ]Lei|Lei\s+Org[âa]nica|Lei|Portaria|Resolu[çc][ãa]o\s+do\s+Conselho\s+de\s+Ministros|Resolu[çc][ãa]o\s+da\s+Assembleia\s+da\s+Rep[úu]blica|Despacho\s+normativo|Decreto\s+Legislativo\s+Regional|Decreto\s+Regulamentar\s+Regional)\s+n\.?[ºo°]?\s*(\d+(?:-[A-Za-z])?)\s*\/\s*(\d{2,4})(?:,?\s+de\s+(\d{1,2}\s+de\s+[A-Za-zçÇáéíóúâêôãõ]+(?:\s+de\s+\d{4})?))?/gi;
 
     const candidates = [];
     sources.forEach(src => {
       let m;
       habGlobalRe.lastIndex = 0;
       while ((m = habGlobalRe.exec(src)) !== null) {
-        const isLei = /lei/i.test(m[1]) && !/decreto/i.test(m[1]);
+        // Mapear a designação citada para o tipo do editor (que depois vira
+        // slug INCM). Antes só distinguia lei/dec-lei, pelo que uma Portaria ou
+        // uma RCM citadas viravam "dec-lei" e geravam um URI do tipo errado.
+        const t = m[1].toLowerCase();
+        const tipoHab =
+          /decreto[- ]lei/.test(t) ? 'dec-lei' :
+          /org[âa]nica/.test(t) ? 'lei-organica' :
+          /portaria/.test(t) ? 'portaria' :
+          /conselho\s+de\s+ministros/.test(t) ? 'res-cm' :
+          /assembleia\s+da\s+rep/.test(t) ? 'res-ar' :
+          /despacho/.test(t) ? 'despacho-normativo' :
+          /legislativo\s+regional/.test(t) ? 'dlr' :
+          /regulamentar\s+regional/.test(t) ? 'drr' : 'lei';
         candidates.push({
-          type: isLei ? 'lei' : 'dec-lei',
+          type: tipoHab,
           number: m[2],
-          year: m[3],
+          // Ano de dois dígitos ("442-A/88") normalizado para o século XX.
+          year: String(m[3]).length <= 2 ? String(1900 + parseInt(m[3], 10)) : m[3],
           dateText: m[4] || '',
           raw: m[0].replace(/\s+/g, ' ').trim(),
         });

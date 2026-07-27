@@ -320,12 +320,22 @@ const BluebellPt = (() => {
 
   // Mistura corpo Bluebell num doc base preservando meta (number/year/dates/…)
   function parseToDoc(text, baseDoc) {
+    // (o bloco META é consumido no fim desta função)
     const parsed = parse(text);
     const out = JSON.parse(JSON.stringify(baseDoc));
     out.recitals = parsed.recitals.length ? parsed.recitals : out.recitals;
     if (parsed.formula) out.formula = parsed.formula;
     if (parsed.body.items.length) out.body = parsed.body;
     if (parsed.attachments.length) out.attachments = parsed.attachments;
+    // Bloco META: identidade do acto lida do texto. Só preenche o que o
+    // baseDoc não traz — o texto não deve sobrepor-se a metadados já definidos
+    // no editor, mas um documento vindo só de texto ficava sem identificação.
+    if (parsed.meta) {
+      if (parsed.meta.actName && !out.actName) out.actName = parsed.meta.actName;
+      if (parsed.meta.number && !out.number) out.number = parsed.meta.number;
+      if (parsed.meta.year && !out.year) out.year = parsed.meta.year;
+      if (parsed.meta.eli) out._eliImportado = parsed.meta.eli;
+    }
     // Recalcular contadores
     out.nextRecitalNum = (out.recitals.length || 0) + 1;
     out.nextArticleNum = (out.body.items.length || 0) + 1;
