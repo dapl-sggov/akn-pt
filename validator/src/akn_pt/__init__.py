@@ -12,6 +12,6 @@ from __future__ import annotations
 from .core import Phase, ValidationReport, validate
 from .i18n import set_language
 
-__all__ = ["validate", "ValidationReport", "Phase", "set_language"]
+__all__ = ["Phase", "ValidationReport", "set_language", "validate"]
 
 __version__ = "0.1.0"
