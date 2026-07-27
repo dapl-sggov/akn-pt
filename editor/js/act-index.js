@@ -49,7 +49,10 @@ const ActIndex = (() => {
     const termos = _norm(q).split(' ').filter(Boolean);
     if (!termos.length) return [];
     const out = [];
-    for (const a of _items) {
+    // Percorre do fim para o inicio: o indice vem por ordem cronologica e o
+    // painel anuncia "Atos recentes" — devolver os mais antigos contradizia-o.
+    for (let _i = _items.length - 1; _i >= 0; _i--) {
+      const a = _items[_i];
       // Só a parte identificadora do ELI entra: o prefixo invariante fazia
       // qualquer token genérico corresponder a todo o índice.
       const hay = _norm(`${a.titulo || ''} ${a.tipo} ${a.numero}/${a.ano} `

@@ -8,14 +8,13 @@ from dataclasses import dataclass, field
 from enum import Enum
 from importlib import resources
 from pathlib import Path
-from typing import Union
 
 from lxml import etree, isoschematron
 
 from . import i18n
 
 # Type alias for input
-XmlInput = Union[bytes, str, Path]
+XmlInput = bytes | str | Path
 
 # Stable message ID extraction. Schematron asserts/reports are prefixed with
 # "[CODE-NNNN] message" (e.g. "[STR-0001] akomaNtoso deve conter...").

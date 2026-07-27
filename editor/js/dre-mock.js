@@ -15,7 +15,7 @@ const DreMock = (() => {
   // Diplomas hipotéticos (PT) — selecção real para demo
   const CORPUS = [
     // Constituição
-    { type: 'crp', label: 'Constituição da República Portuguesa', number: '', year: 1976, date: '1976-04-02', eli: 'https://data.dre.pt/eli/crp/1976/04/02', title: 'Constituição da República Portuguesa' },
+    { type: 'crp', label: 'Constituição da República Portuguesa', number: '', year: 1976, date: '1976-04-02', eli: null /* a CRP nao tem slug no vocabulario da INCM; nao se inventa */, title: 'Constituição da República Portuguesa' },
     // Códigos
     { type: 'cod', label: 'Código Civil', number: '47344', year: 1966, date: '1966-11-25', eli: 'https://data.dre.pt/eli/dec-lei/47344/1966/11/25/p/dre', title: 'Aprova o Código Civil' },
     { type: 'cod', label: 'Código do Trabalho', number: '7', year: 2009, date: '2009-02-12', eli: 'https://data.dre.pt/eli/lei/7/2009/02/12/p/dre', title: 'Aprova a revisão do Código do Trabalho' },

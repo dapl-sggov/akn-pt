@@ -226,6 +226,16 @@ const Amendment = (() => {
     return da < db ? -1 : 1;
   }
 
+  // Alterações em vigor a uma data: sem effectiveDate aplicam-se sempre. Regra
+  // ÚNICA — estava duplicada entre applyAtDate e toAknXmlConsolidated, o que
+  // permitiria que o XML declarasse alterações diferentes das aplicadas.
+  function _emVigor(amender, isoDate) {
+    return (amender.amendments || []).filter((am) => {
+      const eff = am.effectiveDate || null;
+      return eff === null || eff <= isoDate;
+    });
+  }
+
   function applyAtDate(amender, isoDate) {
     if (!amender.target) throw new Error('Sem diploma alvo.');
     // Consolidação só é suportada para articulado: com outro tipo de corpo o
@@ -247,11 +257,7 @@ const Amendment = (() => {
     const items = consolidated.body.items;
 
     // 1. Filtrar: alterações com effectiveDate <= isoDate (null aplicam-se sempre).
-    const inForce = amender.amendments.filter(am => {
-      const eff = am.effectiveDate || null;
-      if (eff === null) return true;
-      return eff <= isoDate;
-    });
+    const inForce = _emVigor(amender, isoDate);
 
     // 2. Ordenar por effectiveDate ascendente (nulls primeiro).
     const ordered = inForce.slice().sort(_cmpEffective);
@@ -335,11 +341,7 @@ const Amendment = (() => {
     consolidated._consolidatedFrom = amender.target.uri;
     // 3. Construir passiveModifications — 1 textualMod por amendment que
     //    caiu dentro da janela isoDate (mesma lógica de applyAtDate).
-    const inForce = (amender.amendments || []).filter(am => {
-      const eff = am.effectiveDate || null;
-      if (eff === null) return true;
-      return eff <= isoDate;
-    });
+    const inForce = _emVigor(amender, isoDate);
     // <source> de cada textualMod = o diploma ALTERADOR, no ELI canónico da
     // INCM (fonte única: EliMetadata). Sem URI explícito nem dados suficientes
     // para o construir, fica null e o exportador omite o atributo — melhor do

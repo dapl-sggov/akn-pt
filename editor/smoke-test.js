@@ -31,6 +31,9 @@ function loadFile(rel) {
     if (typeof Renumber !== 'undefined') { global.Renumber = Renumber; globalThis.Renumber = Renumber; }
     if (typeof Suggestions !== 'undefined') { global.Suggestions = Suggestions; globalThis.Suggestions = Suggestions; }
     if (typeof EliMetadata !== 'undefined') { global.EliMetadata = EliMetadata; globalThis.EliMetadata = EliMetadata; }
+    if (typeof Validation !== 'undefined') { global.Validation = Validation; globalThis.Validation = Validation; }
+    if (typeof SubjectVocab !== 'undefined') { global.SubjectVocab = SubjectVocab; globalThis.SubjectVocab = SubjectVocab; }
+    if (typeof ActIndex !== 'undefined') { global.ActIndex = ActIndex; globalThis.ActIndex = ActIndex; }
     // expor para todos os módulos (akn-export precisa de ler References no fecho global)
     if (typeof AknExport !== 'undefined') globalThis.AknExport = AknExport;
   })();`);
@@ -49,6 +52,7 @@ loadFile('js/bluebell-pt.js');
 loadFile('js/eli-metadata.js');
 loadFile('js/subject-vocab.js');
 loadFile('js/act-index.js');
+loadFile('js/validation.js');
 loadFile('js/import-parser.js');
 
 // State precisa de localStorage (shim) e ignora Editor.refresh (guard typeof).
@@ -1551,11 +1555,16 @@ try {
   const checks = [
     ['@type LegalResource', ld['@type'] === 'eli:LegalResource'],
     ['context eli ontology', ld['@context'].eli === 'http://data.europa.eu/eli/ontology#'],
-    ['id_local 83/2016', ld['eli:id_local'] === '83/2016'],
-    ['title presente', ld['eli:title']['@value'].includes('Diário da República')],
+    // A INCM reserva eli:id_local para um ID interno numérico; o par nº/ano vai
+    // em eli:number, e o title é a designação (a ementa vai em description).
+    ['number = nº/ano', ld['eli:number']['@value'] === '83/2016'],
+    ['sem id_local inventado', ld['eli:id_local'] === undefined],
+    ['title = designação do acto', ld['eli:title']['@value'] === 'Decreto-Lei n.º 83/2016'],
+    ['description = ementa', !!ld['eli:description'] && ld['eli:description']['@value'].includes('Diário da República')],
     ['date_document', ld['eli:date_document']['@value'] === '2016-12-15'],
     ['is_realized_by Expression', ld['eli:is_realized_by']['@type'] === 'eli:LegalExpression'],
-    ['language PRT', ld['eli:is_realized_by']['eli:language']['@id'].endsWith('/PRT')],
+    // Verificado em 4 actos reais da INCM: a autoridade de língua usada é POR.
+    ['language POR (verificado no RDFa real)', ld['eli:is_realized_by']['eli:language']['@id'].endsWith('/POR')],
     ['date_publication', ld['eli:is_realized_by']['eli:date_publication']['@value'] === '2016-12-16'],
     // Manifestações = formatos que o editor produz de facto (XML, HTML e PDF).
     ['3 manifestações (xml+html+pdf)', (() => {
@@ -1564,7 +1573,9 @@ try {
         && emb.every(e => /\/(xml|html|pdf)$/.test(e['@id']))
         && emb.some(e => e['@id'].endsWith('/pdf'));
     })()],
-    ['responsibility_of_agent (órgão que aprovou)', ld['eli:responsibility_of_agent']['@id'] === 'https://data.dre.pt/eli/authority/corporate-body/governo'],
+    ['responsibility_of_agent em /legal-agent/', ld['eli:responsibility_of_agent']['@id'] === 'https://data.dre.pt/eli/authority/legal-agent/governo'],
+    ['format = media-type IANA', ld['eli:is_realized_by']['eli:is_embodied_by'][0]['eli:format']['@id'].startsWith('http://www.iana.org/assignments/media-types/')],
+    ['uri_schema = página ELI da INCM', ld['eli:uri_schema']['@id'].includes('diariodarepublica.pt/dr/geral/ligacoes-interesse')],
     // ---- Assuntos (SubjectVocab): área que não tinha qualquer cobertura ----
     ['SubjectVocab: pesquisa ignora diacríticos e caixa', (() => {
       global.SubjectVocab.setData([['1', 'Água'], ['2', 'Contratação Pública']],
@@ -1619,10 +1630,10 @@ try {
     ['type_document (/eli/authority/resource-type/{slug})', ld['eli:type_document']['@id'] === 'https://data.dre.pt/eli/authority/resource-type/dec-lei'],
     ['passed_by (/eli/authority/corporate-body/{orgão})', ld['eli:passed_by']['@id'] === 'https://data.dre.pt/eli/authority/corporate-body/governo'],
     // RDFa: língua PRT (não POR) e sem URIs relativos de autoridade.
-    ['RDFa língua PRT', rdfa.includes('authority/language/PRT') && !rdfa.includes('authority/language/POR')],
+    ['RDFa língua POR', rdfa.includes('authority/language/POR') && !rdfa.includes('authority/language/PRT')],
     ['RDFa autoridades absolutas com /eli/', !rdfa.includes('resource="/authority/') && rdfa.includes('https://data.dre.pt/eli/authority/corporate-body/')],
-    // id_local com sufixo regional (Açores → /A)
-    ['id_local sufixo regional /A', global.EliMetadata.buildJsonLd(Object.assign({}, doc, { actName: 'dlr', country: 'pt-20', number: '5', year: 2024 }))['eli:id_local'] === '5/2024/A'],
+    // number com sufixo regional (Açores → /A)
+    ['number com sufixo regional /A', global.EliMetadata.buildJsonLd(Object.assign({}, doc, { actName: 'dlr', country: 'pt-20', number: '5', year: 2024 }))['eli:number']['@value'] === '5/2024/A'],
     ['is_about (subjects → eli:is_about com URI INCM)', (() => {
       const d2 = Object.assign({}, doc, { subjects: [{ code: '29923275', label: 'Abandono de Funções' }] });
       const l2 = global.EliMetadata.buildJsonLd(d2);
@@ -1641,6 +1652,62 @@ try {
 }
 
 const total = cases.length + 22;
+
+// ---------------------------------------------------------------------------
+// Validation.check — invariantes ELI do lado do cliente
+// (área que estava sem qualquer cobertura de teste)
+// ---------------------------------------------------------------------------
+try {
+  const V = global.Validation;
+  const base = () => {
+    const d = global.newDocument('dec-lei');
+    d.number = '10'; d.year = 2026;
+    d.shortTitle = 'Diploma de teste para validacao.';
+    d.adoptionDate = '2026-03-01'; d.publicationDate = '2026-03-05';
+    d.body.items[0].heading = 'Objeto';
+    d.body.items[0].paragraphs[0].content = 'Texto.';
+    d.signatures = [
+      { role: 'promulgation', as: 'presidente-republica', name: 'PR', date: '2026-03-02' },
+      { role: 'countersignature', as: 'primeiro-ministro', name: 'PM', date: '2026-03-03' },
+    ];
+    return d;
+  };
+  const temErro = (d, re) => V.check(d).some(i => i.level === 'error' && re.test(i.msg));
+  const temAviso = (d, re) => V.check(d).some(i => i.level === 'warn' && re.test(i.msg));
+
+  const vchecks = [
+    // Um documento bem formado nao pode gerar erros — protege contra os falsos
+    // positivos que o teste eId<->numero ja provocou uma vez.
+    ['doc valido nao gera erros', V.check(base()).filter(i => i.level === 'error').length === 0],
+    ['DLR com country pt -> erro de territorio', temErro(Object.assign(base(), { actName: 'dlr', country: 'pt' }), /territ|pt-20/i)],
+    ['acto nacional com pt-20 -> erro', temErro(Object.assign(base(), { country: 'pt-20' }), /regional|nacional/i)],
+    ['country invalido -> erro', temErro(Object.assign(base(), { country: 'pt-99' }), /FRBRcountry/i)],
+    ['ano nao-AAAA -> erro', temErro(Object.assign(base(), { year: NaN }), /Ano/i)],
+    ['data fora de ISO -> erro', temErro(Object.assign(base(), { publicationDate: '05/03/2026' }), /ISO/i)],
+    ['habilitante fora de data.dre.pt -> aviso', temAviso(Object.assign(base(), { habilitante: 'https://eli.gov.pt/eli/pt/lei/2020/7/pt' }), /can[oó]nica|data\.dre\.pt/i)],
+    ['transposicao sem URI da directiva -> erro', temErro(Object.assign(base(), { subtype: 'dec-lei-transposicao' }), /directiva|transposi/i)],
+    ['assunto sem codigo -> aviso', temAviso(Object.assign(base(), { subjects: [{ label: 'Sem codigo' }] }), /c[oó]digo|is_about/i)],
+    ['eId com sufixo divergente -> erro', (() => {
+      const d = base(); d.body.items[0].id = 'art_5_a'; d.body.items[0].num = 'Artigo 7.o-B';
+      return temErro(d, /eId/i);
+    })()],
+    // eId POSICIONAL divergente do numero apresentado e legitimo (art_9 e o
+    // 9.o elemento do ficheiro, ainda que se apresente como "Artigo 5.o").
+    // Usa-se um id que nao colida com os do modelo, para nao testar duplicados.
+    ['eId posicional NAO gera erro (art_9 vs Artigo 5.o)', (() => {
+      const d = base(); d.body.items[0].id = 'art_9'; d.body.items[0].num = 'Artigo 5.o';
+      return !temErro(d, /eId nao corresponde|eId não corresponde/i);
+    })()],
+  ];
+  const vfails = vchecks.filter(([, ok]) => !ok);
+  if (vfails.length) throw new Error('Falhas: ' + vfails.map(f => f[0]).join(', '));
+  console.log(`  OK   Validation.check (${vchecks.length}/${vchecks.length} invariantes)`);
+  n_ok++;
+} catch (e) {
+  console.log(`  FAIL Validation.check: ${e.message}`);
+  n_fail++;
+}
+
 console.log(`\n${n_ok}/${total} files generated.`);
 console.log(`Next: validate with akn-pt:`);
 console.log(`  python -m akn_pt batch editor/.smoke-output`);

@@ -45,17 +45,19 @@ const Preview = (() => {
         out.push(`<p class="pv-recital">${textRich(r.text, doc)}</p>`);
       });
       if (doc.formula) out.push(`<p class="pv-formula">${textRich(doc.formula, doc)}</p>`);
-      // Identificador ELI VISÍVEL: os metadados embutidos não sobrevivem à
-    // impressão nem ao Word, pelo que o identificador tem de estar no texto.
+    }
+
+    // Identificador ELI VISÍVEL — FORA do bloco do preâmbulo: um acto sem
+    // considerandos (RCM, portarias) ficava sem identificador no artefacto
+    // impresso. Os metadados embutidos não sobrevivem ao papel nem ao Word.
     if (typeof EliMetadata !== 'undefined') {
       try {
         const u = EliMetadata.expressionUri(doc);
-        if (u) out.push(`  <p class="pv-eli">ELI: <a href="${u}">${u}</a></p>`);
+        if (u) out.push(`  <p class="pv-eli">ELI: <a href="${esc(u)}">${esc(u)}</a></p>`);
       } catch (e) { /* o bloco machine-readable abaixo já sinaliza a falha */ }
     }
 
     out.push(`</div>`);
-    }
 
     if (doc.body.kind === 'articles') {
       doc.body.items.forEach(a => out.push(renderArticle(a)));

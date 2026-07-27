@@ -70,6 +70,7 @@ const SubjectVocab = (() => {
       for (const x of cw) _euByCode[x.code] = { eurovoc: x.eurovoc, euLabel: x.euLabel };
     })();
     _loading = _loading.catch((e) => { _loading = null; throw e; });
+    _loading = _loading.catch((e) => { _loading = null; throw e; });
     return _loading;
   }
 
