@@ -374,7 +374,7 @@ const EliMetadata = (() => {
   }
 
   return {
-    workUri, expressionUri, manifestationUri, uriComparison, fileBase,
+    workUri, expressionUri, manifestationUri, uriComparison, fileBase, ELI_SLUG,
     hasSlug: (n) => !!ELI_SLUG[n],
     buildJsonLd, toJsonLdString, toScriptTag, toRdfa,
     PLACEHOLDER_DOMAIN, INCM_DOMAIN,

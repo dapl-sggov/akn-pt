@@ -31,6 +31,9 @@ function loadFile(rel) {
     if (typeof Renumber !== 'undefined') { global.Renumber = Renumber; globalThis.Renumber = Renumber; }
     if (typeof Suggestions !== 'undefined') { global.Suggestions = Suggestions; globalThis.Suggestions = Suggestions; }
     if (typeof EliMetadata !== 'undefined') { global.EliMetadata = EliMetadata; globalThis.EliMetadata = EliMetadata; }
+    if (typeof Validation !== 'undefined') { global.Validation = Validation; globalThis.Validation = Validation; }
+    if (typeof SubjectVocab !== 'undefined') { global.SubjectVocab = SubjectVocab; globalThis.SubjectVocab = SubjectVocab; }
+    if (typeof ActIndex !== 'undefined') { global.ActIndex = ActIndex; globalThis.ActIndex = ActIndex; }
     // expor para todos os módulos (akn-export precisa de ler References no fecho global)
     if (typeof AknExport !== 'undefined') globalThis.AknExport = AknExport;
   })();`);
@@ -49,6 +52,7 @@ loadFile('js/bluebell-pt.js');
 loadFile('js/eli-metadata.js');
 loadFile('js/subject-vocab.js');
 loadFile('js/act-index.js');
+loadFile('js/validation.js');
 loadFile('js/import-parser.js');
 
 // State precisa de localStorage (shim) e ignora Editor.refresh (guard typeof).
@@ -1648,6 +1652,62 @@ try {
 }
 
 const total = cases.length + 22;
+
+// ---------------------------------------------------------------------------
+// Validation.check — invariantes ELI do lado do cliente
+// (área que estava sem qualquer cobertura de teste)
+// ---------------------------------------------------------------------------
+try {
+  const V = global.Validation;
+  const base = () => {
+    const d = global.newDocument('dec-lei');
+    d.number = '10'; d.year = 2026;
+    d.shortTitle = 'Diploma de teste para validacao.';
+    d.adoptionDate = '2026-03-01'; d.publicationDate = '2026-03-05';
+    d.body.items[0].heading = 'Objeto';
+    d.body.items[0].paragraphs[0].content = 'Texto.';
+    d.signatures = [
+      { role: 'promulgation', as: 'presidente-republica', name: 'PR', date: '2026-03-02' },
+      { role: 'countersignature', as: 'primeiro-ministro', name: 'PM', date: '2026-03-03' },
+    ];
+    return d;
+  };
+  const temErro = (d, re) => V.check(d).some(i => i.level === 'error' && re.test(i.msg));
+  const temAviso = (d, re) => V.check(d).some(i => i.level === 'warn' && re.test(i.msg));
+
+  const vchecks = [
+    // Um documento bem formado nao pode gerar erros — protege contra os falsos
+    // positivos que o teste eId<->numero ja provocou uma vez.
+    ['doc valido nao gera erros', V.check(base()).filter(i => i.level === 'error').length === 0],
+    ['DLR com country pt -> erro de territorio', temErro(Object.assign(base(), { actName: 'dlr', country: 'pt' }), /territ|pt-20/i)],
+    ['acto nacional com pt-20 -> erro', temErro(Object.assign(base(), { country: 'pt-20' }), /regional|nacional/i)],
+    ['country invalido -> erro', temErro(Object.assign(base(), { country: 'pt-99' }), /FRBRcountry/i)],
+    ['ano nao-AAAA -> erro', temErro(Object.assign(base(), { year: NaN }), /Ano/i)],
+    ['data fora de ISO -> erro', temErro(Object.assign(base(), { publicationDate: '05/03/2026' }), /ISO/i)],
+    ['habilitante fora de data.dre.pt -> aviso', temAviso(Object.assign(base(), { habilitante: 'https://eli.gov.pt/eli/pt/lei/2020/7/pt' }), /can[oó]nica|data\.dre\.pt/i)],
+    ['transposicao sem URI da directiva -> erro', temErro(Object.assign(base(), { subtype: 'dec-lei-transposicao' }), /directiva|transposi/i)],
+    ['assunto sem codigo -> aviso', temAviso(Object.assign(base(), { subjects: [{ label: 'Sem codigo' }] }), /c[oó]digo|is_about/i)],
+    ['eId com sufixo divergente -> erro', (() => {
+      const d = base(); d.body.items[0].id = 'art_5_a'; d.body.items[0].num = 'Artigo 7.o-B';
+      return temErro(d, /eId/i);
+    })()],
+    // eId POSICIONAL divergente do numero apresentado e legitimo (art_9 e o
+    // 9.o elemento do ficheiro, ainda que se apresente como "Artigo 5.o").
+    // Usa-se um id que nao colida com os do modelo, para nao testar duplicados.
+    ['eId posicional NAO gera erro (art_9 vs Artigo 5.o)', (() => {
+      const d = base(); d.body.items[0].id = 'art_9'; d.body.items[0].num = 'Artigo 5.o';
+      return !temErro(d, /eId nao corresponde|eId não corresponde/i);
+    })()],
+  ];
+  const vfails = vchecks.filter(([, ok]) => !ok);
+  if (vfails.length) throw new Error('Falhas: ' + vfails.map(f => f[0]).join(', '));
+  console.log(`  OK   Validation.check (${vchecks.length}/${vchecks.length} invariantes)`);
+  n_ok++;
+} catch (e) {
+  console.log(`  FAIL Validation.check: ${e.message}`);
+  n_fail++;
+}
+
 console.log(`\n${n_ok}/${total} files generated.`);
 console.log(`Next: validate with akn-pt:`);
 console.log(`  python -m akn_pt batch editor/.smoke-output`);

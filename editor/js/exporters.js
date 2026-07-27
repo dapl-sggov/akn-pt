@@ -92,7 +92,10 @@ const Exporters = (() => {
       // Identifica-se a MANIFESTAÇÃO do formato que está a ser produzido, não o
       // Work: é esse o artefacto que o leitor tem em mãos.
       const uri = fmt ? EliMetadata.manifestationUri(doc, {}, fmt) : EliMetadata.workUri(doc);
-      return uri ? `<p class="eli-uri">ELI: ${escapeHtml(uri)}</p>` : '';
+      // Rotula-se o nível: no PDF/Word o leitor tem em mãos uma manifestação
+      // derivada, não a publicada — dizer só "ELI" seria enganador.
+      const rotulo = fmt ? `ELI (${fmt.toUpperCase()})` : 'ELI';
+      return uri ? `<p class="eli-uri">${rotulo}: ${escapeHtml(uri)}</p>` : '';
     } catch (e) { return ''; }
   }
 

@@ -2562,6 +2562,16 @@ const Editor = (() => {
   }
 
   // ============= EXPORT (handler único) ==================================
+  // Nome de ficheiro derivado do identificador ELI, para todos os formatos.
+  function _nomeELI(doc, ext) {
+    try {
+      if (typeof EliMetadata !== 'undefined' && EliMetadata.fileBase) {
+        return `${EliMetadata.fileBase(doc)}.${ext}`;
+      }
+    } catch (e) { /* cai no nome genérico */ }
+    return `${doc.actName || 'documento'}-${doc.number || 'X'}-${doc.year}.${ext}`;
+  }
+
   async function _doExport(kind) {
     const doc = State.get();
     try {
@@ -2572,7 +2582,7 @@ const Editor = (() => {
       } else if (kind === 'xml-with-comments') {
         const tagged = { ...doc, _exportWithComments: true };
         const xml = doc.kind === 'amender' ? Amendment.toAknXml(tagged) : AknExport.toXml(tagged);
-        _download(xml, `${doc.actName}-${doc.number || 'X'}-${doc.year}-com-coments.akn.xml`, 'application/xml;charset=utf-8');
+        _download(xml, _nomeELI(doc, 'com-coments.akn.xml'), 'application/xml;charset=utf-8');
         toast('XML com comentários exportado.', 'success');
       } else if (kind === 'pdf') {
         Exporters.exportPdf(doc);
@@ -2581,11 +2591,20 @@ const Editor = (() => {
         toast('Word exportado.', 'success');
       } else if (kind === 'eli-jsonld') {
         const jsonld = EliMetadata.toJsonLdString(doc);
-        _download(jsonld, `${doc.actName}-${doc.number || 'X'}-${doc.year}.eli.jsonld`, 'application/ld+json;charset=utf-8');
+        _download(jsonld, _nomeELI(doc, 'eli.jsonld'), 'application/ld+json;charset=utf-8');
         toast('Metadados ELI (JSON-LD) exportados.', 'success');
       } else if (kind === 'bluebell') {
-        const text = BluebellPt.serialize(doc);
-        _download(text, `${doc.actName}-${doc.number || 'X'}-${doc.year}.bb.txt`, 'text/plain;charset=utf-8');
+        // Em modo alterador exporta-se a consolidada (o invólucro não tem
+        // articulado) — o mesmo tratamento dado ao PDF e ao Word.
+        let alvo = doc;
+        if (doc.kind === 'amender' && typeof Amendment !== 'undefined') {
+          try {
+            const marcos = (Amendment.timeline(doc) || []).filter(d => d && d <= _todayIso());
+            alvo = Amendment.applyAtDate(doc, marcos.length ? marcos[marcos.length - 1] : _todayIso());
+          } catch (e) { /* mantém o doc original */ }
+        }
+        const text = BluebellPt.serialize(alvo);
+        _download(text, _nomeELI(alvo, 'bb.txt'), 'text/plain;charset=utf-8');
         toast('Texto Bluebell-PT exportado.', 'success');
       } else if (kind === 'share-url') {
         const url = await Collab.makeShareUrl(doc);

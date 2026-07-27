@@ -27,7 +27,7 @@ const ImportParser = (() => {
   const SLUG_TO_ACT = {
     'dec-lei': 'dec-lei', 'lei': 'lei', 'port': 'portaria', 'resolconsmin': 'res-cm',
     'resolassrep': 'res-ar', 'despnorm': 'despacho-normativo', 'declegreg': 'dlr',
-    'decregulreg': 'drr', 'dec': 'decreto-ar',
+    'decregulreg': 'drr', 'dec': 'decreto-ar', 'leiorg': 'lei',
   };
   const TERR_TO_COUNTRY = { p: 'pt', a: 'pt-20', m: 'pt-30' };
   const ACT_TO_SLUG = Object.fromEntries(Object.entries(SLUG_TO_ACT).map(([s, a]) => [a, s]));

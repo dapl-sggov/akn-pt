@@ -5,6 +5,9 @@
 
 const Validation = (() => {
 
+  // Containers hierárquicos (ADR-0011). Constante única — estava triplicada.
+  const CONTAINERS = new Set(['book', 'part', 'title', 'chapter', 'section', 'subsection']);
+
   function check(doc) {
     const issues = [];
 
@@ -48,7 +51,7 @@ const Validation = (() => {
         }
       });
     };
-    const _CONTAINERS_VAL = new Set(['book', 'part', 'title', 'chapter', 'section', 'subsection']);
+    const _CONTAINERS_VAL = CONTAINERS;
     const _walkItems = (items) => {
       (items || []).forEach(it => {
         if (it && _CONTAINERS_VAL.has(it.containerType)) {
@@ -115,7 +118,10 @@ const Validation = (() => {
     }
 
     // EId uniqueness
-    const ids = collectEids(doc);
+    const idsTodos = collectEids(doc);
+    const semId = idsTodos.filter(x => !x).length;
+    if (semId) issues.push({ level: 'error', msg: `${semId} elemento(s) sem eId.` });
+    const ids = idsTodos.filter(Boolean);
     const dupes = ids.filter((id, i) => ids.indexOf(id) !== i);
     if (dupes.length) {
       issues.push({ level: 'error', msg: `eIds duplicados: ${[...new Set(dupes)].join(', ')}.` });
@@ -133,7 +139,7 @@ const Validation = (() => {
       .replace(/[º°.\s)\-_]/g, '');
     const _normEid = (id, re) => {
       const m = String(id || '').match(re);
-      return m ? m[1].replace(/[-_]/g, '') : null;
+      return m ? m[1].replace(/[-_]/g, '').toLowerCase() : null;
     };
     // IMPORTANTE: os eId são POSICIONAIS por desenho (art_3 é o 3.º artigo do
     // ficheiro, mesmo que se apresente como "Artigo 5.º"). Comparar o valor
@@ -173,6 +179,7 @@ const Validation = (() => {
     const REGIONAIS = new Set(['dlr', 'drr']);
     const PAISES = new Set(['pt', 'pt-20', 'pt-30']);
     const EXIGEM_HABILITANTE = new Set(['portaria', 'despacho-normativo', 'drr']);
+    // Há subtipos que também o exigem, independentemente do tipo de acto.
     const SUBTIPOS_EXIGEM_HABILITANTE = new Set(['dec-lei-autorizado', 'dec-lei-transposicao', 'dlr-autorizado']);
 
     if (doc.subtype === 'lei-organica') {
@@ -193,7 +200,11 @@ const Validation = (() => {
     if (doc.number && !/^\d+(-[A-Za-z])?$/.test(String(doc.number).trim())) {
       issues.push({ level: 'warn', msg: `Número "${doc.number}" fora da forma habitual (N ou N-L) — confirme o segmento do URI ELI.` });
     }
-    [['adoptionDate', 'aprovação'], ['publicationDate', 'publicação']].forEach(([k, label]) => {
+    // O ano entra no segmento {ano} do URI: um NaN produzia .../undefined/...
+    if (doc.year !== undefined && !/^\d{4}$/.test(String(doc.year))) {
+      issues.push({ level: 'error', msg: `Ano "${doc.year}" inválido — entra no URI ELI (esperado AAAA).` });
+    }
+    [['adoptionDate', 'aprovação'], ['publicationDate', 'publicação'], ['_consolidatedAt', 'consolidação']].forEach(([k, label]) => {
       if (doc[k] && !/^\d{4}-\d{2}-\d{2}$/.test(String(doc[k]))) {
         issues.push({ level: 'error', msg: `Data de ${label} fora do formato ISO (AAAA-MM-DD).` });
       }
@@ -237,7 +248,7 @@ const Validation = (() => {
   // Percorre os articles (body articles + hierárquico), ignorando containers e
   // bodies de pontos resolutivos (RCM).
   function eachArticle(doc, fn) {
-    const CONT = new Set(['book', 'part', 'title', 'chapter', 'section', 'subsection']);
+    const CONT = CONTAINERS;
     const walk = (items) => (items || []).forEach((it) => {
       if (it && CONT.has(it.containerType)) walk(it.items);
       else if (it && it.paragraphs) fn(it);
@@ -249,7 +260,7 @@ const Validation = (() => {
   function collectEids(doc) {
     const ids = [];
     doc.recitals.forEach(r => ids.push(r.id));
-    const _CONTAINERS_COLL = new Set(['book', 'part', 'title', 'chapter', 'section', 'subsection']);
+    const _CONTAINERS_COLL = CONTAINERS;
     const _collectFromArticle = (a) => {
       ids.push(a.id);
       (a.paragraphs || []).forEach(p => {
