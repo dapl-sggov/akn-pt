@@ -1551,11 +1551,16 @@ try {
   const checks = [
     ['@type LegalResource', ld['@type'] === 'eli:LegalResource'],
     ['context eli ontology', ld['@context'].eli === 'http://data.europa.eu/eli/ontology#'],
-    ['id_local 83/2016', ld['eli:id_local'] === '83/2016'],
-    ['title presente', ld['eli:title']['@value'].includes('Diário da República')],
+    // A INCM reserva eli:id_local para um ID interno numérico; o par nº/ano vai
+    // em eli:number, e o title é a designação (a ementa vai em description).
+    ['number = nº/ano', ld['eli:number']['@value'] === '83/2016'],
+    ['sem id_local inventado', ld['eli:id_local'] === undefined],
+    ['title = designação do acto', ld['eli:title']['@value'] === 'Decreto-Lei n.º 83/2016'],
+    ['description = ementa', !!ld['eli:description'] && ld['eli:description']['@value'].includes('Diário da República')],
     ['date_document', ld['eli:date_document']['@value'] === '2016-12-15'],
     ['is_realized_by Expression', ld['eli:is_realized_by']['@type'] === 'eli:LegalExpression'],
-    ['language PRT', ld['eli:is_realized_by']['eli:language']['@id'].endsWith('/PRT')],
+    // Verificado em 4 actos reais da INCM: a autoridade de língua usada é POR.
+    ['language POR (verificado no RDFa real)', ld['eli:is_realized_by']['eli:language']['@id'].endsWith('/POR')],
     ['date_publication', ld['eli:is_realized_by']['eli:date_publication']['@value'] === '2016-12-16'],
     // Manifestações = formatos que o editor produz de facto (XML, HTML e PDF).
     ['3 manifestações (xml+html+pdf)', (() => {
@@ -1564,7 +1569,9 @@ try {
         && emb.every(e => /\/(xml|html|pdf)$/.test(e['@id']))
         && emb.some(e => e['@id'].endsWith('/pdf'));
     })()],
-    ['responsibility_of_agent (órgão que aprovou)', ld['eli:responsibility_of_agent']['@id'] === 'https://data.dre.pt/eli/authority/corporate-body/governo'],
+    ['responsibility_of_agent em /legal-agent/', ld['eli:responsibility_of_agent']['@id'] === 'https://data.dre.pt/eli/authority/legal-agent/governo'],
+    ['format = media-type IANA', ld['eli:is_realized_by']['eli:is_embodied_by'][0]['eli:format']['@id'].startsWith('http://www.iana.org/assignments/media-types/')],
+    ['uri_schema = página ELI da INCM', ld['eli:uri_schema']['@id'].includes('diariodarepublica.pt/dr/geral/ligacoes-interesse')],
     // ---- Assuntos (SubjectVocab): área que não tinha qualquer cobertura ----
     ['SubjectVocab: pesquisa ignora diacríticos e caixa', (() => {
       global.SubjectVocab.setData([['1', 'Água'], ['2', 'Contratação Pública']],
@@ -1619,10 +1626,10 @@ try {
     ['type_document (/eli/authority/resource-type/{slug})', ld['eli:type_document']['@id'] === 'https://data.dre.pt/eli/authority/resource-type/dec-lei'],
     ['passed_by (/eli/authority/corporate-body/{orgão})', ld['eli:passed_by']['@id'] === 'https://data.dre.pt/eli/authority/corporate-body/governo'],
     // RDFa: língua PRT (não POR) e sem URIs relativos de autoridade.
-    ['RDFa língua PRT', rdfa.includes('authority/language/PRT') && !rdfa.includes('authority/language/POR')],
+    ['RDFa língua POR', rdfa.includes('authority/language/POR') && !rdfa.includes('authority/language/PRT')],
     ['RDFa autoridades absolutas com /eli/', !rdfa.includes('resource="/authority/') && rdfa.includes('https://data.dre.pt/eli/authority/corporate-body/')],
-    // id_local com sufixo regional (Açores → /A)
-    ['id_local sufixo regional /A', global.EliMetadata.buildJsonLd(Object.assign({}, doc, { actName: 'dlr', country: 'pt-20', number: '5', year: 2024 }))['eli:id_local'] === '5/2024/A'],
+    // number com sufixo regional (Açores → /A)
+    ['number com sufixo regional /A', global.EliMetadata.buildJsonLd(Object.assign({}, doc, { actName: 'dlr', country: 'pt-20', number: '5', year: 2024 }))['eli:number']['@value'] === '5/2024/A'],
     ['is_about (subjects → eli:is_about com URI INCM)', (() => {
       const d2 = Object.assign({}, doc, { subjects: [{ code: '29923275', label: 'Abandono de Funções' }] });
       const l2 = global.EliMetadata.buildJsonLd(d2);

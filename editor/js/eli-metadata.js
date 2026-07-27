@@ -23,11 +23,16 @@ const EliMetadata = (() => {
   // na forma 'proposed', as autoridades são sempre as da INCM.
   const AUTH = `${INCM_DOMAIN}/eli/authority`;
   const ELI_ONTOLOGY = 'http://data.europa.eu/eli/ontology#';
+  const URI_SCHEMA = 'https://diariodarepublica.pt/dr/geral/ligacoes-interesse/identificador-europeu-legislacao-eli';
   const LANG_AUTHORITY = 'http://publications.europa.eu/resource/authority/language/';
-  const FILETYPE_AUTHORITY = 'http://publications.europa.eu/resource/authority/file-type/';
+  // A INCM identifica o formato por media-type da IANA (verificado no RDFa
+  // real), e nao pela autoridade de file-type da UE.
+  const IANA_MEDIA = 'http://www.iana.org/assignments/media-types/';
   // Formatos que o editor produz de facto (ver exporters.js): segmento do URI
   // de Manifestation → concept da autoridade de tipos de ficheiro da UE.
-  const MANIFEST_FORMATS = [['xml', 'XML'], ['html', 'HTML'], ['pdf', 'PDF']];
+  const MANIFEST_FORMATS = [
+    ['xml', 'application/xml'], ['html', 'text/html'], ['pdf', 'application/pdf'],
+  ];
   // Fonte ÚNICA do URI de assunto (evita a base triplicada entre JSON-LD,
   // RDFa e akn-export). Delega no SubjectVocab quando disponível.
   function _subjectUri(code) {
@@ -186,13 +191,13 @@ const EliMetadata = (() => {
     const expression = {
       '@id': expr,
       '@type': 'eli:LegalExpression',
-      'eli:language': { '@id': `${LANG_AUTHORITY}PRT` },
+      'eli:language': { '@id': `${LANG_AUTHORITY}POR` },
       'eli:title': { '@value': title, '@language': 'pt' },
       // Manifestações declaradas = formatos que o editor sabe produzir
       // (XML, HTML e PDF pela impressão) — ver exporters.js.
       'eli:is_embodied_by': MANIFEST_FORMATS.map(([fmt, key]) => ({
         '@id': manifestationUri(doc, opts, fmt), '@type': 'eli:Format',
-        'eli:format': { '@id': `${FILETYPE_AUTHORITY}${key}` },
+        'eli:format': { '@id': `${IANA_MEDIA}${key}` },
       })),
     };
     if (doc.publicationDate) {
@@ -217,7 +222,10 @@ const EliMetadata = (() => {
       },
       '@id': work,
       '@type': 'eli:LegalResource',
-      'eli:id_local': _idLocal(doc),
+      // A INCM usa eli:id_local para um ID INTERNO numérico (ex. 114484243),
+      // que não temos e não se inventa; o par nº/ano vai em eli:number, tal
+      // como no RDFa real. Verificado em 4 actos.
+      'eli:number': { '@value': _idLocal(doc), '@type': 'xsd:string' },
       'eli:type_document': {
         '@id': `${AUTH}/resource-type/${_slug(doc)}`,
         'skos:prefLabel': { '@value': TYPE_LABEL[doc.actName] || doc.actName, '@language': 'pt' },
@@ -226,14 +234,20 @@ const EliMetadata = (() => {
         '@id': `${AUTH}/corporate-body/${author.slug}`,
         'skos:prefLabel': { '@value': author.label, '@language': 'pt' },
       },
-      'eli:title': { '@value': title, '@language': 'pt' },
+      // title = designação do acto ("Decreto-Lei n.º 2/2018"); a ementa vai em
+      // description — é assim que a INCM os separa.
+      'eli:title': { '@value': `${TYPE_LABEL[doc.actName] || doc.actName} n.º ${_idLocal(doc)}`, '@language': 'pt' },
+      'eli:description': doc.shortTitle ? { '@value': doc.shortTitle, '@language': 'pt' } : undefined,
       // Constantes alinhadas com os metadados ELI da INCM (paridade com data.dre.pt).
-      'eli:uri_schema': { '@id': 'https://dre.pt/identificador-europeu-legislacao' },
+      'eli:uri_schema': { '@id': URI_SCHEMA },
       'eli:publisher': { '@value': 'INCM' },
       'eli:publisher_agent': { '@id': `${AUTH}/legal-institution/incm` },
       'eli:rightsholder_agent': { '@id': `${AUTH}/legal-institution/incm` },
       // Órgão responsável pelo acto — o mesmo que o aprovou.
-      'eli:responsibility_of_agent': { '@id': `${AUTH}/corporate-body/${author.slug}` },
+      // A INCM identifica o agente responsável em /legal-agent/{código}, com
+      // vocabulário próprio (dre-incm-pt-legal-agent.rdf). Sem esse código não
+      // se inventa: emite-se o órgão que aprovou, no mesmo espaço.
+      'eli:responsibility_of_agent': { '@id': `${AUTH}/legal-agent/${author.slug}` },
       'eli:legal_value': { '@id': `${ELI_ONTOLOGY}LegalValue-unofficial` },
       'eli:is_realized_by': expression,
     };
@@ -287,6 +301,8 @@ const EliMetadata = (() => {
     if (doc.transposesUri) {
       obj['eli:transposes'] = { '@id': doc.transposesUri };
     }
+    // Remove chaves opcionais não preenchidas (ex. description sem ementa).
+    Object.keys(obj).forEach(k => { if (obj[k] === undefined) delete obj[k]; });
     return obj;
   }
 
@@ -311,17 +327,18 @@ const EliMetadata = (() => {
     const rows = [];
     // Prefixos: xsd é usado nos datatype= das datas, skos nos rótulos.
     rows.push(`<div prefix="eli: ${ELI_ONTOLOGY} xsd: http://www.w3.org/2001/XMLSchema# skos: http://www.w3.org/2004/02/skos/core#" about="${esc(work)}" typeof="eli:LegalResource">`);
-    rows.push(`  <span property="eli:id_local" content="${esc(_idLocal(doc))}"></span>`);
+    rows.push(`  <span property="eli:number" content="${esc(_idLocal(doc))}" datatype="xsd:string"></span>`);
     rows.push(`  <span property="eli:type_document" resource="${AUTH}/resource-type/${esc(_slug(doc))}"></span>`);
-    rows.push(`  <span property="eli:title" lang="pt">${esc(title)}</span>`);
+    rows.push(`  <span property="eli:title" lang="pt">${esc((TYPE_LABEL[doc.actName] || doc.actName) + ' n.º ' + _idLocal(doc))}</span>`);
+    if (doc.shortTitle) rows.push(`  <span property="eli:description" lang="pt">${esc(doc.shortTitle)}</span>`);
     if (doc.adoptionDate) rows.push(`  <span property="eli:date_document" content="${esc(doc.adoptionDate)}" datatype="xsd:date"></span>`);
     rows.push(`  <span property="eli:passed_by" resource="${AUTH}/corporate-body/${esc(author.slug)}">${esc(author.label)}</span>`);
     // Paridade com a INCM (as mesmas constantes emitidas no JSON-LD).
-    rows.push(`  <span property="eli:uri_schema" resource="https://dre.pt/identificador-europeu-legislacao"></span>`);
+    rows.push(`  <span property="eli:uri_schema" resource="${URI_SCHEMA}"></span>`);
     rows.push(`  <span property="eli:publisher" content="INCM"></span>`);
     rows.push(`  <span property="eli:publisher_agent" resource="${AUTH}/legal-institution/incm"></span>`);
     rows.push(`  <span property="eli:rightsholder_agent" resource="${AUTH}/legal-institution/incm"></span>`);
-    rows.push(`  <span property="eli:responsibility_of_agent" resource="${AUTH}/corporate-body/${esc(author.slug)}"></span>`);
+    rows.push(`  <span property="eli:responsibility_of_agent" resource="${AUTH}/legal-agent/${esc(author.slug)}"></span>`);
     rows.push(`  <span property="eli:legal_value" resource="${ELI_ONTOLOGY}LegalValue-unofficial"></span>`);
     if (doc.entryIntoForceDate && /^\d{4}-\d{2}-\d{2}$/.test(String(doc.entryIntoForceDate))) {
       rows.push(`  <span property="eli:first_date_entry_in_force" content="${esc(doc.entryIntoForceDate)}" datatype="xsd:date"></span>`);
@@ -338,7 +355,7 @@ const EliMetadata = (() => {
       }
     }
     rows.push(`  <div property="eli:is_realized_by" resource="${esc(expr)}" typeof="eli:LegalExpression">`);
-    rows.push(`    <span property="eli:language" resource="${LANG_AUTHORITY}PRT"></span>`);
+    rows.push(`    <span property="eli:language" resource="${LANG_AUTHORITY}POR"></span>`);
     rows.push(`    <span property="eli:title" lang="pt">${esc(title)}</span>`);
     if (doc.publicationDate) rows.push(`    <span property="eli:date_publication" content="${esc(doc.publicationDate)}" datatype="xsd:date"></span>`);
     if (_isConsolidated(doc)) {
@@ -348,7 +365,7 @@ const EliMetadata = (() => {
     }
     for (const [fmt, key] of MANIFEST_FORMATS) {
       rows.push(`    <div property="eli:is_embodied_by" resource="${esc(manifestationUri(doc, opts, fmt))}" typeof="eli:Format">`);
-      rows.push(`      <span property="eli:format" resource="${FILETYPE_AUTHORITY}${key}"></span>`);
+      rows.push(`      <span property="eli:format" resource="${IANA_MEDIA}${key}"></span>`);
       rows.push(`    </div>`);
     }
     rows.push(`  </div>`);

@@ -130,10 +130,27 @@ ao construir URIs ELI.
 
 ## 5. Constantes de metadados (RDFa/JSON-LD) da INCM
 
-- `uri_schema` = `https://dre.pt/identificador-europeu-legislacao`
-- `publisher` = `INCM`; `publisher_agent` / `rightsholder_agent` = `https://data.dre.pt/eli/authority/legal-institution/incm`
-- `type_document` = `https://data.dre.pt/eli/authority/resource-type/{slug}`
-- `responsibility_of_agent` = `https://data.dre.pt/eli/authority/legal-agent/{...}` (ex. `/dec-lei`, `/pcm`)
-- `language` = `https://publications.europa.eu/resource/authority/language/PRT` *(INCM usa `PRT`, não `POR`)*
-- `legal_value` = `https://data.europa.eu/eli/ontology#LegalValue-unofficial` *(o conteúdo do portal declara-se não-oficial; o oficial é o DR impresso)*
+> **Corrigido em 2026-07-23** por leitura directa do RDFa de 4 actos reais
+> (`dec-lei/2/2018`, `lei/7/2020`, `port/208/2018`, `resolconsmin/53/2020`).
+> As linhas marcadas ✅ foram verificadas nessa leitura.
+
+- ✅ `uri_schema` = `https://diariodarepublica.pt/dr/geral/ligacoes-interesse/identificador-europeu-legislacao-eli`
+  *(a forma curta `https://dre.pt/identificador-europeu-legislacao` que aqui constava não é a servida)*
+- ✅ `publisher` = `INCM`; `publisher_agent` / `rightsholder_agent` = `http://data.dre.pt/eli/authority/legal-institution/incm`
+- ✅ `type_document` = `http://data.dre.pt/eli/authority/resource-type/{slug}`
+- ✅ `responsibility_of_agent` = `http://data.dre.pt/eli/authority/legal-agent/{código}` — vocabulário
+  próprio da INCM (ex. `tsss` no DL 2/2018), **não** os nossos slugs de órgão
+- ✅ `language` = `http://publications.europa.eu/resource/authority/language/**POR**`
+  *(a indicação anterior de `PRT` estava ERRADA — os 4 actos servem `POR`)*
+- ✅ `number` = o par nº/ano (`2/2018`, `xsd:string`); `id_local` = **ID interno numérico**
+  da INCM (`114484243`) — não é o nº/ano
+- ✅ `title` = designação do acto (`Decreto-Lei n.º 2/2018`); `description` = ementa
+- ✅ `format` = **media-type da IANA** (`http://www.iana.org/assignments/media-types/text/html`),
+  não a autoridade de file-type da UE
+- ✅ Relações inversas emitidas pela INCM: `cited_by`, `amended_by`, `consolidated_by`,
+  `realizes`, `embodies`, `published_in_format`, `licence`
+- ⚠️ Os URIs de autoridade são servidos em `http://` (não `https://`)
+- ⚠️ `legal_value` — a INCM serve `LegalValue-official` **e** `LegalValue-definitive`.
+  O AKN-PT emite `LegalValue-unofficial` **por desenho**: o que o editor produz é
+  um projecto, não a publicação oficial. Divergência intencional.
 - `in_force` = `…/eli/ontology#InForce-{inForce|NotInForce|PartiallyInForce}`
