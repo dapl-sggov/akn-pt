@@ -328,11 +328,15 @@ const EliMetadata = (() => {
     // Prefixos: xsd é usado nos datatype= das datas, skos nos rótulos.
     rows.push(`<div prefix="eli: ${ELI_ONTOLOGY} xsd: http://www.w3.org/2001/XMLSchema# skos: http://www.w3.org/2004/02/skos/core#" about="${esc(work)}" typeof="eli:LegalResource">`);
     rows.push(`  <span property="eli:number" content="${esc(_idLocal(doc))}" datatype="xsd:string"></span>`);
-    rows.push(`  <span property="eli:type_document" resource="${AUTH}/resource-type/${esc(_slug(doc))}"></span>`);
+    // Rótulos aninhados (skos:prefLabel), para paridade com o JSON-LD: sem
+    // eles o consumidor de RDFa ficava só com o URI, sem designação legível.
+    rows.push(`  <span property="eli:type_document" resource="${AUTH}/resource-type/${esc(_slug(doc))}" typeof="skos:Concept">`
+      + `<span property="skos:prefLabel" lang="pt">${esc(TYPE_LABEL[doc.actName] || doc.actName)}</span></span>`);
     rows.push(`  <span property="eli:title" lang="pt">${esc((TYPE_LABEL[doc.actName] || doc.actName) + ' n.º ' + _idLocal(doc))}</span>`);
     if (doc.shortTitle) rows.push(`  <span property="eli:description" lang="pt">${esc(doc.shortTitle)}</span>`);
     if (doc.adoptionDate) rows.push(`  <span property="eli:date_document" content="${esc(doc.adoptionDate)}" datatype="xsd:date"></span>`);
-    rows.push(`  <span property="eli:passed_by" resource="${AUTH}/corporate-body/${esc(author.slug)}">${esc(author.label)}</span>`);
+    rows.push(`  <span property="eli:passed_by" resource="${AUTH}/corporate-body/${esc(author.slug)}" typeof="skos:Concept">`
+      + `<span property="skos:prefLabel" lang="pt">${esc(author.label)}</span></span>`);
     // Paridade com a INCM (as mesmas constantes emitidas no JSON-LD).
     rows.push(`  <span property="eli:uri_schema" resource="${URI_SCHEMA}"></span>`);
     rows.push(`  <span property="eli:publisher" content="INCM"></span>`);

@@ -260,17 +260,18 @@ ${steps.join('\n')}
     if (!passive.length) {
       return `      <analysis source="#dapl"><activeModifications/><passiveModifications/></analysis>`;
     }
-    // destination usa URI absoluto (o eId vive no Work do diploma TARGET, não
-    // no consolidado actual — onde pode até ter sido revogado). Construímos a
-    // URI Work do target a partir do doc._consolidatedFrom (Amendment.fromTarget
-    // preenche este campo).
-    const targetWorkUri = doc._consolidatedFrom || '';
+    // destination usa URI absoluto: o eId vive no diploma TARGET, não no
+    // consolidado actual (onde pode até ter sido revogado). O campo
+    // _consolidatedFrom é preenchido por Amendment.fromTarget com o URI de
+    // EXPRESSION do alvo (…/p/dre/pt) — não de Work. Mantém-se a Expression,
+    // que é o nível onde o texto (e portanto o eId) existe.
+    const targetExprUri = doc._consolidatedFrom || '';
     // Sem URI resolvido, o elemento é omitido em vez de sair com href vazio ou
     // inventado (TIMP-0004 trata a ausência como aviso, não como erro).
     const items = passive.map((m, i) => {
       const src = m.sourceUri ? `\n          <source href="${escapeXml(m.sourceUri)}"/>` : '';
-      const dst = (targetWorkUri && m.eId)
-        ? `\n          <destination href="${escapeXml(targetWorkUri)}#${escapeXml(m.eId)}"/>` : '';
+      const dst = (targetExprUri && m.eId)
+        ? `\n          <destination href="${escapeXml(targetExprUri)}#${escapeXml(m.eId)}"/>` : '';
       return `        <textualMod type="${escapeXml(m.type)}" eId="mod_${escapeXml(m.id || String(i + 1))}">${src}${dst}
         </textualMod>`;
     }).join('\n');
