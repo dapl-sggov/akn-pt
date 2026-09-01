@@ -9,7 +9,7 @@
     "test:ui": "node editor/test-ui.js"
   },
   "devDependencies": {
-    "@xmldom/xmldom": "^0.9.10",
+    "@xmldom/xmldom": "^0.9.12",
     "jsdom": "^29.1.1"
   }
 }
